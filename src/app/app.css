@@ -147,7 +147,10 @@ kbd {
 .wheel-name { font: 600 0.074px var(--condensed); fill: var(--text); text-anchor: middle; dominant-baseline: middle; }
 .wheel-hint { font: 400 0.042px var(--sans); fill: var(--muted); text-anchor: middle; }
 
-.pins { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 0; }
+.pins { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 0; align-content: start; }
+/* room for three pins always, so adding or removing one doesn't move what's below */
+.pins, .pins-empty { min-height: 90px; }
+.pins li { height: 30px; }
 .pins li {
   display: grid;
   grid-template-columns: 12px minmax(5em, 1fr) 4.5em minmax(80px, 1.4fr) 3em 28px;
@@ -161,7 +164,7 @@ kbd {
 .pins-empty { margin-top: 10px; }
 .pins li.pins-more, .pins-empty { display: block; color: var(--dim); font-size: 13px; cursor: default; padding: 6px 8px; }
 .pin-swatch { width: 12px; height: 12px; border-radius: 50%; }
-.pin-name { font-weight: 500; }
+.pin-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .pin-extreme, .pins .pin-share { color: var(--muted); font-size: 13px; }
 .pins .pin-share { text-align: right; }
 .pin-remove { padding: 0; width: 26px; height: 26px; border-color: transparent; background: none; color: var(--muted); }
@@ -209,7 +212,8 @@ kbd {
 @media (hover: none) { .slider-ends span { opacity: 1; } }
 .slider-ends span:first-child { grid-area: left; text-align: right; }
 .slider-ends span:last-child { grid-area: right; }
-.field .segmented { flex-wrap: nowrap; }
+.field .segmented { flex-wrap: nowrap; display: flex; width: 100%; min-width: 0; }
+.field .segmented button { flex: 1 1 0; min-width: 0; padding: 5px 2px; }
 .field { display: grid; grid-template-columns: 6.4em 1fr; grid-template-areas: 'label input'; align-items: center; column-gap: 12px; }
 .field > .segmented { grid-area: input; }
 .slider input { grid-area: input; }
