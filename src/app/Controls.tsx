@@ -4,6 +4,8 @@ import { useState, type ReactNode } from 'react'
 import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, TONALITY_HUES, type Register, type Shape } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
 import { touchOf } from '../generator/controls'
+import { algorithmOf } from '../dx7/algorithms'
+import { getOp, OP, opBase, VC, type Voice } from '../dx7/voice'
 import { hueOfAngle, intensityWord, pinHint, pinLabel } from './Wheel'
 import { StartFromMenu } from './StartFrom'
 import { instrumentName, INSTRUMENTS } from '../generator/instruments'
@@ -94,14 +96,29 @@ function ShapeIcon({ shape }: { shape: Shape }) {
   )
 }
 
+/** The envelope you hear: the loudest carrier's. */
+function heardEg(v: Voice): Eg {
+  const carriers = algorithmOf(v[VC.algorithm]).carriers
+  const op = carriers.reduce((a, c) => (getOp(v, c, 'outputLevel') > getOp(v, a, 'outputLevel') ? c : a), carriers[0])
+  const b = opBase(op)
+  return {
+    rates: [v[b + OP.rate1], v[b + OP.rate2], v[b + OP.rate3], v[b + OP.rate4]],
+    levels: [v[b + OP.level1], v[b + OP.level2], v[b + OP.level3], v[b + OP.level4]],
+  }
+}
+
 function ShapePicker() {
   const shape = useApp((s) => s.controls.shape)
+  const voice = useApp((s) => s.voice)
   const setControl = useApp((s) => s.setControl)
   const pick = (v: Shape | null) => { setControl('shape', v); useApp.getState().regenerate(true); audition() }
   return (
     <div className="shapes" role="radiogroup" aria-label="Envelope">
       <button role="radio" aria-checked={shape === null} className={shape === null ? 'on' : ''} onClick={() => pick(null)} title="The envelope the tonality comes with">
-        <span className="shape-auto">auto</span>
+        {/* the voice's own envelope when it's the one you hear; an outline while another shape is picked */}
+        {shape === null
+          ? <EgCurve eg={heardEg(voice)} className="shape-own" />
+          : <svg className="shape-own outline" viewBox="0 0 60 22" aria-hidden="true"><path d="M1 20 L9 4 L28 9 L46 9 L59 20" /></svg>}
         <span>Own</span>
       </button>
       {SHAPES.map((s) => (
@@ -159,7 +176,7 @@ export function PinList() {
   if (!pins.length) return (
     <div className="pin-area">
       <BaseChip />
-      <p className="pins-empty">{instrument ? 'Click the wheel to colour it with a tonality.' : 'Click the wheel to pin a tonality. With none, every new voice picks one.'}</p>
+      <p className="pins-empty">{instrument ? 'Click the wheel to colour it with a tonality.' : 'Click the wheel to pin a tonality, or press New voice for a fresh roll.'}</p>
     </div>
   )
   return (
@@ -274,7 +291,7 @@ export function Controls() {
 
 /** What each action does, shown below them while one is pointed at or focused. */
 const ACTION_HINTS = {
-  start: 'Start from: an instrument as the base (piano, guitar, vibes, bass, drums, choir…), or Init voice, a plain sine (I).',
+  start: 'Start from: one of 41 classic DX7 instruments as the base (keys, guitars, mallets, basses, winds, brass, strings, drums, choirs), or Init voice, a plain sine (I).',
   variation: 'Variation, a small step: the same pins, controls and instrument; the details move (envelopes, levels, tuning). A sibling.',
   mutate: 'Mutate, a medium step: the pins wander around the wheel and in or out, the controls get a push, a pin may come or go.',
   generate: 'New voice, a fresh start: new pins anywhere on the wheel, the controls back to their defaults, no instrument.',

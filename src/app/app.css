@@ -228,7 +228,7 @@ kbd {
 .shapes button path { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linejoin: round; }
 .shapes button.on { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
 .shapes button.on path { stroke: var(--accent); }
-.shape-auto { height: 20px; display: grid; place-items: center; font: 500 13px var(--condensed); color: var(--dim); }
+.shapes .shape-own.outline path { stroke: var(--dim); stroke-dasharray: 3 3; }
 
 .slider {
   display: grid;
@@ -612,6 +612,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 @media (max-width: 640px) {
   .app { padding: 0 16px 24px; }
+  .stage { gap: 20px; }
   /* the top bar in three rows, not one control per row */
   .volume input[type='range'] { width: 72px; }
   /* the model and the connection on one line */
