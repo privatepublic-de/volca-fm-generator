@@ -15,6 +15,8 @@ const HOLD = 2.5
 export interface SoundTraits {
   /** seconds to 90 % of the loudest */
   attack: number
+  /** seconds to half the loudest: a pad that blooms late reaches its body long before its loudest */
+  rise: number
   /** seconds from the loudest to −20 dB while held; Infinity: it holds */
   decay: number
   /** still getting louder late in the held note */
@@ -50,11 +52,18 @@ export function soundTraits(v: Voice): SoundTraits {
   for (let i = 1; i < env.length; i++) if (env[i] > env[top]) top = i
   const peak = env[top] || 1e-9
   const attack = env.findIndex((x) => x >= 0.9 * peak) * win
+  const rise = env.findIndex((x) => x >= 0.5 * peak) * win
   const fall = env.findIndex((x, i) => i > top && x < peak / 10)
   const decay = fall < 0 ? Infinity : (fall - top) * win
-  // still clearly growing: a slow start, and louder at the end than at 40 % by 3 dB (a steady tone's top can be
-  // anywhere, and a pad that brightens while held grows a little)
-  const rising = attack > 0.4 && env[env.length - 1] > env[Math.floor(env.length * 0.4)] * 1.41
+  // still clearly growing late in the note: louder at the end than around 60 % by 6 dB (a steady tone's top can be
+  // anywhere, and a pad that blooms as its modulators open grows a few dB)
+  // (averages over stretches, so beating between detuned carriers doesn't decide it)
+  const mean = (from: number, to: number) => {
+    const part = env.slice(Math.floor(env.length * from), Math.ceil(env.length * to))
+    return part.reduce((sum, x) => sum + x, 0) / Math.max(1, part.length)
+  }
+  // (and slow from the start: a pad whose modulators open late gets louder too, but reaches its body early)
+  const rising = rise > 0.8 && mean(0.85, 1) > mean(0.5, 0.65) * 2
   // the body: after the attack, before a fast decay is over
   const from = Math.min(Math.max(0.15, attack), HOLD - 0.6)
   // 4096 samples are enough for every measure here, and quicker than more
@@ -62,7 +71,7 @@ export function soundTraits(v: Voice): SoundTraits {
   const f0 = pitch(body) || 261.6 * 2 ** ((v[VC.transpose] - 24) / 12)
   const spec = spectrum(body)
   return {
-    attack, decay, rising, f0,
+    attack, rise, decay, rising, f0,
     noteHz: 261.6 * 2 ** ((v[VC.transpose] - 24) / 12),
     inharmonic: inharmonicOf(v),
     additive: additiveOf(v),
@@ -139,9 +148,11 @@ const isInharmonic = (t: SoundTraits) => t.periodicity < 0.9 || t.inharmonic > 0
 /** The shape, in order of precedence. */
 export function nounOf(t: SoundTraits): string {
   if (t.noise > 0.2) return t.decay <= 0.6 ? 'Hit' : 'Noise'
+  // a slow rise that ends (the Reverse envelope)
+  if (t.rise > 0.4 && t.decay < Infinity) return 'Swell'
   if (t.decay <= 1) return 'Pluck'
   if (t.decay < Infinity) return isInharmonic(t) ? (t.noteHz < 160 || t.f0 < 100 ? 'Gong' : 'Bell') : 'Keys'
-  if (t.rising || t.attack > 1.2) return 'Swell'
+  if (t.rising || t.rise > 1) return 'Swell'
   if (t.noteHz < 140 && t.attack < 0.3) return 'Bass'
   if (t.attack >= 0.08) return 'Pad'
   if (t.brightness < 1.1 && t.periodicity > 0.99 && t.noise < 1e-5) return 'Sine'

@@ -339,17 +339,26 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .library { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px; margin-top: 24px; }
 @media (max-width: 960px) { .library { grid-template-columns: minmax(0, 1fr); } }
 .library h3 { font: 500 13px var(--sans); color: var(--muted); margin-bottom: 10px; }
-.tiles { display: flex; flex-wrap: wrap; gap: 6px; max-height: 148px; overflow: auto; }
-.tile {
-  font: 500 14px var(--condensed);
-  padding: 5px 10px;
-  border-left: 3px solid hsl(var(--h) 70% 62%);
-  background: var(--panel);
+.changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.changes button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 6px 6px 0;
+  padding: 3px 10px;
 }
-.tile { display: inline-flex; align-items: center; gap: 7px; }
-.tile-dots { display: inline-flex; gap: 2px; align-items: center; }
-.tile-dots span { height: 10px; border-radius: 3px; }
-.tile.current { background: hsl(var(--h) 50% 30% / 0.5); border-color: hsl(var(--h) 70% 62%); }
+.changes button:hover:not(:disabled) { background: var(--panel); border-color: transparent; }
+.changes button.current { border-left-color: hsl(var(--h) 70% 62%); background: var(--panel); }
+.change-what { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.change-voice { font: 500 14px var(--condensed); color: var(--muted); }
+.changes button.current .change-voice { color: hsl(var(--h) 80% 78%); }
+.changes-more { color: var(--dim); font-size: 12px; margin: 4px 0 0 12px; }
 
 .fav-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .fav-head h3 { margin: 0; }

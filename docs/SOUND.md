@@ -97,7 +97,7 @@ for the most striking trait, in the DX7's 10 characters. `tools/names.ts` prints
 | Pluck | gone to −20 dB within 1 s |
 | Bell / Gong | fades over seconds and is inharmonic (Gong when low) |
 | Keys | fades over seconds, harmonic |
-| Swell | held, slow start (over 0.4 s) and still 3 dB louder at the end |
+| Swell | a slow start (half the loudest after 0.4 s) that ends (the Reverse envelope); or held, and half the loudest only after 1 s, or slow to half (over 0.8 s) and 6 dB louder over the last 15 % than around 60 % (averaged, so beating doesn't decide). A pad whose modulators open late gets louder too, but reaches its body early: it stays a Pad |
 | Bass | held, the note below 140 Hz (C4 with the voice's transpose), attack under 0.3 s |
 | Pad | held, attack 0.08 s or more |
 | Sine | held, brightness under 1.1, steady, no noise |

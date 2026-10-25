@@ -3,7 +3,6 @@
 import { useRef, useState } from 'react'
 import { vcedMessage, vmemMessage } from '../dx7/sysex'
 import type { Voice } from '../dx7/voice'
-import { mixOf, TONALITY_HUES, TONALITY_LABELS } from '../generator/choices'
 import { audition, useApp, type Entry } from './store'
 
 export function download(name: string, bytes: Uint8Array) {
@@ -18,37 +17,33 @@ const fileName = (name: string) => `${name.trim().replace(/[^\w-]+/g, '-') || 'v
 /** A single voice with the DX7 checksum: the volcas and Dexed take it. */
 export const exportVoice = (v: Voice, name: string) => download(fileName(name), vcedMessage(v, { tail: 'checksum' }))
 
-/** The tonalities a voice was mixed from, heaviest first, as dots and words (none for a voice from a file). */
-function mixOfEntry(e: Entry) {
-  return e.made ? mixOf(e.made.pins) : []
-}
+/** How many steps the list shows; undo and redo reach the whole session. */
+const RECENT = 8
 
-function Tile({ e, current }: { e: Entry; current: boolean }) {
-  const recall = useApp((s) => s.recall)
-  const mix = mixOfEntry(e)
-  const total = mix.reduce((sum, m) => sum + m.weight, 0)
-  const title = mix.length ? `${e.name}: ${mix.map((m) => `${TONALITY_LABELS[m.tonality]} ${Math.round((m.weight / total) * 100)} %`).join(', ')}` : `${e.name} (from a file)`
-  return (
-    <button className={`tile${current ? ' current' : ''}`} style={{ '--h': e.hue } as React.CSSProperties}
-      onClick={() => { recall(e); audition() }} title={title}>
-      <span className="tile-dots" aria-hidden="true">
-        {mix.slice(0, 4).map((m) => <span key={m.tonality} style={{ background: `hsl(${TONALITY_HUES[m.tonality]} 80% 64%)`, width: `${4 + 6 * (m.weight / total)}px` }} />)}
-      </span>
-      {e.name}
-    </button>
-  )
-}
-
+/** The last steps of the session, newest first, each named by what it changed, with the voice it made beside it.
+ *  A click goes back to that step. */
 export function History() {
   const history = useApp((s) => s.history)
   const currentId = useApp((s) => s.currentId)
+  const recall = useApp((s) => s.recall)
   if (!history.length) return null
+  const recent = history.slice(-RECENT).reverse()
+  const hidden = history.length - recent.length
   return (
-    <section className="history" aria-label="This session's voices">
-      <h3>This session</h3>
-      <div className="tiles">
-        {[...history].reverse().map((e) => <Tile key={e.id} e={e} current={e.id === currentId} />)}
-      </div>
+    <section className="history" aria-label="Recent changes">
+      <h3 title="Every step of this session: ⌘Z and ⇧⌘Z go back and forth through all of them">Recent changes</h3>
+      <ol className="changes">
+        {recent.map((e) => (
+          <li key={e.id}>
+            <button className={e.id === currentId ? 'current' : ''} onClick={() => { recall(e); audition() }}
+              style={{ '--h': e.hue } as React.CSSProperties} aria-current={e.id === currentId ? 'step' : undefined}>
+              <span className="change-what">{e.change ?? '—'}</span>
+              <span className="change-voice">{e.name}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      {hidden > 0 && <p className="changes-more">and {hidden} earlier: ⌘Z goes back further</p>}
     </section>
   )
 }

@@ -124,6 +124,25 @@ describe('the app store', () => {
     expect(useApp.getState().generated).not.toBeNull()
   })
 
+  it('each step says what it changed; names repeat in the session and get a number only among the kept', () => {
+    const s = useApp.getState()
+    s.initVoice()
+    useApp.getState().setControl('brightness', 1)
+    useApp.getState().regenerate(true)
+    useApp.getState().mutateCurrent()
+    expect(useApp.getState().history.slice(-3).map((h) => h.change)).toEqual(['Init voice', 'Brightness ↑', 'Mutate'])
+    useApp.getState().initVoice()
+    useApp.getState().initVoice()
+    const names = useApp.getState().history.slice(-2).map((h) => h.name)
+    expect(names[0]).toBe(names[1])
+    useApp.getState().keep()
+    useApp.getState().generateNew()
+    useApp.getState().initVoice()
+    useApp.getState().keep()
+    const kept = useApp.getState().favourites.slice(-2).map((f) => f.name)
+    expect(kept[1]).toBe(`${kept[0]} 2`)
+  })
+
   it('back and forward step through the session (undo, redo)', () => {
     const s = useApp.getState()
     s.generateNew()

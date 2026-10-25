@@ -13,7 +13,9 @@ describe('names from the sound', () => {
     expect(named([['tine', 1]])).toMatch(/Keys$/)
     expect(named([['bell', 1]])).toMatch(/Bell$/)
     expect(named([['warm', 1]])).toMatch(/Pad$/)
-    expect(named([['string', 1]], { shape: 'pad' })).toMatch(/Swell$/)
+    expect(named([['string', 1]], { shape: 'pad' })).toMatch(/Pad$/)
+    expect(named([['warm', 1]], { shape: 'reverse' })).toMatch(/Swell$/)
+    expect(named([['tine', 1]], { shape: 'pad' })).toMatch(/Pad$/)
     expect(named([['organ', 1]])).toBe('Organ')
     expect(named([['warm', 1]], { register: 'bass' })).toMatch(/Bass$/)
     // Init voice: one mild Warm pin, everything down
