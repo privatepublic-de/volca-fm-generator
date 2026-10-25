@@ -399,6 +399,11 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .voice-bar .actions-history { margin-left: auto; }
 }
 .voice-name { font: 600 26px/1.05 var(--condensed); color: hsl(var(--h) 80% 78%); letter-spacing: 0.01em; }
+/* the name is yours to change: it looks like a title, and a dotted line under it says it can be edited */
+.voice-name-button { all: unset; cursor: text; border-bottom: 1px dotted transparent; }
+.voice-name-button:hover, .voice-name-button:focus-visible { border-bottom-color: hsl(var(--h) 60% 60%); }
+.voice-name-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.voice-rename { display: block; width: 11ch; padding: 0 6px; margin-left: -7px; background: var(--raised); border: 1px solid var(--accent); border-radius: 6px; }
 .voice-mix { margin-top: 6px; font-size: 14px; }
 .voice-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .voice-export { margin-left: 12px; padding: 1px 8px; font-size: 12px; color: var(--muted); background: none; }

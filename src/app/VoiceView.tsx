@@ -1,5 +1,6 @@
 // What was made, read-only (PLAN §6.1): the algorithm as the DX7 draws it, each operator coloured by the
 // tonality it belongs to, and the six operators with frequency, level and envelope.
+import { useState } from 'react'
 import { algorithmOf, type Algorithm } from '../dx7/algorithms'
 import { opRatio } from '../dx7/frequency'
 import { getOp, OP, opBase, VC, voiceName, type Voice } from '../dx7/voice'
@@ -132,7 +133,7 @@ export function VoiceView() {
         <VoiceActions />
       </div>
       <div className="voice-head">
-        <h2 className="voice-name">{voiceName(voice)}</h2>
+        <VoiceName />
         <p className="voice-mix">{mix ?? (made ? 'Made under the other volca model: its pins are back, the details may differ' : 'From a file: the wheel didn\'t make it, so it has no pins')}</p>
         <p className="voice-meta">
           Algorithm {alg.number}, feedback {voice[VC.feedback]}
@@ -156,5 +157,34 @@ export function VoiceView() {
         })}
       </ol>
     </section>
+  )
+}
+
+/** The voice's name, yours to change: click it, type (the DX7 has 10 characters), Enter or click away to keep it,
+ *  Escape to leave it. Emptied, it takes the name its sound gives it again. */
+function VoiceName() {
+  const voice = useApp((s) => s.voice)
+  const own = useApp((s) => s.customName)
+  const renameVoice = useApp((s) => s.renameVoice)
+  const [editing, setEditing] = useState(false)
+  const name = voiceName(voice)
+  if (editing) {
+    return (
+      <input className="voice-name voice-rename" autoFocus defaultValue={name} maxLength={10} aria-label="Voice name (10 characters)"
+        onFocus={(e) => e.target.select()}
+        onBlur={(e) => { renameVoice(e.target.value); setEditing(false) }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+          if (e.key === 'Escape') { e.currentTarget.value = name; e.currentTarget.blur() }
+        }} />
+    )
+  }
+  return (
+    <h2 className="voice-name">
+      <button className="voice-name-button" onClick={() => setEditing(true)}
+        title={own ? 'Your name for it: click to change (empty it for the name its sound gives it)' : 'Click to give it a name of your own'}>
+        {name}
+      </button>
+    </h2>
   )
 }

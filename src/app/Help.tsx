@@ -141,7 +141,8 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             Kept voices stay in this browser. Each one exports as a single-voice <code>.syx</code> (its .syx button), and
             <strong> Export as cartridge</strong> writes the first 32 as one DX7 bank. Both are standard DX7 SysEx: Dexed,
             a DX7, a TX802 and other DX7-compatible synths load them. <strong>Export .syx</strong> beside the voice's name
-            saves the voice you hear. <strong>Import .syx</strong> reads single voices and 32-voice banks into your kept
+            saves the voice you hear. Click the name to give the voice one of your own (10 characters, as on the DX7):
+            it stays through your changes until a new start, and goes with the voice to the volca and into files. <strong>Import .syx</strong> reads single voices and 32-voice banks into your kept
             voices.
           </p>
         </section>

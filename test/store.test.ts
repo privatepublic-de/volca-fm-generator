@@ -103,6 +103,31 @@ describe('the app store', () => {
     }
   })
 
+  it('your own name for the voice stays through changes until a new start; emptied, the sound names it again', () => {
+    const s = useApp.getState()
+    s.setModel('fm2')
+    useApp.setState({ pins: [{ id: 701, angle: 60, radius: 0.5, weight: 0.6 }], customName: null })
+    useApp.getState().regenerate(true)
+    const auto = voiceName(useApp.getState().voice)
+    useApp.getState().renameVoice('My Bell')
+    expect(voiceName(useApp.getState().voice)).toBe('My Bell')
+    expect(useApp.getState().history.find((h) => h.id === useApp.getState().currentId)?.name).toBe('My Bell')
+    useApp.getState().setControl('brightness', 0.5)
+    useApp.getState().regenerate(true)
+    expect(voiceName(useApp.getState().voice)).toBe('My Bell')
+    useApp.getState().variation()
+    expect(voiceName(useApp.getState().voice)).toBe('My Bell')
+    // emptied: the generator names it again
+    useApp.getState().renameVoice('')
+    expect(useApp.getState().customName).toBeNull()
+    expect(voiceName(useApp.getState().voice)).not.toBe('My Bell')
+    useApp.getState().renameVoice('Again')
+    useApp.getState().generateNew()
+    expect(useApp.getState().customName).toBeNull()
+    expect(voiceName(useApp.getState().voice)).not.toBe('Again')
+    expect(auto.length).toBeGreaterThan(0)
+  })
+
   it('a kept voice brings its pins and controls back, renamed or not', () => {
     const s = useApp.getState()
     s.setModel('fm2')
