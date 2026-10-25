@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { vcedMessage, vmemMessage } from '../dx7/sysex'
 import type { Voice } from '../dx7/voice'
+import { mixOf, TONALITY_HUES, TONALITY_LABELS } from '../generator/choices'
 import { audition, useApp, type Entry } from './store'
 
 export function download(name: string, bytes: Uint8Array) {
@@ -17,11 +18,22 @@ const fileName = (name: string) => `${name.trim().replace(/[^\w-]+/g, '-') || 'v
 /** A single voice with the DX7 checksum: the volcas and Dexed take it. */
 export const exportVoice = (v: Voice, name: string) => download(fileName(name), vcedMessage(v, { tail: 'checksum' }))
 
+/** The tonalities a voice was mixed from, heaviest first, as dots and words (none for a voice from a file). */
+function mixOfEntry(e: Entry) {
+  return e.made ? mixOf(e.made.pins) : []
+}
+
 function Tile({ e, current }: { e: Entry; current: boolean }) {
   const recall = useApp((s) => s.recall)
+  const mix = mixOfEntry(e)
+  const total = mix.reduce((sum, m) => sum + m.weight, 0)
+  const title = mix.length ? `${e.name}: ${mix.map((m) => `${TONALITY_LABELS[m.tonality]} ${Math.round((m.weight / total) * 100)} %`).join(', ')}` : `${e.name} (from a file)`
   return (
     <button className={`tile${current ? ' current' : ''}`} style={{ '--h': e.hue } as React.CSSProperties}
-      onClick={() => { recall(e); audition() }} title={e.name}>
+      onClick={() => { recall(e); audition() }} title={title}>
+      <span className="tile-dots" aria-hidden="true">
+        {mix.slice(0, 4).map((m) => <span key={m.tonality} style={{ background: `hsl(${TONALITY_HUES[m.tonality]} 80% 64%)`, width: `${4 + 6 * (m.weight / total)}px` }} />)}
+      </span>
       {e.name}
     </button>
   )

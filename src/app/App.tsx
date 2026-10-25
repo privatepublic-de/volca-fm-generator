@@ -24,6 +24,17 @@ export function App() {
     window.addEventListener('pointerdown', start, { once: true })
     window.addEventListener('keydown', start, { once: true })
     const shortcuts = (e: KeyboardEvent) => {
+      // undo and redo step through this session's voices, wherever the focus is (but in a text field)
+      const target = e.target as HTMLElement
+      const typing = target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && ['text', 'number'].includes((target as HTMLInputElement).type))
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && !typing) {
+        e.preventDefault()
+        const s = useApp.getState()
+        if (e.shiftKey) s.forward()
+        else s.back()
+        audition()
+        return
+      }
       const el = e.target as HTMLElement
       if (e.metaKey || e.ctrlKey || e.altKey || e.repeat || ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(el.tagName) && e.key === 'Enter') return
       if (['INPUT', 'TEXTAREA'].includes(el.tagName) && (el as HTMLInputElement).type !== 'range' && (el as HTMLInputElement).type !== 'checkbox') return
@@ -48,7 +59,7 @@ export function App() {
 
   return (
     <div className="app" style={{ '--h': hue } as CSSProperties}>
-      <TopBar onStore={() => setStoring(true)} />
+      <TopBar onStore={() => setStoring(true)} audioOn={audioOn} />
       <main className="stage">
         <div className="stage-wheel">
           <Wheel />
@@ -65,8 +76,8 @@ export function App() {
         <Favourites />
       </div>
       <Keyboard />
-      {!audioOn && <p className="audio-hint">Click or press a key to start the sound.</p>}
       <footer className="footer">
+        <span><kbd>⌘Z</kbd> <kbd>⇧⌘Z</kbd> back, forward</span>
         <span><kbd>I</kbd> init voice</span>
         <span><kbd>Enter</kbd> new voice</span>
         <span><kbd>V</kbd> variation</span>

@@ -3,25 +3,29 @@
 import { useState, type ReactNode } from 'react'
 import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, type Register, type Shape } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
-import { hueOfAngle, pinHint, pinLabel } from './Wheel'
-import { audition, MAX_PINS, playback, useApp, type Controls as ControlValues } from './store'
+import { hueOfAngle, intensityWord, pinHint, pinLabel } from './Wheel'
+import { audition, MAX_PINS, playback, sameSound, useApp, type Controls as ControlValues } from './store'
 
-/** A slider that makes the voice again while it moves and plays it when let go. */
-function Slider({ label, value, min, max, step = 0.05, onChange, left, right, bipolar, disabled, hint }: {
+/** A slider that makes the voice again while it moves and plays it when let go. A double-click puts it back to
+ *  `reset` (its neutral value: the middle for bipolar ones), which `mark` shows on the track when it isn't an end. */
+function Slider({ label, value, min, max, step = 0.05, onChange, left, right, bipolar, disabled, hint, reset }: {
   label: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void
-  left?: string; right?: string; bipolar?: boolean; disabled?: boolean; hint?: string
+  left?: string; right?: string; bipolar?: boolean; disabled?: boolean; hint?: string; reset?: number
 }) {
   const regenerate = useApp((s) => s.regenerate)
+  const neutral = reset ?? (bipolar ? 0 : min)
+  const mark = neutral > min && neutral < max && !bipolar ? ((neutral - min) / (max - min)) * 100 : null
   return (
-    <label className={`slider${bipolar ? ' bipolar' : ''}${disabled ? ' disabled' : ''}`} title={hint}>
+    <label className={`slider${bipolar ? ' bipolar' : ''}${mark !== null ? ' marked' : ''}${disabled ? ' disabled' : ''}`}
+      title={`${hint ? `${hint}. ` : ''}Double-click: back to ${neutral === 0.5 && !bipolar ? 'the tonality\'s own' : 'neutral'}`}>
       <span className="slider-label">{label}</span>
       <input
         type="range" min={min} max={max} step={step} value={value} disabled={disabled}
-        style={{ '--fill': `${((value - min) / (max - min)) * 100}%` } as React.CSSProperties}
+        style={{ '--fill': `${((value - min) / (max - min)) * 100}%`, ...(mark !== null ? { '--mark': `${mark}%` } : {}) } as React.CSSProperties}
         onChange={(e) => onChange(Number(e.target.value))}
         onPointerUp={() => { regenerate(true); audition() }}
         onKeyUp={(e) => { if (e.key.startsWith('Arrow')) { regenerate(true); audition() } }}
-        onDoubleClick={() => { onChange(bipolar ? 0 : min); regenerate(true); audition() }}
+        onDoubleClick={() => { onChange(neutral); regenerate(true); audition() }}
       />
       {(left || right) && <span className="slider-ends"><span>{left}</span><span>{right}</span></span>}
     </label>
@@ -137,7 +141,7 @@ export function PinList() {
         <li key={p.id} className={selected === p.id ? 'selected' : ''} onClick={() => selectPin(p.id)} title={pinHint(p)}>
           <span className="pin-swatch" style={{ background: `hsl(${hueOfAngle(p.angle)} 85% 64%)` }} />
           <span className="pin-name">{pinLabel(p)}</span>
-          <span className="pin-extreme" title="Towards the rim: more extreme">{p.radius < 0.34 ? 'mild' : p.radius > 0.67 ? 'extreme' : 'typical'}</span>
+          <span className="pin-extreme" title="Drag the pin towards the rim: more extreme">{intensityWord(p.radius)}</span>
           <input
             type="range" min={0.05} max={1} step={0.05} value={p.weight} aria-label={`${pinLabel(p)} weight`}
             style={{ '--fill': `${p.weight * 100}%`, '--accent': `hsl(${hueOfAngle(p.angle)} 85% 64%)` } as React.CSSProperties}
@@ -214,14 +218,14 @@ export function Controls() {
       <div className="controls-col">
         <Group title="Tone">
           <Slider label="Brightness" left="mellow" right="bright" bipolar min={-1} max={1} value={c.brightness} onChange={set('brightness')} />
-          <Slider label="Complexity" left="pure" right="dense" min={0} max={1} value={c.complexity} onChange={set('complexity')}
+          <Slider label="Complexity" left="pure" right="dense" min={0} max={1} reset={0.5} value={c.complexity} onChange={set('complexity')}
             hint="How many of the six operators sound and how deep: two when pure, six and intense when dense" />
           <Slider label="Motion" left="still" right="alive" min={0} max={1} value={c.motion} onChange={set('motion')}
             hint="Vibrato, shimmer and drifting brightness; past the middle, wobbles, random steps and pitch drift" />
         </Group>
-        <Group title="New voices">
+        <Group title="Character">
           <Slider label="Wild" left="typical" right="wild" min={0} max={1} value={wild} onChange={setWild}
-            hint="How far a new voice may stray from its tonalities' usual sound" />
+            hint="How far the voice may stray from its tonalities' usual sound: odd ratios, other feedback, near the top another algorithm" />
         </Group>
       </div>
       <div className="controls-col">
@@ -246,12 +250,14 @@ const ACTION_HINTS = {
   generate: 'New voice: your pins and controls rolled again: other ratios and levels, and another algorithm where the tonality has a choice.',
   variation: 'Variation: your pins and controls rolled much freer, at least three quarters wild: further from the usual sound.',
   mutate: 'Mutate: the pins wander around the wheel and in or out, the controls get a push, sometimes a pin comes or goes; then a new voice.',
-  keep: 'Keep: puts this voice in your kept voices, in this browser.',
+  keep: 'Keep: puts this voice, with its pins and controls, in your kept voices, in this browser.',
+  kept: 'Kept: this voice is in your kept voices. Click to take it out again.',
 }
 type ActionKey = keyof typeof ACTION_HINTS
 
 export function Actions() {
-  const { initVoice, generateNew, variation, mutateCurrent, keep } = useApp.getState()
+  const { initVoice, generateNew, variation, mutateCurrent, keep, unkeep } = useApp.getState()
+  const kept = useApp((s) => s.favourites.find((f) => sameSound(f.voice, s.voice)))
   const autoplay = useApp((s) => s.autoplay)
   const setAutoplay = useApp((s) => s.setAutoplay)
   const [hint, setHint] = useState<ActionKey>('generate')
@@ -268,10 +274,13 @@ export function Actions() {
         {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, true)}
         {button('variation', 'Variation', 'V', () => { variation(); audition() })}
         {button('mutate', 'Mutate', 'M', () => { mutateCurrent(); audition() })}
-        {button('keep', 'Keep', 'Q', keep)}
+        {kept
+          ? <button className="kept" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out"
+              onPointerEnter={() => setHint('kept')} onFocus={() => setHint('kept')} onPointerLeave={() => setHint('generate')} onBlur={() => setHint('generate')}>Kept</button>
+          : button('keep', 'Keep', 'Q', keep)}
         <label className="toggle small">
           <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
-          <span>Play on change</span>
+          <span title="Plays the note you played last (C4 until you play one) after every change">Play on change</span>
         </label>
       </div>
       <p className="action-hint" aria-live="polite">{ACTION_HINTS[hint]}</p>

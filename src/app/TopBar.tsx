@@ -4,7 +4,7 @@ import type { Model } from '../engine/models'
 import { playback, useApp } from './store'
 import type { Target } from '../ui/playback'
 
-export function TopBar({ onStore }: { onStore: () => void }) {
+export function TopBar({ onStore, audioOn }: { onStore: () => void; audioOn: boolean }) {
   const model = useApp((s) => s.model)
   const setModel = useApp((s) => s.setModel)
   const [, refresh] = useState(0)
@@ -40,6 +40,7 @@ export function TopBar({ onStore }: { onStore: () => void }) {
         {problem && <span className="topbar-problem">{problem}</span>}
       </div>
       <div className="topbar-group">
+        {!audioOn && s.target !== 'volca' && <span className="topbar-hint">Click anywhere or press a key to start the sound</span>}
         <div className="segmented small" role="radiogroup" aria-label="Play on">
           {(['browser', 'volca', 'both'] as Target[]).map((t) => (
             <button key={t} role="radio" aria-checked={s.target === t} className={s.target === t ? 'on' : ''}

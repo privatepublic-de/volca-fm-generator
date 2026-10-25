@@ -2,7 +2,7 @@
 // favourites. Pins, controls and favourites are kept in this browser; the history lasts the session.
 import { create } from 'zustand'
 import { readSyx } from '../dx7/sysex'
-import { setVoiceName, voiceName, type Voice } from '../dx7/voice'
+import { setVoiceName, VC, voiceName, type Voice } from '../dx7/voice'
 import type { Model } from '../engine/models'
 import { angleOf, DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, type Pin, type Tonality } from '../generator/choices'
 import { mutateChoices } from '../generator/explore'
@@ -72,6 +72,9 @@ interface State extends Saved {
   variation(): void
   mutateCurrent(): void
   recall(entry: Entry): void
+  /** undo and redo: the voice before or after the current one in this session's history */
+  back(): void
+  forward(): void
   keep(): void
   unkeep(id: number): void
   rename(id: number, name: string): void
@@ -101,8 +104,11 @@ function load(): Saved {
 
 function loadFavourites(): Entry[] {
   try {
-    const list = JSON.parse(localStorage.getItem(FAVOURITES_KEY) ?? '[]') as { voice: number[]; name: string; hue: number }[]
-    return list.map((f) => ({ id: nextId++, voice: Uint8Array.from(f.voice), name: f.name, hue: f.hue }))
+    const list = JSON.parse(localStorage.getItem(FAVOURITES_KEY) ?? '[]') as { voice: number[]; name: string; hue: number; made?: Entry['made'] }[]
+    return list.map((f) => ({
+      id: nextId++, voice: Uint8Array.from(f.voice), name: f.name, hue: f.hue,
+      made: f.made && { ...f.made, pins: f.made.pins.map((p) => ({ ...p, id: nextId++ })) },
+    }))
   } catch {
     return []
   }
@@ -110,13 +116,16 @@ function loadFavourites(): Entry[] {
 
 function saveFavourites(list: Entry[]) {
   try {
-    localStorage.setItem(FAVOURITES_KEY, JSON.stringify(list.map((f) => ({ voice: Array.from(f.voice), name: f.name, hue: f.hue }))))
+    localStorage.setItem(FAVOURITES_KEY, JSON.stringify(list.map((f) => ({ voice: Array.from(f.voice), name: f.name, hue: f.hue, made: f.made }))))
   } catch { /* private window */ }
 }
 
 /** Init voice's controls: everything down, the gate envelope. */
 const { pins: _noPins, ...DEFAULT_CONTROLS } = DEFAULT_CHOICES
 export const INIT_CONTROLS: Controls = { ...DEFAULT_CONTROLS, shape: 'gate', brightness: -1, complexity: 0, motion: 0, length: 0, velocity: 0, pitchAccent: false, register: null }
+
+/** The same sound: every byte but the name (a renamed kept voice is still the voice the wheel made). */
+export const sameSound = (a: Voice, b: Voice) => a.subarray(0, VC.name).every((x, i) => x === b[i])
 
 export const choicesOf = (s: Pick<State, 'pins' | 'controls'>): GeneratorChoices => ({ ...s.controls, pins: s.pins })
 
@@ -244,14 +253,29 @@ export const useApp = create<State>((set, get) => {
       const g = entry.made ? generate(choicesOf(get()), { seed: get().seed, model: get().model, wild: get().wild }) : null
       playback.setVoice(entry.voice)
       // the generator's view only if it makes exactly these bytes (another model, or a mutation, doesn't)
-      const same = g !== null && g.voice.every((b, i) => b === entry.voice[i])
+      const same = g !== null && sameSound(g.voice, entry.voice)
       set({ voice: entry.voice, generated: same ? g : null, currentId: entry.id })
+    },
+    back() {
+      const { history, currentId, recall } = get()
+      const i = history.findIndex((h) => h.id === currentId)
+      // not on an entry (a kept voice, or just changed): back to the newest
+      const to = i < 0 ? history.at(-1) : history[i - 1]
+      if (to) recall(to)
+    },
+    forward() {
+      const { history, currentId, recall } = get()
+      const i = history.findIndex((h) => h.id === currentId)
+      if (i >= 0 && history[i + 1]) recall(history[i + 1])
     },
     keep() {
       const s = get()
-      const hue = s.history.find((h) => h.id === s.currentId)?.hue ?? hueOf(s.generated)
-      if (s.favourites.some((f) => f.voice.every((b, i) => b === s.voice[i]))) return
-      const favourites = [...s.favourites, { id: nextId++, voice: s.voice, name: voiceName(s.voice), hue }]
+      const current = s.history.find((h) => h.id === s.currentId)
+      const hue = current?.hue ?? hueOf(s.generated)
+      if (s.favourites.some((f) => sameSound(f.voice, s.voice))) return
+      // with what made it, so it brings its pins and controls back
+      const made = current && sameSound(current.voice, s.voice) ? current.made : undefined
+      const favourites = [...s.favourites, { id: nextId++, voice: s.voice, name: voiceName(s.voice), hue, made }]
       saveFavourites(favourites)
       set({ favourites })
     },
@@ -282,9 +306,9 @@ export const useApp = create<State>((set, get) => {
   }
 })
 
-/** C4 after a change, when play-on-change is on. */
+/** The last note played (C4 until one is) after a change, when play-on-change is on. */
 export function audition(velocity = 100) {
-  if (useApp.getState().autoplay) setTimeout(() => playback.audition(60, velocity), 140)
+  if (useApp.getState().autoplay) setTimeout(() => playback.audition(playback.lastNote, velocity), 140)
 }
 
 /** The tonalities the pins read as, heaviest first. */

@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { SECTOR, TONALITIES, TONALITY_HINTS, TONALITY_HUES, TONALITY_LABELS, angleOf, mixOf } from '../generator/choices'
 import { voiceName } from '../dx7/voice'
-import { audition, useApp, type AppPin } from './store'
+import { audition, MAX_PINS, useApp, type AppPin } from './store'
 
 /** The centre button's radius; pins live between it and the rim. */
 const CENTRE = 0.22
@@ -26,6 +26,8 @@ export const hueOfAngle = (angle: number) => {
   // between two tonalities: the hue of the larger share (hues don't average well across the red end)
   return TONALITY_HUES[m[0].tonality]
 }
+/** Mild near the centre, extreme at the rim. */
+export const intensityWord = (radius: number) => (radius < 0.34 ? 'mild' : radius > 0.67 ? 'extreme' : 'typical')
 export const pinLabel = (p: AppPin) => mixOf([{ ...p, weight: 1 }]).map((m) => TONALITY_LABELS[m.tonality]).join(' / ')
 /** What the pin's tonalities sound like, for a tooltip: one line each. */
 export const pinHint = (p: AppPin) => mixOf([{ ...p, weight: 1 }]).map((m) => `${TONALITY_LABELS[m.tonality]}: ${TONALITY_HINTS[m.tonality]}`).join('\n')
@@ -87,11 +89,26 @@ export function Wheel() {
   }
 
   const onMove = (e: PointerEvent<SVGSVGElement>) => {
-    if (!drag) return
     const { angle, dist } = at(e)
+    showTip(e, angle, dist, (e.target as Element).closest('g.pin') !== null)
+    if (!drag) return
     const removing = dist > REMOVE_AT
     if (removing !== drag.removing) setDrag({ ...drag, removing })
     if (!removing) schedule(drag.id, snapped(angle, e.shiftKey), toIntensity(dist))
+  }
+
+  /** The label at the pointer: what a click or a drag here would do. */
+  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null)
+  const showTip = (e: PointerEvent<SVGSVGElement>, angle: number, dist: number, onPin: boolean) => {
+    const box = svg.current!.getBoundingClientRect()
+    const place = (text: string) => setTip({ x: e.clientX - box.left, y: e.clientY - box.top, text })
+    const where = () => `${mixOf([{ angle: snapped(angle, e.shiftKey), radius: 1, weight: 1 }]).map((m) => TONALITY_LABELS[m.tonality]).join(' / ')}, ${intensityWord(toIntensity(dist))}`
+    if (drag) return place(drag.removing || dist > REMOVE_AT ? 'Release to remove' : where())
+    if (onPin) return place('Drag to move, off the wheel to remove; scroll for weight')
+    if (dist < CENTRE) return place('New voice')
+    if (dist > 1.02) return setTip(null)
+    if (useApp.getState().pins.length >= MAX_PINS) return place('Three pins at most: drag one off to make room')
+    place(`Pin ${where()}`)
   }
 
   const onUp = () => {
@@ -164,11 +181,13 @@ export function Wheel() {
         <div className="wheel-shade" />
         {glow && <div className="wheel-glow" style={{ backgroundImage: glow }} />}
       </div>
+      {tip && <div className="wheel-tip" style={{ left: tip.x, top: tip.y }} aria-hidden="true">{tip.text}</div>}
       <svg
         ref={svg}
         className={`wheel-svg${drag ? ' dragging' : ''}`}
         viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`}
         onPointerMove={onMove}
+        onPointerLeave={() => { if (!drag) setTip(null) }}
         onPointerUp={onUp}
         onPointerCancel={onUp}
         role="group"

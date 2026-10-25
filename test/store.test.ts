@@ -84,6 +84,46 @@ describe('the app store', () => {
     expect(useApp.getState().favourites).toHaveLength(0)
   })
 
+  it('a kept voice brings its pins and controls back, renamed or not', () => {
+    const s = useApp.getState()
+    s.setModel('fm2')
+    useApp.setState({ pins: [{ id: 801, angle: 60, radius: 0.5, weight: 0.6 }, { id: 802, angle: 210, radius: 0.5, weight: 0.4 }] })
+    useApp.getState().setControl('brightness', 0.4)
+    useApp.getState().generateNew()
+    const made = useApp.getState().voice
+    useApp.getState().keep()
+    const kept = useApp.getState().favourites.at(-1)!
+    expect(kept.made?.pins.map((p) => p.angle)).toEqual([60, 210])
+    useApp.getState().rename(kept.id, 'MINE')
+    // somewhere else entirely
+    useApp.getState().initVoice()
+    expect(useApp.getState().pins).toHaveLength(1)
+    useApp.getState().recall(useApp.getState().favourites.at(-1)!)
+    const now = useApp.getState()
+    expect(now.pins.map((p) => p.angle)).toEqual([60, 210])
+    expect(now.controls.brightness).toBe(0.4)
+    expect(now.generated).not.toBeNull()
+    expect(now.voice.subarray(0, 145)).toEqual(made.subarray(0, 145))
+  })
+
+  it('back and forward step through the session (undo, redo)', () => {
+    const s = useApp.getState()
+    s.generateNew()
+    s.generateNew()
+    s.generateNew()
+    const [a, b, c] = useApp.getState().history.slice(-3)
+    useApp.getState().back()
+    expect(useApp.getState().currentId).toBe(b.id)
+    useApp.getState().back()
+    expect(useApp.getState().currentId).toBe(a.id)
+    useApp.getState().forward()
+    useApp.getState().forward()
+    expect(useApp.getState().currentId).toBe(c.id)
+    expect(useApp.getState().voice).toEqual(c.voice)
+    useApp.getState().forward()
+    expect(useApp.getState().currentId).toBe(c.id)
+  })
+
   it('pins: at most three, and taking one away regenerates', () => {
     const s = useApp.getState()
     useApp.setState({ pins: [] })

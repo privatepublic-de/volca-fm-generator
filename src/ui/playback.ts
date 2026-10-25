@@ -38,6 +38,8 @@ export class Playback {
   private volcaHasVoice = false
   private sendTimer: ReturnType<typeof setTimeout> | undefined
   private readonly held = new Set<number>()
+  /** the last note played, so a change is heard where you were playing (C4 until then) */
+  lastNote = 60
   /** a note started or stopped (for drawing the keys) */
   onNotes: (held: ReadonlySet<number>) => void = () => {}
   /** the MIDI ports or the chosen one changed */
@@ -147,6 +149,7 @@ export class Playback {
     if (this.held.has(note)) return
     if (this.toBrowser() && !this.engine) await this.start()
     this.held.add(note)
+    this.lastNote = note
     if (this.toBrowser()) this.engine?.noteOn(note, velocity)
     if (this.toVolca()) {
       if (!this.volcaHasVoice) this.sendToVolca()
@@ -173,7 +176,7 @@ export class Playback {
   }
 
   /** Plays a note briefly, to hear a new voice without touching the keyboard. */
-  audition(note = 60, velocity = 100, ms = 700) {
+  audition(note = this.lastNote, velocity = 100, ms = 700) {
     void this.noteOn(note, velocity)
     setTimeout(() => this.noteOff(note), ms)
   }

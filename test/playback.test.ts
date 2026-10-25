@@ -35,3 +35,18 @@ describe('effects on the volca', () => {
     expect(sent.filter((m) => (m[0] & 0xf0) === 0xb0)).toEqual([])
   })
 })
+
+describe('auditions', () => {
+  it('play the last note played, C4 until one is', () => {
+    const p = new Playback()
+    const f = fakeOutput()
+    p.useOutput(f.output)
+    p.set({ model: 'fm2', target: 'volca', channel: 1 })
+    expect(p.lastNote).toBe(60)
+    void p.noteOn(43, 90)
+    p.noteOff(43)
+    f.sent.length = 0
+    p.audition()
+    expect(f.sent.find((m) => (m[0] & 0xf0) === 0x90)?.[1]).toBe(43)
+  })
+})

@@ -71,6 +71,7 @@ kbd {
 .topbar-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .topbar .channel { display: flex; align-items: center; gap: 6px; color: var(--muted); }
 .topbar .channel input { width: 3.6em; background: var(--raised); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; }
+.topbar-hint { color: var(--accent); font-size: 13px; }
 .topbar-problem { color: #ff9a8c; font-size: 13px; max-width: 28em; }
 .volume input { width: 96px; }
 
@@ -103,6 +104,18 @@ kbd {
   background: radial-gradient(circle, rgb(21 19 31 / 0.96) 0%, rgb(21 19 31 / 0.88) 20%, rgb(21 19 31 / 0.55) 45%, rgb(21 19 31 / 0.18) 80%, rgb(21 19 31 / 0) 100%);
 }
 .wheel-glow { position: absolute; inset: 0; mix-blend-mode: screen; filter: blur(4px); }
+.wheel-tip {
+  position: absolute;
+  z-index: 2;
+  transform: translate(14px, 14px);
+  pointer-events: none;
+  white-space: nowrap;
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgb(21 19 31 / 0.88);
+  color: var(--text);
+}
 .wheel-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .wheel-hit { fill: transparent; cursor: crosshair; }
 .wheel-svg.dragging, .wheel-svg.dragging * { cursor: grabbing; }
@@ -205,6 +218,11 @@ input[type='range']::-webkit-slider-runnable-track {
   border-radius: 2px;
   background: linear-gradient(to right, var(--accent) var(--fill), var(--line) var(--fill));
 }
+.marked input[type='range']::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(to right, transparent calc(var(--mark) - 1px), var(--muted) calc(var(--mark) - 1px), var(--muted) calc(var(--mark) + 1px), transparent calc(var(--mark) + 1px)),
+    linear-gradient(to right, var(--accent) var(--fill), var(--line) var(--fill));
+}
 .bipolar input[type='range']::-webkit-slider-runnable-track {
   background:
     linear-gradient(to right, transparent calc(50% - 1px), var(--muted) calc(50% - 1px), var(--muted) calc(50% + 1px), transparent calc(50% + 1px)),
@@ -238,6 +256,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .actions .primary { font-size: 16px; padding: 8px 22px; }
+.actions .kept { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .action-hint { color: var(--muted); font-size: 13px; margin-top: 6px; min-height: 2.9em; max-width: 72ch; }
 .actions .toggle { margin-left: auto; }
 
@@ -256,6 +275,9 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   transition: border-color 0.6s;
 }
 @media (max-width: 960px) { .voice { grid-template-columns: minmax(0, 1fr); } }
+.voice-title { display: flex; align-items: center; gap: 4px; margin-left: -6px; }
+.voice-step { background: none; border-color: transparent; color: var(--muted); font-size: 22px; line-height: 1; padding: 0 6px 3px; }
+.voice-step:hover:not(:disabled) { color: var(--text); }
 .voice-name { font: 600 34px/1 var(--condensed); color: hsl(var(--h) 80% 78%); letter-spacing: 0.01em; }
 .voice-mix { margin-top: 6px; font-size: 14px; }
 .voice-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
@@ -294,6 +316,9 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   border-left: 3px solid hsl(var(--h) 70% 62%);
   background: var(--panel);
 }
+.tile { display: inline-flex; align-items: center; gap: 7px; }
+.tile-dots { display: inline-flex; gap: 2px; align-items: center; }
+.tile-dots span { height: 10px; border-radius: 3px; }
 .tile.current { background: hsl(var(--h) 50% 30% / 0.5); border-color: hsl(var(--h) 70% 62%); }
 
 .fav-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
@@ -321,7 +346,6 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .key.down.black { background: hsl(var(--h) 60% 45%); }
 .key-label { position: absolute; bottom: 5px; left: 0; right: 0; text-align: center; font-size: 11px; color: #6c6683; }
 
-.audio-hint { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; }
 .footer { display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: center; color: var(--dim); font-size: 13px; margin-top: 18px; }
 
 /* ---------- dialog ---------- */
