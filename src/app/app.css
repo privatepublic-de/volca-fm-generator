@@ -198,7 +198,9 @@ kbd {
 .stage-wheel { align-self: start; }
 /* as tall as the wheel's column: the spare height goes between the groups, the actions sit by the voice below */
 .stage-controls { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
-.stage-controls .controls { flex: 1; align-content: start; }
+.stage-controls .controls { align-content: start; }
+/* the voice under the controls that made it; its foot level with the wheel column's when there's room */
+.stage-controls .voice { margin-top: auto; }
 /* the envelope across, then two columns: tone and new voices, playing and effects */
 /* groups in rows across two columns: the ones side by side start level, every row the same space apart */
 .controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px 32px; align-items: start; }
@@ -357,8 +359,9 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 .voice {
   display: grid;
-  grid-template-columns: minmax(200px, 1.1fr) auto minmax(0, 2fr);
-  gap: 24px;
+  /* the name (with its actions) beside the algorithm, the operators on a row of their own */
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px 24px;
   align-items: center;
   margin-top: 12px;
   padding: 12px 20px;
@@ -366,8 +369,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   border-radius: 12px;
 
 }
-/* narrower: the name (with its actions) beside the algorithm, the operators on a row of their own */
-@media (max-width: 1100px) { .voice { grid-template-columns: minmax(0, 1fr) auto; } .voice .ops { grid-column: 1 / -1; } }
+.voice .ops { grid-column: 1 / -1; }
 @media (max-width: 960px) { .voice { grid-template-columns: minmax(0, 1fr); } }
 .voice-head { container-type: inline-size; }
 .voice-actions { margin-top: 12px; }
@@ -376,7 +378,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .voice-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
 .voice-export { margin-left: 12px; padding: 1px 8px; font-size: 12px; color: var(--muted); background: none; }
 
-.algorithm { height: 118px; max-width: 220px; }
+.algorithm { height: 100px; max-width: 200px; }
 .alg-link, .alg-out line { stroke: var(--dim); stroke-width: 1.5; }
 .alg-fb { fill: none; stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: 3 2; }
 .alg-op rect { fill: var(--raised); stroke: hsl(var(--h) 70% 62%); stroke-width: 1.5; }

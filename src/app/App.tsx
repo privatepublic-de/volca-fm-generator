@@ -1,5 +1,5 @@
-// The generator (PLAN §6): the wheel and its pins on the left, where to start and the controls on the right, the
-// voice it made below with what to do with it, then the session's voices, the kept ones and the keyboard.
+// The generator (PLAN §6): the wheel and its pins on the left; on the right where to start, the controls and the
+// voice they made with what to do with it; below, the session's voices, the kept ones and the keyboard.
 import { useEffect, useState, type CSSProperties } from 'react'
 import { TONALITY_HUES } from '../generator/choices'
 import { Controls, PinList, StartActions } from './Controls'
@@ -14,6 +14,8 @@ import { Wheel } from './Wheel'
 
 export function App() {
   const [storing, setStoring] = useState(false)
+  // between 961 and 1100 px the controls stack into one tall column: the voice goes below, across both
+  const voiceBelow = useMedia('(min-width: 961px) and (max-width: 1100px)')
   // #help in the address opens the help, so it can be linked to
   const [helping, setHelping] = useState(() => location.hash === '#help')
   const [audioOn, setAudioOn] = useState(playback.started)
@@ -75,9 +77,10 @@ export function App() {
         <div className="stage-controls">
           <StartActions />
           <Controls />
+          {!voiceBelow && <VoiceView />}
         </div>
       </main>
-      <VoiceView />
+      {voiceBelow && <VoiceView />}
       <div className="library">
         <History />
         <Favourites />
@@ -95,4 +98,16 @@ export function App() {
       <Help open={helping} onClose={() => { setHelping(false); if (location.hash === '#help') history.replaceState(null, '', location.pathname + location.search) }} />
     </div>
   )
+}
+
+/** Whether a media query matches, following it as the window changes. */
+function useMedia(query: string): boolean {
+  const [matches, setMatches] = useState(() => matchMedia(query).matches)
+  useEffect(() => {
+    const m = matchMedia(query)
+    const on = () => setMatches(m.matches)
+    m.addEventListener('change', on)
+    return () => m.removeEventListener('change', on)
+  }, [query])
+  return matches
 }
