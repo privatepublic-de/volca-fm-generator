@@ -25,6 +25,8 @@ export interface Generated {
   roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'transform' }[]
   /** loudness of the loudest 20 ms at C4, dB */
   loudness: number
+  /** which tonality each sounding operator belongs to (1–6), for drawing */
+  opTonality: Partial<Record<number, Tonality>>
 }
 
 /** How far a voice strays from its template at wild 0 and 1. */
@@ -41,6 +43,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   const [dominant, ...rest] = mix
   const def = TONALITY_DEFS[dominant.tonality]
   const roles: Generated['roles'] = [{ tonality: dominant.tonality, as: 'skeleton' }]
+  const opTonality: Generated['opTonality'] = {}
 
   // 1. the skeleton; intensity moves it from mild to extreme like brightness does
   const v = buildSkeleton(dominant.tonality, rng, spread)
@@ -55,7 +58,9 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   for (const part of rest) {
     const share = part.weight / dominant.weight
     if (share >= BRANCH_SHARE && c.complexity >= 0.35 && freeBranches.length) {
-      fillBranch(v, freeBranches.shift()!, part, share, shape, rng, spread)
+      const branch = freeBranches.shift()!
+      fillBranch(v, branch, part, share, shape, rng, spread)
+      for (const op of branch) opTonality[op] = part.tonality
       roles.push({ tonality: part.tonality, as: 'branch' })
     } else {
       TONALITY_DEFS[part.tonality].transform(v, Math.min(1, share * (0.4 + 0.6 * part.intensity)), rng)
@@ -77,7 +82,8 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   let db = normalizeLoudness(v)
   if (db < SILENT_DB) { rescue(v); db = normalizeLoudness(v) }
   setVoiceName(v, nameOf(mix, c))
-  return { voice: v, mix, roles, loudness: db }
+  for (let op = 1; op <= 6; op++) if (getOp(v, op, 'outputLevel') > 0) opTonality[op] ??= dominant.tonality
+  return { voice: v, mix, roles, loudness: db, opTonality }
 }
 
 /** The dominant tonality's operators, algorithm, feedback and vibrato on top of INIT VOICE. */
