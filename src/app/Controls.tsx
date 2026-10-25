@@ -285,42 +285,62 @@ const ACTION_HINTS = {
 }
 type ActionKey = keyof typeof ACTION_HINTS
 
-export function Actions() {
-  const { generateNew, variation, mutateCurrent, keep, unkeep, back, forward } = useApp.getState()
+/** A row of actions with a hint under it for the one pointed at or focused. */
+function useActionRow() {
+  const [hint, setHint] = useState<ActionKey | null>(null)
+  const hover = (key: ActionKey) => ({
+    onPointerEnter: () => setHint(key), onFocus: () => setHint(key), onPointerLeave: () => setHint(null), onBlur: () => setHint(null),
+  })
+  const button = (key: ActionKey, label: ReactNode, shortcut: string, run: () => void, className = '', disabled = false, name?: string) => (
+    <button className={className} onClick={run} title={shortcut} disabled={disabled} aria-label={name} {...hover(key)}>
+      {label}
+    </button>
+  )
+  return { hint, hover, button }
+}
+
+/** Where a voice begins: an instrument or Init voice, or a fresh roll of the wheel. Above the controls. */
+export function StartActions() {
+  const { generateNew } = useApp.getState()
+  const choosing = useApp((s) => s.startMenu)
+  const setChoosing = useApp((s) => s.setStartMenu)
+  const { hint, hover, button } = useActionRow()
+  return (
+    <div className="actions-block start-actions">
+      <div className="actions">
+        <button data-start-toggle aria-expanded={choosing} onClick={() => setChoosing(!choosing)} {...hover('start')}>Start from…</button>
+        {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() })}
+      </div>
+      {hint && !choosing && <p className="action-hint" role="status">{ACTION_HINTS[hint]}</p>}
+      {choosing && <StartFromMenu onClose={() => setChoosing(false)} />}
+    </div>
+  )
+}
+
+/** What to do with the voice you hear: a small or a medium step from it, keep it, go back and forth. In the voice
+ *  panel, beside its name. */
+export function VoiceActions() {
+  const { variation, mutateCurrent, keep, unkeep, back, forward } = useApp.getState()
   const at = useApp((s) => s.history.findIndex((h) => h.id === s.currentId))
   const length = useApp((s) => s.history.length)
   const canUndo = at < 0 ? length > 0 : at > 0
   const canRedo = at >= 0 && at < length - 1
   const kept = useApp((s) => s.favourites.find((f) => sameSound(f.voice, s.voice)))
-  const [hint, setHint] = useState<ActionKey | null>(null)
-  const choosing = useApp((s) => s.startMenu)
-  const setChoosing = useApp((s) => s.setStartMenu)
-  const button = (key: ActionKey, label: ReactNode, shortcut: string, run: () => void, className = '', disabled = false, name?: string) => (
-    <button className={className} onClick={run} title={shortcut} disabled={disabled} aria-label={name}
-      onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>
-      {label}
-    </button>
-  )
+  const { hint, hover, button } = useActionRow()
   return (
-    <div className="actions-block">
+    <div className="actions-block voice-actions">
       <div className="actions">
-        <button data-start-toggle aria-expanded={choosing} onClick={() => setChoosing(!choosing)}
-          onPointerEnter={() => setHint('start')} onFocus={() => setHint('start')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Start from…</button>
         {button('variation', 'Variation', 'V', () => { variation(); audition() })}
         {button('mutate', 'Mutate', 'M', () => { mutateCurrent(); audition() })}
-        {/* set apart: the steps from here, then starting over */}
-        {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, 'apart')}
         {kept
-          ? <button className="kept apart" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out"
-              onPointerEnter={() => setHint('kept')} onFocus={() => setHint('kept')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Kept</button>
+          ? <button className="kept apart" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out" {...hover('kept')}>Kept</button>
           : button('keep', 'Keep', 'Q', keep, 'apart')}
         <span className="actions-history">
           {button('undo', <><span aria-hidden="true">↶</span><span className="label">Undo</span></>, '⌘Z', () => { back(); audition() }, '', !canUndo, 'Undo')}
           {button('redo', <><span className="label">Redo</span><span aria-hidden="true">↷</span></>, '⇧⌘Z', () => { forward(); audition() }, '', !canRedo, 'Redo')}
         </span>
       </div>
-      {hint && !choosing && <p className="action-hint" role="status">{ACTION_HINTS[hint]}</p>}
-      {choosing && <StartFromMenu onClose={() => setChoosing(false)} />}
+      {hint && <p className="action-hint" role="status">{ACTION_HINTS[hint]}</p>}
     </div>
   )
 }

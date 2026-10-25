@@ -5,7 +5,7 @@ import { opRatio } from '../dx7/frequency'
 import { getOp, OP, opBase, VC, voiceName, type Voice } from '../dx7/voice'
 import { TONALITY_HUES, TONALITY_LABELS, type Tonality } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
-import { EgCurve } from './Controls'
+import { EgCurve, VoiceActions } from './Controls'
 import { instrumentName, INSTRUMENTS } from '../generator/instruments'
 import { exportVoice } from './Library'
 import { useApp } from './store'
@@ -133,6 +133,7 @@ export function VoiceView() {
           Algorithm {alg.number}, feedback {voice[VC.feedback]}
           <button className="voice-export" onClick={() => exportVoice(voice, voiceName(voice))} title="Save the voice you hear as a DX7 single-voice SysEx file">Export .syx</button>
         </p>
+        <VoiceActions />
       </div>
       <AlgorithmDiagram voice={voice} opTonality={opTonality} />
       <ol className="ops">

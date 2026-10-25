@@ -58,7 +58,7 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
         <section id="help-start">
           <h3>Starting points</h3>
           <p>
-            <strong>Start from…</strong> offers 41 instruments in nine groups: keys, plucked, mallets, bass, winds, brass,
+            <strong>Start from…</strong>, above the controls, offers 41 instruments in nine groups: keys, plucked, mallets, bass, winds, brass,
             strings, percussion and voices. Most are Yamaha's own DX7 voices (the ROM and VRC cartridges, the TX7 and TX816
             sets), copied operator by operator; the pianos change between a few of them with each new roll. The instrument
             shows as a diamond on the wheel. It isn't a pin: it doesn't change the sound, and pins you add colour it.
@@ -68,14 +68,16 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
 
         <section id="help-ways">
           <h3>Three ways on</h3>
+          <p>Variation and Mutate sit beside the voice's name, New voice above the controls.</p>
           <dl className="help-defs">
             <dt>Variation <kbd>V</kbd></dt><dd>A small step. The same pins, controls and instrument; the details move: envelopes, levels, tuning. A sibling of the voice.</dd>
             <dt>Mutate <kbd>M</kbd></dt><dd>A medium step. The pins wander around the wheel and in or out, the controls get a push, a pin may come or go. An instrument without pins gets its first one.</dd>
             <dt>New voice <kbd>Enter</kbd></dt><dd>A fresh start: new pins anywhere, the controls back to their defaults, no instrument. Register, Wild and the effects stay as you set them. The wheel's centre does the same.</dd>
           </dl>
           <p>
-            Every step is listed under Recent changes; Undo and Redo (<kbd>⌘Z</kbd>, <kbd>⇧⌘Z</kbd>) go back and forth.
-            <strong> Keep</strong> (<kbd>Q</kbd>) puts the voice, with its pins and controls, in your kept voices.
+            Every step is listed under Recent changes; Undo and Redo beside the voice's name (<kbd>⌘Z</kbd>,
+            <kbd>⇧⌘Z</kbd>) go back and forth. <strong>Keep</strong> (<kbd>Q</kbd>), there too, puts the voice, with its
+            pins and controls, in your kept voices.
           </p>
         </section>
 
