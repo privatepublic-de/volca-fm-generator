@@ -300,8 +300,8 @@ export function Actions() {
   const [hint, setHint] = useState<ActionKey | null>(null)
   const choosing = useApp((s) => s.startMenu)
   const setChoosing = useApp((s) => s.setStartMenu)
-  const button = (key: ActionKey, label: string, shortcut: string, run: () => void, primary = false, disabled = false) => (
-    <button className={primary ? 'primary' : ''} onClick={run} title={shortcut} disabled={disabled}
+  const button = (key: ActionKey, label: string, shortcut: string, run: () => void, className = '', disabled = false) => (
+    <button className={className} onClick={run} title={shortcut} disabled={disabled}
       onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>
       {label}
     </button>
@@ -313,14 +313,15 @@ export function Actions() {
           onPointerEnter={() => setHint('start')} onFocus={() => setHint('start')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Start from…</button>
         {button('variation', 'Variation', 'V', () => { variation(); audition() })}
         {button('mutate', 'Mutate', 'M', () => { mutateCurrent(); audition() })}
-        {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, true)}
+        {/* set apart: the steps from here, then starting over */}
+        {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, 'apart')}
         {kept
           ? <button className="kept" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out"
               onPointerEnter={() => setHint('kept')} onFocus={() => setHint('kept')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Kept</button>
           : button('keep', 'Keep', 'Q', keep)}
         <span className="actions-history">
-          {button('undo', 'Undo', '⌘Z', () => { back(); audition() }, false, !canUndo)}
-          {button('redo', 'Redo', '⇧⌘Z', () => { forward(); audition() }, false, !canRedo)}
+          {button('undo', 'Undo', '⌘Z', () => { back(); audition() }, '', !canUndo)}
+          {button('redo', 'Redo', '⇧⌘Z', () => { forward(); audition() }, '', !canRedo)}
         </span>
         <label className="toggle small">
           <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />

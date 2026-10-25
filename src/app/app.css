@@ -296,8 +296,8 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .toggle.small { font-size: 14px; color: var(--muted); }
 
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.actions .primary { font-size: 16px; padding: 8px 22px; }
-.actions button:not(.primary):not(.kept) { background: none; }
+.actions button:not(.kept) { background: none; }
+.actions .apart { margin-left: 12px; }
 .actions .kept { border-color: transparent; color: var(--accent); background: none; }
 .actions .kept::before { content: '✓ '; }
 .actions-block { position: relative; }
