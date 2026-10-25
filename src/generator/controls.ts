@@ -37,8 +37,12 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
   const sounding = () => [1, 2, 3, 4, 5, 6].filter((op) => level(v, op) > 0)
   const target = targetOperators(complexity)
   if (complexity < 0.5) {
-    // silence the weakest modulators first (then what they feed loses nothing audible), then extra carriers
-    const order = sounding().sort((x, y) => (carriers.includes(x) ? 1 : 0) - (carriers.includes(y) ? 1 : 0) || level(v, x) - level(v, y))
+    // silence the weakest modulators first (then what they feed loses nothing audible), then extra carriers; a
+    // noise source and the carrier it feeds stay (without them noise is a sine)
+    const noise = noiseSource(v)
+    const kept = noise === null ? [] : [noise, ...carriers.filter((c) => algorithm.modulators[c].includes(noise))]
+    const order = sounding().filter((op) => !kept.includes(op))
+      .sort((x, y) => (carriers.includes(x) ? 1 : 0) - (carriers.includes(y) ? 1 : 0) || level(v, x) - level(v, y))
     while (sounding().length > target && order.length) {
       const op = order.shift()!
       if (carriers.includes(op) && sounding().filter((o) => carriers.includes(o)).length <= 1) continue

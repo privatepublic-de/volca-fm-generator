@@ -103,6 +103,13 @@ describe('mixing', () => {
     }
   })
 
+  it('noise and breath keep their noise when pure', () => {
+    expect(avg(only('noise', { complexity: 0 }), (s) => flatness(slice(s, 0.1, 0.6)))).toBeGreaterThan(0.3)
+    const breath = generate(only('breath', { complexity: 0 }), { seed: 1 }).voice
+    expect(breath[VC.feedback]).toBe(7)
+    expect(getOp(breath, 6, 'outputLevel')).toBeGreaterThanOrEqual(97)
+  })
+
   it('more noise in the mix is noisier', () => {
     const flatWith = (w: number) => avg({ ...DEFAULT_CHOICES, pins: [pin('warm', 1), pin('noise', w)] }, (s) => flatness(slice(s, 0.2, 0.6)))
     expect(flatWith(0.8)).toBeGreaterThan(flatWith(0.1))
