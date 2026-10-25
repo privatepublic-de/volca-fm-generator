@@ -71,6 +71,7 @@ export function App() {
       <TopBar onStore={() => setStoring(true)} onHelp={() => setHelping(true)} audioOn={audioOn} />
       <main className="stage">
         <div className="stage-wheel">
+          <h3 className="stage-title">Tonality</h3>
           <Wheel />
           <PinList />
         </div>

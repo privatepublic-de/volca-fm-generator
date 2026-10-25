@@ -202,6 +202,13 @@ kbd {
 .pin-remove { padding: 0; width: 26px; height: 26px; border-color: transparent; background: none; color: var(--muted); }
 
 .stage-wheel { align-self: start; }
+/* titled like the groups on the right; on a desktop screen level with Envelope, below the Start row */
+.stage-title { font: 500 13px var(--sans); color: var(--muted); }
+@media (min-width: 961px) {
+  .stage-title { margin-top: 54px; }
+  /* the wheel's own margin is room for the names on the rim: it may reach up under the title */
+  .stage-wheel .wheel { margin-top: -14px; }
+}
 /* as tall as the wheel's column: the spare height goes between the groups, the actions sit by the voice below */
 .stage-controls { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
 .stage-controls .controls { align-content: start; }
