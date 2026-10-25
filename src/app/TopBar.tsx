@@ -34,23 +34,26 @@ export function TopBar({ onStore, onHelp, audioOn }: { onStore: () => void; onHe
             <option value="fm">volca fm</option>
           </select>
         </label>
-        {ready ? (
-          <>
-            <select value={out ?? ''} onChange={(e) => set({ port: e.target.value })} aria-label="MIDI out to the volca">
-              <option value="" disabled>MIDI out…</option>
-              {playback.outputs.map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
-            <label className="channel" title="The volca's MIDI channel">ch
-              <input type="number" min={1} max={16} value={s.channel} onChange={(e) => set({ channel: Math.max(1, Math.min(16, Number(e.target.value) || 1)) })} />
-            </label>
-          </>
-        ) : (
-          <button onClick={async () => { setProblem((await playback.connect()) ?? ''); refresh((n) => n + 1) }} title="Needs Chrome or Edge and a MIDI interface into the volca's MIDI IN">Connect the volca</button>
-        )}
-        {problem ? <span className="topbar-problem">{problem}</span> : status && <span className={`topbar-status${out && s.target !== 'browser' ? ' live' : ''}`} title={statusTitle}>{status}</span>}
+        {/* one slot, as wide connected as not, so connecting doesn't move the bar */}
+        <div className="topbar-connection">
+          {ready ? (
+            <>
+              <select value={out ?? ''} onChange={(e) => set({ port: e.target.value })} aria-label="MIDI out to the volca" title={out ?? undefined}>
+                <option value="" disabled>{playback.outputs.length ? 'MIDI out…' : 'No MIDI outputs'}</option>
+                {playback.outputs.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+              <label className="channel" title="The volca's MIDI channel">ch
+                <input type="number" min={1} max={16} value={s.channel} onChange={(e) => set({ channel: Math.max(1, Math.min(16, Number(e.target.value) || 1)) })} />
+              </label>
+              <span className={`topbar-dot${out && s.target !== 'browser' ? ' live' : ''}`} role="status"
+                title={status ? `${status}${statusTitle ? ` (${statusTitle})` : ''}` : undefined} aria-label={status ?? undefined} />
+            </>
+          ) : (
+            <button onClick={async () => { setProblem((await playback.connect()) ?? ''); refresh((n) => n + 1) }} title="Needs Chrome or Edge and a MIDI interface into the volca's MIDI IN">Connect the volca</button>
+          )}
+        </div>
       </div>
       <div className="topbar-group">
-        {!audioOn && s.target !== 'volca' && <span className="topbar-hint">Click or press a key for sound</span>}
         <div className="segmented small" role="radiogroup" aria-label="Play on">
           {(['browser', 'volca', 'both'] as Target[]).map((t) => (
             <button key={t} role="radio" aria-checked={s.target === t} className={s.target === t ? 'on' : ''}
@@ -61,7 +64,11 @@ export function TopBar({ onStore, onHelp, audioOn }: { onStore: () => void; onHe
           ))}
         </div>
         <label className="volume" title="Volume of the browser's sound">
-          <span>Volume</span>
+          <span className="sr-only">Volume</span>
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor" />
+            <path d="M11.5 5.5a3.5 3.5 0 0 1 0 5M13 3.5a6 6 0 0 1 0 9" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
           <input type="range" min={0} max={6} step={0.1} value={s.volume}
             style={{ '--fill': `${(s.volume / 6) * 100}%` } as React.CSSProperties}
             onChange={(e) => set({ volume: Number(e.target.value) })} />
@@ -69,6 +76,10 @@ export function TopBar({ onStore, onHelp, audioOn }: { onStore: () => void; onHe
         <button onClick={onStore} title="How to keep this voice in the volca's memory">Store on the volca…</button>
         <button className="topbar-help" onClick={onHelp} title="How it works (?)">Help</button>
       </div>
+      {/* notes under the bar, so they take no room in it */}
+      {problem
+        ? <p className="topbar-note problem">{problem}</p>
+        : !audioOn && s.target !== 'volca' && <p className="topbar-note">Click or press a key for sound</p>}
     </header>
   )
 }
