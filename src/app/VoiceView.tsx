@@ -6,7 +6,7 @@ import { getOp, OP, opBase, VC, voiceName, type Voice } from '../dx7/voice'
 import { TONALITY_HUES, TONALITY_LABELS, type Tonality } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
 import { EgCurve } from './Controls'
-import { audition, useApp } from './store'
+import { useApp } from './store'
 
 interface Node { op: number; x: number; depth: number }
 
@@ -119,22 +119,13 @@ export function VoiceView() {
   const voice = useApp((s) => s.voice)
   const generated = useApp((s) => s.generated)
   const made = useApp((s) => [...s.history, ...s.favourites].find((e) => e.id === s.currentId)?.made)
-  const { back, forward } = useApp.getState()
-  const at = useApp((s) => s.history.findIndex((h) => h.id === s.currentId))
-  const length = useApp((s) => s.history.length)
-  const canBack = at < 0 ? length > 0 : at > 0
-  const canForward = at >= 0 && at < length - 1
   const alg = algorithmOf(voice[VC.algorithm])
   const opTonality = generated?.opTonality ?? {}
   const mix = generated && describeMix(generated.roles)
   return (
     <section className="voice">
       <div className="voice-head">
-        <div className="voice-title">
-          <button className="voice-step" onClick={() => { back(); audition() }} disabled={!canBack} aria-label="The voice before (⌘Z)" title="The voice before (⌘Z)">‹</button>
-          <h2 className="voice-name">{voiceName(voice)}</h2>
-          <button className="voice-step" onClick={() => { forward(); audition() }} disabled={!canForward} aria-label="The voice after (⇧⌘Z)" title="The voice after (⇧⌘Z)">›</button>
-        </div>
+        <h2 className="voice-name">{voiceName(voice)}</h2>
         <p className="voice-mix">{mix ?? (made ? 'Made under the other volca model: its pins are back, the details may differ' : 'From a file: the wheel didn\'t make it, so it has no pins')}</p>
         <p className="voice-meta">Algorithm {alg.number}, feedback {voice[VC.feedback]}</p>
       </div>

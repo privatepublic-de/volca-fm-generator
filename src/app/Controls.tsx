@@ -250,17 +250,23 @@ const ACTION_HINTS = {
   mutate: 'Mutate: the pins wander around the wheel and in or out, the controls get a push, sometimes a pin comes or goes; then a new voice.',
   keep: 'Keep: puts this voice, with its pins and controls, in your kept voices, in this browser.',
   kept: 'Kept: this voice is in your kept voices. Click to take it out again.',
+  undo: 'Undo: back to the voice before, with its pins and controls (⌘Z).',
+  redo: 'Redo: forward again (⇧⌘Z).',
 }
 type ActionKey = keyof typeof ACTION_HINTS
 
 export function Actions() {
-  const { initVoice, generateNew, variation, mutateCurrent, keep, unkeep } = useApp.getState()
+  const { initVoice, generateNew, variation, mutateCurrent, keep, unkeep, back, forward } = useApp.getState()
+  const at = useApp((s) => s.history.findIndex((h) => h.id === s.currentId))
+  const length = useApp((s) => s.history.length)
+  const canUndo = at < 0 ? length > 0 : at > 0
+  const canRedo = at >= 0 && at < length - 1
   const kept = useApp((s) => s.favourites.find((f) => sameSound(f.voice, s.voice)))
   const autoplay = useApp((s) => s.autoplay)
   const setAutoplay = useApp((s) => s.setAutoplay)
   const [hint, setHint] = useState<ActionKey | null>(null)
-  const button = (key: ActionKey, label: string, shortcut: string, run: () => void, primary = false) => (
-    <button className={primary ? 'primary' : ''} onClick={run} title={shortcut}
+  const button = (key: ActionKey, label: string, shortcut: string, run: () => void, primary = false, disabled = false) => (
+    <button className={primary ? 'primary' : ''} onClick={run} title={shortcut} disabled={disabled}
       onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>
       {label}
     </button>
@@ -276,6 +282,10 @@ export function Actions() {
           ? <button className="kept" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out"
               onPointerEnter={() => setHint('kept')} onFocus={() => setHint('kept')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Kept</button>
           : button('keep', 'Keep', 'Q', keep)}
+        <span className="actions-history">
+          {button('undo', 'Undo', '⌘Z', () => { back(); audition() }, false, !canUndo)}
+          {button('redo', 'Redo', '⇧⌘Z', () => { forward(); audition() }, false, !canRedo)}
+        </span>
         <label className="toggle small">
           <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
           <span title="Plays the note you played last (C4 until you play one) after every change">Play on change</span>
