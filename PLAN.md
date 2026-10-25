@@ -22,7 +22,7 @@ Facts only; **no code is copied** (Dexed is GPL, volcako has its own license).
 
 | Project | What we learn |
 |---|---|
-| **reface-dx-editor** `src/style/` (ours, MIT) | The generator's structure: a family **skeleton** (algorithm, ratios, levels), then an **envelope shape**, then **characters** as weighted transforms in a fixed order, then brightness, length, motion, effects, then **ensure audible** and **name**. All pure: (choices, seed) → voice. Modulator level sets depth steeply (~50 a touch, ~65 clearly, ~75 strong, 85+ very bright, docs/SOUND.md there; that's the reface's 0–127 scale, to be measured again on the DX7's 0–99). Templates as data, tuned by ear. Code to copy and adapt: `style/random.ts`, transport, controls, the history and library stores, launchers, Pages workflow. |
+| An earlier style generator of ours (unpublished, MIT) | The generator's structure: a family **skeleton** (algorithm, ratios, levels), then an **envelope shape**, then **characters** as weighted transforms in a fixed order, then brightness, length, motion, effects, then **ensure audible** and **name**. All pure: (choices, seed) → voice. Modulator level sets depth steeply (~50 a touch, ~65 clearly, ~75 strong, 85+ very bright, its own docs; that's a 0–127 scale, to be measured again on the DX7's 0–99). Templates as data, tuned by ear. Code to copy and adapt: `style/random.ts`, transport, controls, the history and library stores, launchers, Pages workflow. |
 | [Korg volca fm MIDI Implementation](http://www.korg.com/us/support/download/manual/0/558/2963/) (rev 1.01, 2016) | **No MIDI out** ("not equipped with a MIDI Out jack"). SysEx: `F0 43 0n 00 01 1B` + 1 voice (format 0, the DX7 VCED) or `F0 43 0n 09 20 00` + 32 voices (format 9, VMEM). In the 1-voice table, byte **155 = operator on/off bits** (B5…B0) in the place where the DX7 has the checksum. **Note velocity is not used.** No parameter-change SysEx is listed. CCs (only with *MIDI RX Short Message* on): 41 velocity, 42/43 modulator attack/decay, 44/45 carrier attack/decay, 46 LFO rate, 47 LFO pitch depth, 48 algorithm, 49/50 arpeggiator. |
 | [Luomu/volcako](https://github.com/Luomu/volcako) (desktop editor, volca fm) | Sends the whole 1-voice message on every edit (no delays in `sysex.cpp`; its call sites not read); the voice lands in the selected slot's edit state and **must be stored on the volca (Edit → Write)**. Listens on any channel. Its "DX7 compatibility mode" puts the DX7 checksum in byte 155 and "will sound wrong on volca fm, may work on fm2". Not tested on the fm2. |
 | volca fm firmware ([Max for Live editor page](https://cycling74.com/projects/korg-volca-fm-editor-max4live-midi-device), unverified) | The official firmware is 1.07; an unofficial 1.09 adds DX7 parameter changes (used by Dexed and Max for Live editors). We target the official firmware and don't rely on parameter changes. |
@@ -38,7 +38,7 @@ Facts only; **no code is copied** (Dexed is GPL, volcako has its own license).
 | **No MIDI out** (fm: documented; fm2: expected, Q6). | No connect check, no read-back, no following the panel. Connect = pick an output port (and a channel for notes). The browser engine is the only confirmation of what was sent. Needs a USB-MIDI interface into the volca's 5-pin MIDI IN (fm2: confirm in Q6). |
 | A voice is one **163-byte 1-voice SysEx** (6 header + 155 data + byte 155 + `F7`), any channel. | One message per audition (~52 ms over DIN). |
 | **The fm2 is fully editable from Dexed** (experience, 2026-10-25), so it takes the whole voice and DX7 parameter changes; the volca fm (stock firmware) only whole voices. | On the fm2 the controls can change a sounding voice live with parameter changes; a new voice is a whole-voice send, which probably **cuts sounding notes** (Q4), so the loop for new voices is generate → send (debounced) → play a note. The fm gets whole voices only. |
-| The voice goes into the edit state of the selected slot; **storing is Edit → Write on the volca** (fm; fm2: Q2). | A "Store on the volca" helper explains the steps, as the reface's guided STORE does, but there is no read-back to confirm it. |
+| The voice goes into the edit state of the selected slot; **storing is Edit → Write on the volca** (fm; fm2: Q2). | A "Store on the volca" helper explains the steps, as a guided store would, but there is no read-back to confirm it. |
 | Byte 155 means operator on/off (fm), checksum (DX7). | The codec writes it per model; the `.syx` export offers "volca" or "DX7/Dexed". |
 | **fm ignores velocity** (stock). fm has 3 voices, fm2 6 (Q5 for fm2's velocity). | The generator's velocity response is only offered on models that use it; the browser engine copies the model (voices, velocity on/off) so the preview doesn't promise more than the volca plays. |
 | The fm takes CCs for modulator/carrier attack and decay (42–45), LFO rate and pitch depth (46/47) and algorithm (48). | A possible live path: Envelope and Motion could move a sounding voice on the fm without a resend (Q8). |
@@ -122,11 +122,11 @@ Twelve tonalities on the rim, ordered so that **neighbours sound close**: harmon
 | Wooden | Short, knocky: marimba, wood block, kalimba | Low-ratio body, fast-decaying high modulators, short EGs (algorithms 7, 14) |
 | Organ | Additive, drawbars, steady | Up to six carriers at harmonic ratios (0.5, 1, 2, 3, 4, 8) (algorithm 32, or 19/25 with a little key click) |
 
-The table is the starting point: tonalities, algorithms and numbers are data in `templates.ts`, tuned by ear and recorded in `docs/SOUND.md` (as in the reface).
+The table is the starting point: tonalities, algorithms and numbers are data in `templates.ts`, tuned by ear and recorded in `docs/SOUND.md`.
 
 ### 4.2 What mixing pins means
 
-FM parameters don't blend: averaging the ratios or algorithms of a bell and a warm pad gives mud, not 60/40. So the mix is **skeleton + transforms**, the reface's model extended:
+FM parameters don't blend: averaging the ratios or algorithms of a bell and a warm pad gives mud, not 60/40. So the mix is **skeleton + transforms**, the earlier generator's model extended:
 
 1. **The heaviest pin chooses the skeleton**: algorithm, operator roles, ratios, basic levels, its typical envelope. Two pins at the same weight: the seed decides.
 2. **Every other pin acts as a transform with its weight as the amount**, on the operator roles of that skeleton. Each tonality defines both: its skeleton, and its transform when it's a secondary pin. Examples: *Metallic* detunes modulator ratios to non-integers and deepens them; *Breath* repurposes a free operator (or the weakest modulator) as a noise source with a fast EG; *Warm* lowers modulator levels and feedback and softens attacks; *Bell* makes carrier decays longer and adds an inharmonic pair; *String* detunes stacks against each other and slows the attack.
@@ -219,7 +219,7 @@ Dark background, the wheel as the light source: each tonality's hue carries thro
 
 ## 7. Architecture
 
-Same stack as the siblings: Vite 6, TypeScript, React 18, zustand, vitest, `@fontsource/barlow`, no backend. Code from the reface is **copied and adapted**, not shared.
+Same stack as the siblings: Vite 6, TypeScript, React 18, zustand, vitest, `@fontsource/barlow`, no backend. Code from the earlier generator is **copied and adapted**, not shared.
 
 ```
 src/
@@ -241,7 +241,7 @@ src/
     shapes.ts     envelope shapes
     transforms.ts brightness, complexity, motion, register, play, model fit, ensure audible
     generate.ts   the pipeline, generate / variations / mutate / locks
-    random.ts     seeded rng (from the reface)
+    random.ts     seeded rng
     name.ts
   library/     history.ts, favourites.ts (localStorage)
   app/         App, TopBar, Wheel, Controls, VoiceView (algorithm + operators), History, Keyboard, StoreDialog, dialogs, controls/
@@ -266,7 +266,7 @@ docs/          FINDINGS.md (probe results), SOUND.md (tuning and measures)
 
 ## 9. Not in scope (for now)
 
-- Editing operators by hand (the reface editor's job; here only the generator's controls).
+- Editing operators by hand (an editor's job; here only the generator's controls).
 - Building and sending 32-voice banks (the codec can read them for import).
 - Sequencer, arpeggiator and other volca performance settings.
 - Reading anything from the volcas (they have no MIDI out).

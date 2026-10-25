@@ -1,4 +1,4 @@
-// A seeded random generator (mulberry32), from the reface DX editor: the same seed gives the same voice, so tests
+// A seeded random generator (mulberry32): the same seed gives the same voice, so tests
 // are exact and Generate is just a new seed.
 
 export interface Rng {

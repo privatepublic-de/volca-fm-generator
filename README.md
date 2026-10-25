@@ -63,7 +63,7 @@ Pages, the host, logs your IP address when you open the page. The full statement
 
 This generator is vibe-coded with [Claude](https://claude.com/claude-code) by Anthropic: Peter Witzel designed it
 and tested it on a volca fm2 and a volca fm, Claude wrote the code. Every commit says so in a
-`Co-Authored-By: Claude` line. It's a sibling of the reface DX editor.
+`Co-Authored-By: Claude` line.
 
 - [PLAN.md](PLAN.md): the plan and its phases.
 - [docs/SOUND.md](docs/SOUND.md): how the engine was calibrated, what the generator makes and why, the
