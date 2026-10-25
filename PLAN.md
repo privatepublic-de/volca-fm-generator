@@ -37,7 +37,7 @@ Facts only; **no code is copied** (Dexed is GPL, volcako has its own license).
 |---|---|
 | **No MIDI out** (fm: documented; fm2: expected, Q6). | No connect check, no read-back, no following the panel. Connect = pick an output port (and a channel for notes). The browser engine is the only confirmation of what was sent. Needs a USB-MIDI interface into the volca's 5-pin MIDI IN (fm2: confirm in Q6). |
 | A voice is one **163-byte 1-voice SysEx** (6 header + 155 data + byte 155 + `F7`), any channel. | One message per audition (~52 ms over DIN). |
-| No parameter changes on the stock firmware (fm; fm2: Q3). | Every new voice is a whole-voice send. It probably **cuts sounding notes** (Q4), so the loop is generate → send (debounced) → play a note. Fine for a generator; it's not knob-tweaking. |
+| **The fm2 is fully editable from Dexed** (experience, 2026-10-25), so it takes the whole voice and DX7 parameter changes; the volca fm (stock firmware) only whole voices. | On the fm2 the controls can change a sounding voice live with parameter changes; a new voice is a whole-voice send, which probably **cuts sounding notes** (Q4), so the loop for new voices is generate → send (debounced) → play a note. The fm gets whole voices only. |
 | The voice goes into the edit state of the selected slot; **storing is Edit → Write on the volca** (fm; fm2: Q2). | A "Store on the volca" helper explains the steps, as the reface's guided STORE does, but there is no read-back to confirm it. |
 | Byte 155 means operator on/off (fm), checksum (DX7). | The codec writes it per model; the `.syx` export offers "volca" or "DX7/Dexed". |
 | **fm ignores velocity** (stock). fm has 3 voices, fm2 6 (Q5 for fm2's velocity). | The generator's velocity response is only offered on models that use it; the browser engine copies the model (voices, velocity on/off) so the preview doesn't promise more than the volca plays. |
@@ -74,9 +74,9 @@ The count field says 155 but the volca message carries 156 bytes (Q1). The 32-vo
 
 ---
 
-## 3. Open questions (Phase 0, needs both volcas)
+## 3. Open questions
 
-A probe page (`/probe.html`, as in the siblings) sends test voices and notes; results go to `docs/FINDINGS.md` with date and firmware.
+A probe page (`/probe.html`, as in the siblings) sends test voices and notes; results go to `docs/FINDINGS.md` with date and firmware. **Probing is kept light (2026-10-25):** Q1 is answered for the fm2; the fm2 is taken as fully DX7-compatible because Dexed edits it completely, which settles Q3 and Q5 for it until something sounds wrong. The rest is answered as it comes up while building (Q4 in Phase 1), and the volca fm's questions are probed later, when its model profile is built.
 
 | # | Question | Why it matters |
 |---|---|---|
@@ -253,7 +253,7 @@ docs/          FINDINGS.md (probe results), SOUND.md (tuning and measures)
 
 | Phase | Content | Done when |
 |---|---|---|
-| **0 Probe** | `probe.html`: pick a port, send test voices (operator bits vs checksum, count variants), notes, back-to-back sends; FINDINGS.md | Q1–Q8 answered on both volcas |
+| **0 Probe** | `probe.html`: pick a port, send test voices (operator bits vs checksum, count variants), notes, back-to-back sends; FINDINGS.md | Q1 answered on the fm2 (done); the rest as it comes up, the volca fm later |
 | **1 Voice and MIDI** | `dx7/` codec with tests, transport, debounced send, keyboard, a hand-made set of test voices sent to the volca, `.syx` import/export | A voice from Dexed round-trips and plays the same on the volca |
 | **2 Engine** | AudioWorklet engine, the 32 algorithms, model profiles, offline rendering and `measure.ts` | The test voices sound close to the volca and Dexed, by ear; the measures run in tests |
 | **3 Generator** | Twelve tonalities (single pin first), the controls, the pipeline, ensure audible, names; then secondary pins and branches; SOUND.md | Each tonality recognisable on its own by ear, on both volcas; measure tests pass; 1000 random choices: none silent, none clipping |
