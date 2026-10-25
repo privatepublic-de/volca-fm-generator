@@ -123,7 +123,7 @@ kbd {
 }
 .wheel-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .wheel-hit { fill: transparent; cursor: crosshair; }
-.wheel-svg.dragging, .wheel-svg.dragging * { cursor: grabbing; }
+.wheel-svg.dragging:not(.turning), .wheel-svg.dragging:not(.turning) * { cursor: grabbing; }
 .wheel-tick { stroke: rgb(21 19 31 / 0.55); stroke-width: 0.006; pointer-events: none; }
 .wheel-label {
   font: 500 0.08px var(--condensed);
@@ -140,10 +140,13 @@ kbd {
 .pin.selected .pin-ring, .pin:focus-visible .pin-ring { stroke: rgb(255 255 255 / 0.55); }
 .pin.selected .pin-dot, .pin:focus-visible .pin-dot { stroke: #fff; }
 .pin.removing { opacity: 0.3; }
-.pin-dial { fill: none; stroke: transparent; stroke-width: 0.05; pointer-events: stroke; cursor: grab; }
+/* the dial's cursor: a turning arrow, white over a dark edge so it shows on every colour of the wheel */
+.pin-dial, .wheel-svg.turning, .wheel-svg.turning * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18.5 8.5A7 7 0 1 0 19 13M19.5 3.5v5h-5' stroke='%2315131f' stroke-width='4'/%3E%3Cpath d='M18.5 8.5A7 7 0 1 0 19 13M19.5 3.5v5h-5' stroke='white' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E") 12 12, grab;
+}
+.pin-dial { fill: none; stroke: transparent; stroke-width: 0.05; pointer-events: stroke; }
 .pin-knob { fill: #fff; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
 .pin:hover .pin-knob, .pin.selected .pin-knob, .pin:focus-visible .pin-knob { opacity: 0.9; }
-.wheel-svg.dragging .pin-dial { cursor: grabbing; }
 
 .wheel-centre { cursor: pointer; outline: none; }
 .wheel-centre circle { fill: var(--ink); stroke: var(--accent); stroke-width: 0.008; transition: fill 0.15s; }

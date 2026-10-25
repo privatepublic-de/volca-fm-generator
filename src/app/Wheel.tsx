@@ -215,7 +215,7 @@ export function Wheel() {
       {tip && <div className="wheel-tip" style={{ left: tip.x, top: tip.y }} aria-hidden="true">{tip.text}</div>}
       <svg
         ref={svg}
-        className={`wheel-svg${drag ? ' dragging' : ''}`}
+        className={`wheel-svg${drag ? ' dragging' : ''}${drag?.weight ? ' turning' : ''}`}
         viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`}
         onPointerMove={onMove}
         onPointerLeave={() => { if (!drag) setTip(null) }}
