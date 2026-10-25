@@ -1,11 +1,13 @@
 // The wheel (PLAN §6.1): the twelve tonalities as a colour field, pins on it. The names on the rim are labels only (a
 // click near them shouldn't pin anything: the bottom one sits right above the pin sliders). Click the field to pin, drag a pin to
 // move it (towards the rim: more extreme), drag it off the wheel to take it away. The ring around a pin is a dial
-// for its weight: turn it (or scroll on the pin).
+// for its weight: turn it (or scroll on the pin). An instrument to start from shows as a marker at its tonality,
+// not a pin: it doesn't change the sound or take a pin's place; click it to choose another, drag it off to remove it.
 // The centre makes a new voice. Pins can be moved with the keyboard too.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { SECTOR, TONALITIES, TONALITY_HINTS, TONALITY_HUES, TONALITY_LABELS, angleOf, mixOf } from '../generator/choices'
 import { voiceName } from '../dx7/voice'
+import { instrumentName, INSTRUMENTS } from '../generator/instruments'
 import { audition, MAX_PINS, useApp, type AppPin } from './store'
 
 /** The centre button's radius; pins live between it and the rim. */
@@ -43,7 +45,12 @@ export function Wheel() {
   const generated = useApp((s) => s.generated)
   const { addPin, movePin, setWeight, removePin, selectPin, regenerate, generateNew } = useApp.getState()
   const svg = useRef<SVGSVGElement>(null)
-  const [drag, setDrag] = useState<{ id: number; removing: boolean; weight?: boolean } | null>(null)
+  const [drag, setDrag] = useState<{ id: number; removing: boolean; weight?: boolean; base?: boolean } | null>(null)
+  const instrument = useApp((s) => s.controls.instrument)
+  const base = instrument ? INSTRUMENTS[instrument] : null
+  const basePlace = base ? polar(angleOf(base.family), toRadius(0.5)) : null
+  /** the base marker while it is dragged: where it is, and whether it moved at all (else it was a click) */
+  const [baseDrag, setBaseDrag] = useState<{ x: number; y: number; moved: boolean } | null>(null)
   const pending = useRef<{ id: number; angle: number; radius: number } | null>(null)
   const frame = useRef(0)
 
@@ -107,8 +114,23 @@ export function Wheel() {
     if (stepped !== p.weight) setWeight(id, stepped)
   }
 
+  const onBaseDown = (e: PointerEvent<SVGElement>) => {
+    e.stopPropagation()
+    svg.current!.setPointerCapture(e.pointerId)
+    setDrag({ id: -1, removing: false, base: true })
+    setBaseDrag(null)
+  }
+
   const onMove = (e: PointerEvent<SVGSVGElement>) => {
     const { angle, dist, x, y } = at(e)
+    if (drag?.base) {
+      const moved = baseDrag?.moved || Math.hypot(x - basePlace!.x, y - basePlace!.y) > 0.06
+      setBaseDrag({ x, y, moved })
+      const removing = dist > REMOVE_AT
+      if (removing !== drag.removing) setDrag({ ...drag, removing })
+      setTip({ ...tipAt(e), text: removing ? 'Release to remove the instrument' : 'Off the wheel to remove' })
+      return
+    }
     if (drag?.weight) {
       turnDial(drag.id, x, y)
       const p = useApp.getState().pins.find((q) => q.id === drag.id)
@@ -116,6 +138,7 @@ export function Wheel() {
       return
     }
     const target = e.target as Element
+    if (target.closest('g.base-marker') && base) return setTip({ ...tipAt(e), text: `${instrumentName(base)}, the base (${TONALITY_LABELS[base.family]}): click for another, drag off to remove` })
     showTip(e, angle, dist, target.closest('g.pin') !== null, target.classList.contains('pin-dial'))
     if (!drag) return
     const removing = dist > REMOVE_AT
@@ -143,6 +166,14 @@ export function Wheel() {
 
   const onUp = () => {
     if (!drag) return
+    if (drag.base) {
+      const { clearInstrument, setStartMenu, startMenu } = useApp.getState()
+      if (drag.removing) { clearInstrument(); audition() }
+      else if (!baseDrag?.moved) setStartMenu(!startMenu)
+      setDrag(null)
+      setBaseDrag(null)
+      return
+    }
     cancelAnimationFrame(frame.current)
     frame.current = 0
     const p = pending.current
@@ -198,11 +229,14 @@ export function Wheel() {
   }
 
   // the glow: each pin lights the field around it in its colour, as strong as its weight
-  const glow = pins.map((p) => {
+  const glow = [
+    ...(base && basePlace ? [`radial-gradient(circle at ${50 + (basePlace.x / 2) * 100}% ${50 + (basePlace.y / 2) * 100}%, hsl(${TONALITY_HUES[base.family]} 95% 70% / 0.5) 0%, transparent 32%)`] : []),
+    ...pins.map((p) => {
     const { x, y } = polar(p.angle, toRadius(p.radius))
     const share = p.weight / maxWeight
     return `radial-gradient(circle at ${50 + (x / 2) * 100}% ${50 + (y / 2) * 100}%, hsl(${hueOfAngle(p.angle)} 95% 70% / ${0.35 + 0.4 * share}) 0%, transparent ${18 + 22 * share}%)`
-  }).join(', ')
+    }),
+  ].join(', ')
 
   const name = voiceName(voice)
 
@@ -248,6 +282,19 @@ export function Wheel() {
             </text>
           )
         })}
+        {base && basePlace && (() => {
+          const at = baseDrag?.moved ? baseDrag : basePlace
+          return (
+            <g className={`base-marker${drag?.base && drag.removing ? ' removing' : ''}`} transform={`translate(${at.x} ${at.y})`}
+              data-start-toggle role="button" tabIndex={0} aria-label={`${instrumentName(base)}, the base: choose another`}
+              onPointerDown={onBaseDown}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); useApp.getState().setStartMenu(true) } }}>
+              <rect className="base-ring" x={-0.075} y={-0.075} width={0.15} height={0.15} rx={0.02} transform="rotate(45)" />
+              <rect className="base-dot" x={-0.042} y={-0.042} width={0.084} height={0.084} rx={0.012} transform="rotate(45)"
+                style={{ fill: `hsl(${TONALITY_HUES[base.family]} 85% 64%)` }} />
+            </g>
+          )
+        })()}
         {pins.map((p) => {
           const { x, y } = polar(p.angle, toRadius(p.radius))
           const share = p.weight / maxWeight

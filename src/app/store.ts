@@ -59,12 +59,15 @@ interface State extends Saved {
   history: Entry[]
   favourites: Entry[]
   selectedPin: number | null
+  /** the Start from… menu is open (its button and the base marker on the wheel open it) */
+  startMenu: boolean
 
   addPin(angle: number, radius: number): number | null
   movePin(id: number, angle: number, radius: number): void
   setWeight(id: number, weight: number): void
   removePin(id: number): void
   selectPin(id: number | null): void
+  setStartMenu(open: boolean): void
   setControl<K extends keyof Controls>(key: K, value: Controls[K]): void
   setWild(wild: number): void
   setModel(model: Model): void
@@ -190,6 +193,7 @@ export const useApp = create<State>((set, get) => {
     history: [],
     favourites: loadFavourites(),
     selectedPin: null,
+    startMenu: false,
 
     addPin(angle, radius) {
       if (get().pins.length >= MAX_PINS) return null
@@ -209,6 +213,9 @@ export const useApp = create<State>((set, get) => {
     removePin(id) {
       set({ pins: get().pins.filter((p) => p.id !== id), selectedPin: null })
       make(true)
+    },
+    setStartMenu(open) {
+      set({ startMenu: open })
     },
     selectPin(id) {
       set({ selectedPin: id })

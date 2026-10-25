@@ -396,7 +396,7 @@ const RECIPES = {
   },
   // after SITAR (Original Yamaha/DX7 ROM1/ROM1B #22)
   sitar: {
-    label: 'Sitar', group: 'plucked', family: 'metallic', hint: 'A sitar: a long, buzzing, slightly out-of-true ring',
+    label: 'Sitar', group: 'plucked', family: 'string', hint: 'A sitar: a long, buzzing, slightly out-of-true ring',
     skeleton: {
       algorithms: [8], shape: 'pluck',
       ops: {
@@ -511,7 +511,7 @@ const RECIPES = {
   },
   // after STEEL DRUM (Original Yamaha/DX7 ROM1/ROM1A #27)
   steelDrum: {
-    label: 'Steel Drum', group: 'mallets', family: 'bell', hint: 'A steel pan: a round, slightly bending ring',
+    label: 'Steel Drum', group: 'mallets', family: 'tine', hint: 'A steel pan: a round, slightly bending ring',
     skeleton: {
       algorithms: [15], shape: 'struck', feedback: 5,
       ops: {
@@ -560,7 +560,7 @@ const RECIPES = {
   },
   // after Slap.Bass (Original Yamaha/DX7II VRC Cartridges/VRC-1001_DECAY group_A(33-64) #22)
   slapBass: {
-    label: 'Slap Bass', group: 'bass', family: 'tine', hint: 'Slapped and popped: a sharp click, played hard',
+    label: 'Slap Bass', group: 'bass', family: 'string', hint: 'Slapped and popped: a sharp click, played hard',
     skeleton: {
       algorithms: [17], shape: 'pluck', feedback: 4,
       ops: {
@@ -585,7 +585,7 @@ const RECIPES = {
   },
   // after JazzBass (Original Yamaha/DX7IIFD/DX7IIFDVoice64B #18)
   uprightBass: {
-    label: 'Upright', name: 'Upright bass', group: 'bass', family: 'warm', hint: 'A double bass, plucked: soft, woody, round',
+    label: 'Upright', name: 'Upright bass', group: 'bass', family: 'wooden', hint: 'A double bass, plucked: soft, woody, round',
     skeleton: {
       algorithms: [15], shape: 'pluck', feedback: 7,
       ops: {
@@ -1016,7 +1016,7 @@ const RECIPES = {
   },
   // ---------- voices ----------
   choir: {
-    label: 'Choir', group: 'voices', family: 'breath', hint: 'An "aah" choir: voices side by side, the vowel in the partials',
+    label: 'Choir', group: 'voices', family: 'string', hint: 'An "aah" choir: voices side by side, the vowel in the partials',
     skeleton: {
       algorithms: [32], shape: 'pad', vibrato: [60, 60, 5],
       ops: {

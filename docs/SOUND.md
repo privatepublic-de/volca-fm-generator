@@ -193,3 +193,13 @@ shifts every sounding operator's sensitivity by the same step, the carriers half
 original's balance stays (the piano's hammer stays more sensitive than its body); the step is the one nearest the
 slider. Double-click goes back to own. Before, 0 meant own and the slider could only raise sensitivities, so an
 instrument showed 0 however much it answered to touch. Saved states with 0 load as own.
+
+## The instrument on the wheel (2026-10-25)
+
+An instrument to start from shows as a diamond at its tonality, halfway out: not a pin, so it neither changes the
+sound nor takes one of the three places. Click it for Start from…, drag it off the wheel to remove the instrument.
+Its tonality was checked against a measure of the sound (brightness, length, attack, noise, inharmonicity,
+hollowness, against each tonality's own voice; `local/families.ts` in the session): five moved, sitar (Metallic),
+slap bass (Tine) and choir (Breath) to String, the upright bass (Warm) to Wooden, the steel drum (Bell) to Tine. The
+measure alone is too crude to follow (a little noise pulls it to Breath, a bright piano to Metallic), so the
+pianos stay at Tine, the harpsichord and clavinet at Reed.

@@ -298,7 +298,8 @@ export function Actions() {
   const autoplay = useApp((s) => s.autoplay)
   const setAutoplay = useApp((s) => s.setAutoplay)
   const [hint, setHint] = useState<ActionKey | null>(null)
-  const [choosing, setChoosing] = useState(false)
+  const choosing = useApp((s) => s.startMenu)
+  const setChoosing = useApp((s) => s.setStartMenu)
   const button = (key: ActionKey, label: string, shortcut: string, run: () => void, primary = false, disabled = false) => (
     <button className={primary ? 'primary' : ''} onClick={run} title={shortcut} disabled={disabled}
       onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>
@@ -308,7 +309,7 @@ export function Actions() {
   return (
     <div className="actions-block">
       <div className="actions">
-        <button data-start-toggle aria-expanded={choosing} onClick={() => setChoosing((c) => !c)}
+        <button data-start-toggle aria-expanded={choosing} onClick={() => setChoosing(!choosing)}
           onPointerEnter={() => setHint('start')} onFocus={() => setHint('start')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Start from…</button>
         {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, true)}
         {button('variation', 'Variation', 'V', () => { variation(); audition() })}
