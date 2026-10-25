@@ -56,7 +56,13 @@ kbd {
   --accent: hsl(var(--h) 78% 66%);
   --accent-soft: hsl(var(--h) 60% 40% / 0.35);
 }
-.app { max-width: 1340px; margin: 0 auto; padding: 0 24px 32px; }
+.app {
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 0 24px 32px;
+  /* the wheel is as large as the screen's height allows; the library below lines up with it */
+  --wheel: clamp(300px, calc(100vh - 440px), 470px);
+}
 
 /* ---------- top bar ---------- */
 
@@ -84,8 +90,6 @@ kbd {
 /* ---------- stage: wheel and controls ---------- */
 
 .stage {
-  /* the wheel is as large as the screen's height allows with the voice band still in view */
-  --wheel: clamp(300px, calc(100vh - 440px), 470px);
   display: grid;
   grid-template-columns: var(--wheel) minmax(0, 1fr);
   gap: 32px;
@@ -415,7 +419,15 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 /* ---------- history and favourites ---------- */
 
-.library { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 28px; margin-top: 24px; }
+/* the voices kept and made: under the wheel and under the controls, in their columns, set off by a line */
+.library {
+  display: grid;
+  grid-template-columns: var(--wheel) minmax(0, 1fr);
+  gap: 32px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
 @media (max-width: 960px) { .library { grid-template-columns: minmax(0, 1fr); } }
 .library h3 { font: 500 13px var(--sans); color: var(--muted); margin-bottom: 10px; }
 .changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
