@@ -58,7 +58,7 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
         <section id="help-start">
           <h3>Starting points</h3>
           <p>
-            <strong>Start from…</strong>, above the controls, offers 41 instruments in nine groups: keys, plucked, mallets, bass, winds, brass,
+            <strong>Start from…</strong>, over the wheel, offers 41 instruments in nine groups: keys, plucked, mallets, bass, winds, brass,
             strings, percussion and voices. Most are Yamaha's own DX7 voices (the ROM and VRC cartridges, the TX7 and TX816
             sets), copied operator by operator; the pianos change between a few of them with each new roll. The instrument
             shows as a diamond on the wheel. It isn't a pin: it doesn't change the sound, and pins you add colour it.
@@ -68,7 +68,7 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
 
         <section id="help-ways">
           <h3>Three ways on</h3>
-          <p>Variation and Mutate are at the top of Your voice, New voice above the controls.</p>
+          <p>Variation and Mutate are at the top of Your voice, New voice over the wheel.</p>
           <dl className="help-defs">
             <dt>Variation <kbd>V</kbd></dt><dd>A small step. The same pins, controls and instrument; the details move: envelopes, levels, tuning. A sibling of the voice.</dd>
             <dt>Mutate <kbd>M</kbd></dt><dd>A medium step. The pins wander around the wheel and in or out, the controls get a push, a pin may come or go. An instrument without pins gets its first one.</dd>

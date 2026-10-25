@@ -202,13 +202,13 @@ kbd {
 .pin-remove { padding: 0; width: 26px; height: 26px; border-color: transparent; background: none; color: var(--muted); }
 
 .stage-wheel { align-self: start; }
-/* titled like the groups on the right; on a desktop screen level with Envelope, below the Start row */
-.stage-title { font: 500 13px var(--sans); color: var(--muted); }
-@media (min-width: 961px) {
-  .stage-title { margin-top: 54px; }
-  /* the wheel's own margin is room for the names on the rim: it may reach up under the title */
-  .stage-wheel .wheel { margin-top: -14px; }
-}
+/* titled like the groups on the right and level with Envelope; Start from and New voice at its right */
+.stage-head { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+/* the menu and the hint take the header's left edge, not the buttons' */
+.stage-head .start-actions { position: static; container-type: normal; }
+.stage-title { margin-top: 4px; font: 500 13px var(--sans); color: var(--muted); }
+/* the wheel's own margin is room for the names on the rim: it may reach up under the header */
+.stage-wheel .wheel { margin-top: -6px; }
 /* as tall as the wheel's column: the spare height goes between the groups, the actions sit by the voice below */
 .stage-controls { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
 .stage-controls .controls { align-content: start; }
@@ -316,8 +316,8 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .actions .kept { border-color: transparent; color: var(--accent); background: none; }
 .actions .kept::before { content: '✓ '; }
 .actions-block { position: relative; container-type: inline-size; }
-/* at the top of the controls the menu opens downwards */
-.start-actions .start-from { top: calc(100% + 8px); bottom: auto; }
+/* from the wheel's header the menu opens downwards, wider than the wheel's column, over the controls */
+.start-actions .start-from { top: calc(100% + 8px); bottom: auto; right: auto; width: min(820px, calc(100vw - 48px)); }
 /* the instruments to start from: above the action row, over the controls */
 .start-from {
   position: absolute;
@@ -622,6 +622,8 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .stage { gap: 20px; }
   /* the top bar in three rows, not one control per row */
   .volume input[type='range'] { width: 72px; }
+  /* the sound note in the bar's flow: floating, it would sit on the Start from buttons */
+  .topbar-note { position: static; flex-basis: 100%; }
   /* the model and the connection on one line */
   .topbar-connection { min-width: 0; }
   .topbar-connection select { max-width: 118px; }

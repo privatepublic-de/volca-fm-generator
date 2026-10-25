@@ -1,5 +1,5 @@
-// The generator (PLAN §6): the wheel and its pins on the left; on the right where to start, the controls and the
-// voice they made with what to do with it; below, the session's voices, the kept ones and the keyboard.
+// The generator (PLAN §6): on the left where to start, the wheel and its pins; on the right the controls and the
+// voice they made with what to do with it; below, the kept voices, the session's and the keyboard.
 import { useEffect, useState, type CSSProperties } from 'react'
 import { TONALITY_HUES } from '../generator/choices'
 import { Controls, PinList, StartActions } from './Controls'
@@ -71,12 +71,15 @@ export function App() {
       <TopBar onStore={() => setStoring(true)} onHelp={() => setHelping(true)} audioOn={audioOn} />
       <main className="stage">
         <div className="stage-wheel">
-          <h3 className="stage-title">Tonality</h3>
+          {/* the wheel's header: where a voice begins, beside its title (as Your voice has its actions) */}
+          <div className="stage-head">
+            <h3 className="stage-title">Tonality</h3>
+            <StartActions />
+          </div>
           <Wheel />
           <PinList />
         </div>
         <div className="stage-controls">
-          <StartActions />
           <Controls />
           {!voiceBelow && <VoiceView />}
         </div>
