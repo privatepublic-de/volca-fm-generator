@@ -5,7 +5,9 @@ import { readSyx } from '../dx7/sysex'
 import { setVoiceName, voiceName, type Voice } from '../dx7/voice'
 import type { Model } from '../engine/models'
 import { DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, type Pin, type Tonality } from '../generator/choices'
-import { generate, mutate, type Generated } from '../generator/generate'
+import { mutateChoices } from '../generator/explore'
+import { generate, type Generated } from '../generator/generate'
+import { rng as makeRng } from '../generator/random'
 import { newSeed } from '../generator/random'
 import { Playback } from '../ui/playback'
 
@@ -121,7 +123,7 @@ export const useApp = create<State>((set, get) => {
   }
 
   /** A new voice on stage: to the player, and to the history when it's a step. */
-  const show = (voice: Voice, generated: Generated | null, record: boolean) => {
+  const show = (voice: Voice, generated: Generated | null, record: boolean, wildUsed = get().wild) => {
     playback.setVoice(voice)
     let currentId: number | null = null
     let history = get().history
@@ -129,7 +131,7 @@ export const useApp = create<State>((set, get) => {
       const s = get()
       const entry: Entry = {
         id: nextId++, voice, name: voiceName(voice), hue: hueOf(generated),
-        made: generated ? { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: s.wild } : undefined,
+        made: generated ? { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: wildUsed } : undefined,
       }
       history = [...history, entry].slice(-HISTORY_LENGTH)
       currentId = entry.id
@@ -137,11 +139,12 @@ export const useApp = create<State>((set, get) => {
     set({ voice, generated, currentId, history })
   }
 
-  const make = (record: boolean) => {
+  /** The voice of the current pins and controls; `wild` for this roll only (Variation rolls wilder). */
+  const make = (record: boolean, wild = get().wild) => {
     const s = get()
-    const g = generate(choicesOf(s), { seed: s.seed, model: s.model, wild: s.wild })
+    const g = generate(choicesOf(s), { seed: s.seed, model: s.model, wild })
     persist()
-    show(g.voice, g, record)
+    show(g.voice, g, record, wild)
   }
 
   const first = generate(choicesOf(saved), { seed: saved.seed, model: playback.settings.model, wild: saved.wild })
@@ -204,13 +207,17 @@ export const useApp = create<State>((set, get) => {
       make(true)
     },
     variation() {
-      // the same pins and controls, a seed nearby
-      set({ seed: get().seed + 1 + Math.floor(Math.random() * 997) })
-      make(true)
+      // the same pins and controls, another roll, and a free one: at least three quarters of the way to Wild
+      set({ seed: newSeed() })
+      make(true, Math.min(1, Math.max(get().wild, 0.5) + 0.25))
     },
     mutateCurrent() {
-      const v = mutate(get().voice, 0.4, newSeed())
-      show(v, null, true)
+      // the pins move and the controls get a push; then a new voice from there
+      const s = get()
+      const m = mutateChoices(choicesOf(s), makeRng(newSeed()), 0.6, MAX_PINS)
+      const { pins, ...controls } = m
+      set({ pins: pins.map((p, i) => ({ ...p, id: s.pins[i]?.id ?? nextId++ })), controls, seed: newSeed(), selectedPin: null })
+      make(true)
     },
     recall(entry) {
       if (entry.made) {

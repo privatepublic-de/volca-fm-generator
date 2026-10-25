@@ -70,7 +70,19 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng, owned: r
     return
   }
   const depth = (complexity - 0.5) * 2
-  for (const op of sounding()) if (!carriers.includes(op)) setLevel(v, op, level(v, op) + 5 * depth)
+  // the top half is about intensity, not only count: modulation deepens a lot, the brightness stops dying away,
+  // and near the top the added operators come in strong and inharmonic, with more feedback
+  const intense = Math.max(0, depth - 0.5) * 2
+  for (const op of sounding()) {
+    if (carriers.includes(op) || op === noise) continue
+    // a quiet modulator further (the curve is flat below ~60), a deep one less
+    setLevel(v, op, level(v, op) + 5 * depth + intense * (10 + Math.max(0, 72 - level(v, op)) * 0.5))
+    // the envelope holds the brightness instead of fading it out
+    const b = opBase(op)
+    v[b + OP.level2] = clamp99(v[b + OP.level2] + (v[b + OP.level1] - v[b + OP.level2]) * intense)
+    v[b + OP.level3] = clamp99(v[b + OP.level3] + (v[b + OP.level1] - v[b + OP.level3]) * intense)
+  }
+  if (v[VC.feedback] && !hasNoiseSource(v)) setVc(v, 'feedback', v[VC.feedback] + Math.round(3 * intense))
   // silent carriers first (an octave or a unison against the main one, quieter), then silent modulators where
   // what they modulate sounds
   const main = carriers.find((op) => level(v, op) > 0 && !kept.includes(op)) ?? carriers.find((op) => level(v, op) > 0)!
@@ -86,8 +98,8 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng, owned: r
   for (const op of [1, 2, 3, 4, 5, 6]) {
     if (own().length >= target) break
     if (level(v, op) > 0 || carriers.includes(op) || !feeds(op)) continue
-    setRatio(v, op, rng.pick([1, 2, 3, 4]))
-    setLevel(v, op, 45 + 20 * depth)
+    setRatio(v, op, rng.chance(intense) ? rng.pick([1.41, 2.62, 3.5, 5.19, 7.07, 9.33]) : rng.pick([1, 2, 3, 4]))
+    setLevel(v, op, 45 + 20 * depth + 20 * intense)
     // its envelope from the operator it feeds
     const into = [1, 2, 3, 4, 5, 6].find((c) => algorithm.modulators[c].includes(op))!
     v.copyWithin(opBase(op) + OP.rate1, opBase(into) + OP.rate1, opBase(into) + OP.rate1 + 8)
@@ -99,24 +111,31 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng, owned: r
 export function applyMotion(v: Voice, m: number, rng: Rng) {
   if (!m) return
   const { carriers, modulators } = rolesOf(v)
-  setVc(v, 'lfoWave', rng.pick([0, 4]))
-  setVc(v, 'lfoSpeed', 28 + 10 * m)
-  setVc(v, 'lfoDelay', Math.min(v[VC.lfoDelay] || 99, 60))
-  setVc(v, 'lfoPitchDepth', Math.max(v[VC.lfoPitchDepth], 3 + 7 * m))
-  setVc(v, 'pitchModSens', Math.max(v[VC.pitchModSens], 3))
-  setVc(v, 'lfoAmpDepth', Math.round(30 * m))
+  // up to ½ alive in the usual way; above, it goes further: fast deep vibrato, tremolo, random steps or a square
+  // wobble, the timbre swaying with the LFO, a slow pitch drift, carriers far apart
+  const gentle = Math.min(1, m * 2)
+  const wild = Math.max(0, m - 0.5) * 2
+  setVc(v, 'lfoWave', wild > 0.5 && rng.chance(wild) ? rng.pick([5, 3, 1]) : rng.pick([0, 4]))
+  setVc(v, 'lfoSpeed', 28 + 8 * gentle + 34 * wild)
+  setVc(v, 'lfoDelay', wild > 0.3 ? 0 : Math.min(v[VC.lfoDelay] || 99, 60))
+  setVc(v, 'lfoPitchDepth', Math.max(v[VC.lfoPitchDepth], 3 + 6 * gentle + 40 * wild))
+  setVc(v, 'pitchModSens', Math.max(v[VC.pitchModSens], 3 + Math.round(2 * wild)))
+  setVc(v, 'lfoAmpDepth', Math.round(25 * gentle + 60 * wild))
   const sounding = carriers.filter((op) => level(v, op) > 0)
-  sounding.forEach((op, i) => { if (sounding.length > 1) setOp(v, op, 'detune', 7 + (i % 2 ? 1 : -1) * Math.round(1 + 3 * m)) })
+  sounding.forEach((op, i) => { if (sounding.length > 1) setOp(v, op, 'detune', 7 + (i % 2 ? 1 : -1) * Math.round(1 + 2 * gentle + 4 * wild)) })
   const noise = noiseSource(v)
   modulators.filter((op) => level(v, op) > 0 && op !== noise).forEach((op, k) => {
     const b = opBase(op)
-    setOp(v, op, 'ampModSens', m > 0.5 ? 2 : 1)
+    setOp(v, op, 'ampModSens', wild > 0.3 ? 3 : m > 0.25 ? 2 : 1)
     // later stages slow and apart: fading out, or growing in
-    v[b + OP.rate3] = clamp99(Math.min(v[b + OP.rate3], 60) - 6 * m * (k + 1))
-    const [lo, hi] = rng.chance(0.5) ? [0.7, 1] : [1, 0.7]
-    v[b + OP.level2] = clamp99(v[b + OP.level1] * (1 - m + m * lo))
-    v[b + OP.level3] = clamp99(v[b + OP.level1] * (1 - m + m * hi))
+    v[b + OP.rate3] = clamp99(Math.min(v[b + OP.rate3], 60) - 6 * gentle * (k + 1) - 10 * wild)
+    const swing = 0.3 * gentle + 0.4 * wild
+    const [lo, hi] = rng.chance(0.5) ? [1 - swing, 1] : [1, 1 - swing]
+    v[b + OP.level2] = clamp99(v[b + OP.level1] * lo)
+    v[b + OP.level3] = clamp99(v[b + OP.level1] * hi)
   })
+  // a slow pitch drift over seconds, a little under then over, settling on the note (no glide on release)
+  if (wild > 0.4 && v[VC.pitchLevel1] === 50) v.set([25, 20, 18, 99, Math.round(50 - 2 * wild), Math.round(50 + 3 * wild), 50, 50], VC.pitchRate1)
 }
 
 /** Transpose (24 = none) and timbre per register. */

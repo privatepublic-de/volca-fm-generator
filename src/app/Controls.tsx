@@ -242,8 +242,8 @@ export function Actions() {
   return (
     <div className="actions">
       <button className="primary" onClick={() => { generateNew(); audition() }} title="Enter">New voice</button>
-      <button onClick={() => { variation(); audition() }} title="V: the same pins and controls, another roll">Variation</button>
-      <button onClick={() => { mutateCurrent(); audition() }} title="M: this voice, nudged">Mutate</button>
+      <button onClick={() => { variation(); audition() }} title="V: the same pins and controls, rolled wilder">Variation</button>
+      <button onClick={() => { mutateCurrent(); audition() }} title="M: the pins wander and the controls get a push, then a new voice">Mutate</button>
       <button onClick={keep} title="Q: keep this voice in your favourites">Keep</button>
       <label className="toggle small">
         <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />

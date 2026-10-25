@@ -3,11 +3,12 @@ import { getOp, isValidVoice, VC, voiceName, type Voice } from '../src/dx7/voice
 import { centroid, decayTime, flatness, peak, periodicity, pitch, slice, attackTime, type Segment } from '../src/engine/measure'
 import { renderNote } from '../src/engine/render'
 import { angleOf, DEFAULT_CHOICES, mixOf, REGISTERS, SHAPES, TONALITIES, type GeneratorChoices, type Tonality } from '../src/generator/choices'
-import { generate, mutate } from '../src/generator/generate'
+import { generate } from '../src/generator/generate'
 import { loudness, TARGET_DB } from '../src/generator/loudness'
 import { algorithmOf } from '../src/dx7/algorithms'
 const rolesOfVoice = (v: Voice) => algorithmOf(v[VC.algorithm])
 import { rng } from '../src/generator/random'
+import { mutateChoices } from '../src/generator/explore'
 
 const SR = 24000
 const play = (v: Voice, holdSeconds = 2, note = 60): Segment => ({ samples: renderNote(v, { sampleRate: SR, holdSeconds, note }), sampleRate: SR })
@@ -240,6 +241,44 @@ describe('pitch', () => {
   })
 })
 
+describe('going further', () => {
+  const pitchSpread = (s: Segment) => {
+    const p: number[] = []
+    for (let t = 0.5; t < 1.9; t += 0.03) p.push(pitch(slice(s, t, t + 0.03)))
+    return Math.max(...p) / Math.min(...p)
+  }
+
+  it('motion beyond ½ wobbles far more than at ½', () => {
+    expect(avg(only('organ', { motion: 1 }), pitchSpread)).toBeGreaterThan(avg(only('organ', { motion: 0.5 }), pitchSpread) * 1.5)
+  })
+
+  it('complexity beyond ½ is brighter and stays bright', () => {
+    for (const t of ['warm', 'tine', 'bell'] as const) {
+      const late = (complexity: number) => avg(only(t, { complexity }), (s) => centroid(slice(s, 1, 1.5)))
+      expect(late(1), t).toBeGreaterThan(late(0.5) * 1.4)
+    }
+  })
+
+  it('wild changes ratios and sometimes the algorithm; typical never does', () => {
+    const algorithms = (wild: number) => new Set([...Array(30).keys()].map((seed) => generate(only('tine'), { seed, wild }).voice[VC.algorithm]))
+    expect(algorithms(0).size).toBe(1)
+    expect(algorithms(1).size).toBeGreaterThan(3)
+  })
+
+  it('mutate moves pins, sometimes adds or drops one, and pushes the controls', () => {
+    const c = { ...DEFAULT_CHOICES, pins: [pin('bell', 0.6), pin('warm', 0.4)] }
+    const results = [...Array(40).keys()].map((seed) => mutateChoices(c, rng(seed)))
+    expect(results.every((m) => m.pins[0].angle !== c.pins[0].angle)).toBe(true)
+    expect(results.some((m) => m.pins.length === 3)).toBe(true)
+    expect(results.some((m) => m.pins.length === 1)).toBe(true)
+    expect(results.some((m) => Math.abs(m.brightness) > 0.2)).toBe(true)
+    // pins wander up to about two sectors
+    const moved = results.map((m) => Math.min(Math.abs(m.pins[0].angle - c.pins[0].angle), 360 - Math.abs(m.pins[0].angle - c.pins[0].angle)))
+    expect(Math.max(...moved)).toBeGreaterThan(30)
+    expect(Math.max(...moved)).toBeLessThan(70)
+  })
+})
+
 describe('anything goes', () => {
   it('random choices: valid, audible, not too loud, quick', () => {
     const r = rng(2026)
@@ -263,11 +302,4 @@ describe('anything goes', () => {
     expect((performance.now() - started) / 120).toBeLessThan(50)
   })
 
-  it('mutate changes a little and keeps it audible', () => {
-    const v = generate(only('tine'), { seed: 1 }).voice
-    const m = mutate(v, 0.5, 9)
-    expect(m).not.toEqual(v)
-    expect(m[VC.algorithm]).toBe(v[VC.algorithm])
-    expect(Math.abs(loudness(m) - TARGET_DB)).toBeLessThan(4)
-  })
 })

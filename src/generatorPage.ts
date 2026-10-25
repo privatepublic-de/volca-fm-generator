@@ -6,7 +6,7 @@ import {
   angleOf, DEFAULT_CHOICES, REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, TONALITIES, TONALITY_HINTS, TONALITY_HUES, TONALITY_LABELS,
   type GeneratorChoices, type Register, type Shape, type Tonality,
 } from './generator/choices'
-import { generate, mutate, type Generated } from './generator/generate'
+import { generate, type Generated } from './generator/generate'
 import { newSeed } from './generator/random'
 import { Player } from './ui/player'
 
@@ -193,9 +193,11 @@ $<HTMLButtonElement>('#variation').addEventListener('click', () => {
   audition()
 })
 $<HTMLButtonElement>('#mutate').addEventListener('click', () => {
-  if (!currentVoice) return
-  current = null
-  show(mutate(currentVoice, 0.4, newSeed()), true)
+  // the lab's pins are whole tonalities, so its Mutate is a fully wild roll of them (the app moves its pins instead)
+  state.seed = newSeed()
+  save()
+  current = generate(choices(), { seed: state.seed, model: player.settings.model, wild: 1 })
+  show(current.voice, true)
   drawHistory()
   audition()
 })

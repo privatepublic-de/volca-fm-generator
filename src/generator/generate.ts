@@ -2,13 +2,14 @@
 // the other pins take free branches or act as transforms, then the shape and the controls, then loudness and a name.
 import { algorithmOf } from '../dx7/algorithms'
 import { getOp, initVoice, OP, opBase, setOp, setVc, setVoiceName, VC, type Voice } from '../dx7/voice'
+import { setRatio } from '../dx7/frequency'
 import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
 import { applyBrightness, applyComplexity, applyMotion, applyRegister, applyVelocity } from './controls'
 import { normalizeLoudness, SILENT_DB } from './loudness'
 import { rng as makeRng, type Rng } from './random'
 import { applyLength, applyPitchBlip, applyShape, clamp99, makeTransient, rolesOf } from './shapes'
-import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseDb, noiseHostOp, noiseOps, TONALITY_DEFS, useNoiseHost, within } from './tonalities'
+import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseDb, noiseHostOp, noiseOps, noiseSource as noiseSourceOp, TONALITY_DEFS, useNoiseHost, within } from './tonalities'
 
 export interface GenerateOptions {
   seed: number
@@ -77,6 +78,9 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
     }
   }
 
+  // off the usual paths, from half way to Wild up
+  goWild(v, wild, rng)
+
   // 3. the controls
   applyLength(v, c.length)
   applyBrightness(v, Math.max(-1, Math.min(1, c.brightness + (dominant.intensity - 0.5) * 0.6)))
@@ -94,6 +98,24 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   setVoiceName(v, nameOf(mix, c))
   for (let op = 1; op <= 6; op++) if (getOp(v, op, 'outputLevel') > 0) opTonality[op] ??= dominant.tonality
   return { voice: v, mix, roles, loudness: db, opTonality }
+}
+
+/** The top half of Wild leaves the textbook: modulators at unusual ratios (whole, odd and inharmonic), other feedback,
+ *  carriers detuned; near the top, now and then another algorithm altogether (the operators keep their settings in
+ *  new roles). A noise source stays as it is: it only works where it is. In place. */
+function goWild(v: Voice, wild: number, rng: Rng) {
+  const w = Math.max(0, Math.min(1, wild) - 0.5) * 2
+  if (!w) return
+  if (!hasNoiseSource(v) && rng.chance(Math.max(0, w - 0.4) * 0.8)) setVc(v, 'algorithm', rng.int(0, 31))
+  const { modulators, carriers } = rolesOf(v)
+  const noise = noiseSourceOp(v)
+  for (const op of modulators) {
+    if (op === noise || getOp(v, op, 'outputLevel') === 0 || !rng.chance(0.25 + 0.6 * w)) continue
+    setRatio(v, op, rng.pick([0.5, 1, 2, 3, 5, 7, 9, 11, 13, 1.41, 1.73, 2.62, 3.14, 4.24, 5.19, 7.07, 9.33]))
+    setOp(v, op, 'outputLevel', getOp(v, op, 'outputLevel') + rng.int(-8, 12))
+  }
+  for (const op of carriers) if (rng.chance(0.5 * w)) setOp(v, op, 'detune', rng.int(0, 14))
+  if (!hasNoiseSource(v) && rng.chance(0.6 * w)) setVc(v, 'feedback', rng.int(0, 7))
 }
 
 /** The dominant tonality's operators, algorithm, feedback and vibrato on top of INIT VOICE. */
@@ -184,29 +206,6 @@ export function nameOf(mix: readonly MixPart[], c: GeneratorChoices): string {
   ]
   for (const w of words) if (w !== noun && `${w} ${noun}`.length <= 10) return `${w} ${noun}`
   return noun
-}
-
-// ---------- variations ----------
-
-/** Small random changes, `amount` 0…1: levels and rates jitter, ratios rarely move. Name and algorithm stay. */
-export function mutate(source: Voice, amount: number, seed: number): Voice {
-  const v = Uint8Array.from(source)
-  const rng = makeRng(seed)
-  const a = Math.max(0, Math.min(1, amount))
-  const jitter = (x: number, range: number) => clamp99(x + (rng.next() * 2 - 1) * a * range)
-  const { carriers } = rolesOf(v)
-  for (let op = 1; op <= 6; op++) {
-    const b = opBase(op)
-    if (v[b + OP.outputLevel] === 0) continue
-    for (let i = 0; i < 4; i++) if (v[b + OP.rate1 + i] < 99 && rng.chance(0.5)) v[b + OP.rate1 + i] = jitter(v[b + OP.rate1 + i], 12)
-    if (!carriers.includes(op)) v[b + OP.outputLevel] = jitter(v[b + OP.outputLevel], 10)
-    if (rng.chance(a * 0.25) && !v[b + OP.oscMode]) v[b + OP.coarse] = Math.max(0, Math.min(31, v[b + OP.coarse] + rng.pick([-1, 1])))
-    if (rng.chance(a * 0.5)) v[b + OP.detune] = Math.max(0, Math.min(14, v[b + OP.detune] + rng.pick([-1, 1])))
-  }
-  if (rng.chance(a * 0.5) && v[VC.feedback] && !hasNoiseSource(v)) setVc(v, 'feedback', v[VC.feedback] + rng.pick([-1, 1]))
-  ensureAudible(v)
-  if (normalizeLoudness(v) < SILENT_DB) { rescue(v); normalizeLoudness(v) }
-  return v
 }
 
 /** Which algorithm and how it was built, for display. */

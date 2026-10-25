@@ -30,10 +30,26 @@ describe('the app store', () => {
     useApp.getState().recall(made)
     expect(useApp.getState().voice).toEqual(made.voice)
     expect(useApp.getState().generated).toBeNull()
-    useApp.getState().setModel('fm2')
+  })
+
+  it('mutate moves the pins and comes back exactly; a variation too, with the wildness it was rolled at', () => {
+    const s = useApp.getState()
+    s.setModel('fm2')
+    useApp.setState({ pins: [{ id: 901, angle: 60, radius: 0.5, weight: 0.6 }, { id: 902, angle: 210, radius: 0.5, weight: 0.4 }], wild: 0 })
+    const before = useApp.getState().pins.map((p) => ({ ...p }))
     useApp.getState().mutateCurrent()
+    const after = useApp.getState().pins
+    expect(after[0].angle).not.toBe(before[0].angle)
     const mutated = useApp.getState().history.at(-1)!
-    expect(mutated.made).toBeUndefined()
+    expect(mutated.made).toBeDefined()
+    useApp.getState().variation()
+    const varied = useApp.getState().history.at(-1)!
+    expect(varied.made!.wild).toBeGreaterThanOrEqual(0.75)
+    for (const e of [mutated, varied]) {
+      useApp.getState().recall(e)
+      expect(useApp.getState().generated, e.name).not.toBeNull()
+      expect(useApp.getState().voice).toEqual(e.voice)
+    }
   })
 
   it('keeps, renames and forgets favourites', () => {
