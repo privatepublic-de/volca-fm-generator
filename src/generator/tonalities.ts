@@ -5,6 +5,7 @@
 // 80 strong, 90+ very bright; feedback 6–7 on an operator at 80–88 is saw-like. Real noise only comes from feedback 7
 // on an operator at 96 or more, output level and envelope together (at 92 it is still a periodic tone): `noise`
 // operators hold their envelope at the top and leave the shape to the carrier they feed.
+import { algorithmOf } from '../dx7/algorithms'
 import { getOp, OP, opBase, setOp, setVc, VC, type Voice } from '../dx7/voice'
 import { opRatio, setFixed, setRatio } from '../dx7/frequency'
 import type { Shape, Tonality } from './choices'
@@ -142,15 +143,16 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       }
     },
   },
-  // the DX brass: one 1:1 modulator fanned out into three detuned carriers, brightness swelling into the note
+  // brass: two detuned 1:1 pairs with deep modulation, brightness swelling into the note; a third pair (the one
+  // with the feedback) free for a second sound
   brass: {
     noun: 'Brass', adjective: 'Brassy',
     skeleton: {
-      algorithms: [22], shape: 'swell', feedback: [5, 6], pitchBlip: 'below',
+      algorithms: [5], shape: 'swell', feedback: [5, 6], pitchBlip: 'below', branches: [[5, 6]],
       ops: {
-        1: { ratio: [1], level: 99 }, 2: { ratio: [1], level: [80, 88], velocity: [3, 5] },
-        3: { ratio: [1], level: [86, 94], detune: [-4, -2] }, 4: { ratio: [1], level: [86, 94], detune: [2, 4] },
-        5: { ratio: [1, 2], level: [76, 86] }, 6: { ratio: [1], level: [70, 80] },
+        1: { ratio: [1], level: 99, detune: [-3, -1] }, 2: { ratio: [1], level: [82, 88], velocity: [3, 5] },
+        3: { ratio: [1], level: [92, 97], detune: [1, 3] }, 4: { ratio: [1, 2], level: [78, 85], velocity: [3, 5] },
+        5: { ratio: [1, 2], level: [80, 88] }, 6: { ratio: [1], level: [74, 82] },
       },
     },
     branch: { carrier: { ratio: [1], level: [84, 92] }, modulator: { ratio: [1], level: [78, 86], velocity: [3, 4] } },
@@ -196,20 +198,9 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       },
     },
     branch: { carrier: { ratio: [1, 2], level: [58, 68] }, modulator: { ratio: [3.5, 7.07], level: 99, noise: true } },
-    transform(v, a, rng) {
-      // the weakest modulator, or a silent operator, becomes air: high, inharmonic, deep, a puff at the start
-      // (a silent one only if what it modulates sounds)
-      const { algorithm } = rolesOf(v)
-      const feedsSound = (m: number) => [1, 2, 3, 4, 5, 6].some((c) => algorithm.modulators[c].includes(m) && level(v, c) > 0)
-      const silent = [1, 2, 3, 4, 5, 6].filter((op) => level(v, op) === 0 && rolesOf(v).modulators.includes(op) && feedsSound(op))
-      const mods = activeModulators(v)
-      const op = silent[0] ?? mods.sort((x, y) => level(v, x) - level(v, y))[0]
-      if (!op) return
-      setFixed(v, op, rng.range(2500, 6000))
-      setLevel(v, op, 70 + 18 * a)
-      const b = opBase(op)
-      v.set([99, 55, 40, 50], b + OP.rate1)
-      v.set([99, Math.round(60 + 20 * a), Math.round(55 + 20 * a), 0], b + OP.level1)
+    transform(v, a) {
+      // air: a little noise of its own, quieter at the top than Noise
+      addNoise(v, a, -14)
     },
   },
   // noise as the sound: feedback 7 at the top of a stack, fixed-frequency modulators, everything deep
@@ -224,17 +215,12 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       },
     },
     branch: { carrier: { ratio: [1, 5.19], level: [86, 94] }, modulator: { ratio: [7.07, 3.5], level: 99, noise: true } },
-    transform(v, a, rng) {
-      // the feedback operator turns to noise from about half; below, it buzzes
-      const fb = feedbackOp(v)
-      if (level(v, fb) > 0) {
-        if (a >= 0.5) makeNoise(v, fb)
-        else setLevel(v, fb, Math.max(level(v, fb), 80 + 20 * a))
-        v[VC.feedback] = Math.max(v[VC.feedback], a >= 0.5 ? 7 : 6)
-      }
-      for (const op of activeModulators(v)) if (rng.chance(0.3 + 0.5 * a)) {
-        setFixed(v, op, rng.range(300, 6000))
-        setLevel(v, op, level(v, op) + 10 * a)
+    transform(v, a) {
+      if (!addNoise(v, a)) {
+        // no place for a noise source: the feedback operator buzzes instead, as far as it goes without breaking
+        const fb = feedbackOp(v)
+        if (level(v, fb) > 0) setLevel(v, fb, Math.min(92, Math.max(level(v, fb), 80 + 10 * a)))
+        v[VC.feedback] = Math.max(v[VC.feedback], 6)
       }
     },
   },
@@ -381,6 +367,48 @@ export function applyOpSpec(v: Voice, op: number, s: OpSpec, rng: Rng, spread: n
   setLevel(v, op, within(s.level, rng, spread))
   setOp(v, op, 'detune', 7 + (s.detune === undefined ? 0 : within(s.detune, rng, spread)))
   setOp(v, op, 'velocitySens', s.velocity === undefined ? 0 : within(s.velocity, rng, spread))
+}
+
+/** How loud a noise branch is against the tone, in dB, for amount 0…1: a hint of air at the bottom, a lot at the top.
+ *  The noise itself is all or nothing (feedback 7 at 96+), so the amount is the level of what carries it. */
+export const noiseDb = (amount: number, top = -6) => -40 + (top + 40) * Math.max(0, Math.min(1, amount))
+
+/** Switches to the algorithm with the same operator roles whose feedback can be a noise source: 32 → 31 (OP6 into
+ *  OP5); 6 → 5 and 4 → 3 (their feedback is a loop between two operators). In place. */
+export function useNoiseHost(v: Voice) {
+  v[VC.algorithm] = noiseHostAlgorithm(v[VC.algorithm])
+}
+const noiseHostAlgorithm = (byte: number) => ({ 31: 30, 5: 4, 3: 2 } as Record<number, number>)[byte] ?? byte
+
+/** The operator that would become the noise source (the feedback one, after useNoiseHost). */
+export const noiseHostOp = (v: Voice) => algorithmOf(noiseHostAlgorithm(v[VC.algorithm])).feedback.to
+
+/** Noise into a voice, `amount` 0…1, gradual: the feedback operator becomes a noise source, and how much of it is
+ *  heard is set where it goes. Into a carrier: that carrier's level (noiseDb). Into a modulator: that modulator's
+ *  level, which sets how far the noise roughens what it modulates. In place; false when this algorithm can't take it
+ *  (its feedback operator modulates several). */
+export function addNoise(v: Voice, amount: number, top = -6): boolean {
+  useNoiseHost(v)
+  const { algorithm, carriers } = rolesOf(v)
+  const fb = algorithm.feedback
+  if (fb.from !== fb.to) return false
+  const into = [1, 2, 3, 4, 5, 6].filter((c) => algorithm.modulators[c].includes(fb.to))
+  if (into.length !== 1) return false
+  const target = into[0]
+  const main = carriers.find((c) => c !== target && level(v, c) > 0) ?? carriers[0]
+  makeNoise(v, fb.to, getOp(v, main, 'rate4'))
+  v[VC.feedback] = 7
+  if (carriers.includes(target)) {
+    // the carrier only carries the noise: no other modulators, the main carrier's envelope, level by amount
+    for (const m of algorithm.modulators[target]) if (m !== fb.to) setLevel(v, m, 0)
+    if (opRatio(v, target) === null) setRatio(v, target, 1)
+    v.copyWithin(opBase(target) + OP.rate1, opBase(main) + OP.rate1, opBase(main) + OP.rate1 + 8)
+    setLevel(v, target, level(v, main) + Math.round(noiseDb(amount, top) / 0.75))
+  } else {
+    // 45 barely roughens, 85 is all noise
+    setLevel(v, target, 45 + 40 * Math.max(0, Math.min(1, amount)) * ((top + 40) / 34))
+  }
+  return true
 }
 
 /** The transient operators of a skeleton or branch. */

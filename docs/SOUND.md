@@ -25,6 +25,15 @@ stops being a tone. Saw-like tones come from feedback 6–7 with the operator at
 the top (`makeNoise`) and the carrier it feeds shapes the sound; and nothing may lower its level or the feedback
 afterwards (`noiseSource`), or it turns back into a tone.
 
+**Noise in small amounts** (2026-10-25, after the fm2 showed noise was on or off): the source can't be turned down, so
+the amount is set where it goes (`addNoise`). Into a carrier, that carrier's level: from 40 dB under the tone (a hint
+of air) to 6 dB under (`noiseDb`). Into a modulator, that modulator's level, 45 (barely rough) to 85 (all noise). Only
+the feedback operator can be the source, so a noise pin takes a free pair only where that pair's modulator is the
+feedback operator, and algorithms whose feedback can't host it switch to the twin with the same roles (32 → 31,
+6 → 5, 4 → 3). Brass became two detuned pairs plus a free one (algorithm 5) so that it has a place for noise too.
+`tools/noise-steps.ts` measures it, and a test keeps it gradual: noisiness grows at every step of the weight, as a
+colour and as a branch, from a hint at 0.03.
+
 **Rates** (the envelope's time roughly triples for every 10 less):
 
 | Rate | 20 | 30 | 40 | 50 | 60 | 70 | 80 |
@@ -56,7 +65,7 @@ Each tonality alone, five seeds, at the default controls; brightness and noisine
 | organ | Organ | 32 | 1.45 | 0 | 1.00 | 0.01 s | ∞ |
 | warm | Warm | 5–6 | 1.08 | 0 | 1.00 | 0.10 s | ∞ |
 | reed | Reed | 5 | 1.83 | 0 | 1.00 | 0.11 s | ∞ |
-| brass | Brass | 22 | 2.50 | 0 | 1.00 | 0.03 s | ∞ |
+| brass | Brass | 5 | 2.84 | 0 | 1.00 | 0.03 s | ∞ |
 | string | Strings | 5 | 2.29 | 0 | 1.00 | 0.10 s | ∞ |
 | breath | Flute | 5 | 18.2 | 0.001 | 1.00 | 0.13 s | ∞ |
 

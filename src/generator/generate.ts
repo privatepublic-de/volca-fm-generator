@@ -8,7 +8,7 @@ import { applyBrightness, applyComplexity, applyMotion, applyRegister, applyVelo
 import { normalizeLoudness, SILENT_DB } from './loudness'
 import { rng as makeRng, type Rng } from './random'
 import { applyLength, applyPitchBlip, applyShape, clamp99, makeTransient, rolesOf } from './shapes'
-import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseOps, TONALITY_DEFS, within } from './tonalities'
+import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseDb, noiseHostOp, noiseOps, TONALITY_DEFS, useNoiseHost, within } from './tonalities'
 
 export interface GenerateOptions {
   seed: number
@@ -58,8 +58,11 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   const freeBranches = [...(def.skeleton.branches ?? [])]
   for (const part of rest) {
     const share = part.weight / dominant.weight
-    if (share >= BRANCH_SHARE && c.complexity >= 0.35 && freeBranches.length) {
-      const branch = freeBranches.shift()!
+    // a noise branch needs the pair whose modulator can be the noise source
+    const fits = (br: readonly [number, number]) => !TONALITY_DEFS[part.tonality].branch.modulator.noise || br[1] === noiseHostOp(v)
+    const free = freeBranches.findIndex(fits)
+    if (share >= BRANCH_SHARE && c.complexity >= 0.35 && free >= 0) {
+      const [branch] = freeBranches.splice(free, 1)
       fillBranch(v, branch, part, share, shape, rng, spread)
       for (const op of branch) opTonality[op] = part.tonality
       roles.push({ tonality: part.tonality, as: 'branch' })
@@ -114,8 +117,9 @@ function fillBranch(v: Voice, [carrier, modulator]: readonly [number, number], p
   const b = TONALITY_DEFS[part.tonality].branch
   applyOpSpec(v, carrier, b.carrier, rng, spread)
   applyOpSpec(v, modulator, b.modulator, rng, spread)
-  const steps = Math.round((20 * Math.log10(Math.min(1, share))) / 0.75)
-  setOp(v, carrier, 'outputLevel', clamp99(getOp(v, carrier, 'outputLevel') + steps))
+  // a noise branch is far louder to the ear than a tone at the same level: its own, wider curve (noiseDb)
+  const db = b.modulator.noise ? noiseDb(share * (0.4 + 0.6 * part.intensity)) : 20 * Math.log10(Math.min(1, share))
+  setOp(v, carrier, 'outputLevel', clamp99((b.modulator.noise ? 99 : getOp(v, carrier, 'outputLevel')) + Math.round(db / 0.75)))
   setOp(v, modulator, 'outputLevel', clamp99(getOp(v, modulator, 'outputLevel') - 8 * (1 - part.intensity)))
   // the branch plays its own tonality's envelope only when no shape was chosen
   const own = shape ?? TONALITY_DEFS[part.tonality].skeleton.shape
@@ -125,7 +129,7 @@ function fillBranch(v: Voice, [carrier, modulator]: readonly [number, number], p
   for (const op of [carrier, modulator]) v.set(tmp.subarray(opBase(op), opBase(op) + 8), opBase(op))
   if (b.carrier.fast) makeTransient(v, carrier)
   if (b.modulator.fast) makeTransient(v, modulator)
-  if (b.modulator.noise) makeNoise(v, modulator, carrierRelease(v))
+  if (b.modulator.noise) { useNoiseHost(v); makeNoise(v, modulator, carrierRelease(v)) }
   // the feedback belongs to whoever has its operator
   const fbOp = algorithmOf(v[VC.algorithm]).feedback.to
   const fb = TONALITY_DEFS[part.tonality].skeleton.feedback

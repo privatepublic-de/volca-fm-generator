@@ -82,8 +82,8 @@ describe('mixing', () => {
     expect(strong.roles).toEqual([{ tonality: 'bell', as: 'skeleton' }, { tonality: 'warm', as: 'branch' }])
     const weak = generate({ ...DEFAULT_CHOICES, pins: [pin('bell', 0.9), pin('warm', 0.1)] }, { seed: 1 })
     expect(weak.roles[1].as).toBe('transform')
-    // brass has no free branch
-    expect(generate({ ...DEFAULT_CHOICES, pins: [pin('brass', 0.6), pin('bell', 0.4)] }, { seed: 1 }).roles[1].as).toBe('transform')
+    // the organ has no free branch (six drawbars)
+    expect(generate({ ...DEFAULT_CHOICES, pins: [pin('organ', 0.6), pin('bell', 0.4)] }, { seed: 1 }).roles[1].as).toBe('transform')
   })
 
   it('a second tonality changes the sound', () => {
@@ -110,9 +110,21 @@ describe('mixing', () => {
     expect(getOp(breath, 6, 'outputLevel')).toBeGreaterThanOrEqual(97)
   })
 
-  it('more noise in the mix is noisier', () => {
-    const flatWith = (w: number) => avg({ ...DEFAULT_CHOICES, pins: [pin('warm', 1), pin('noise', w)] }, (s) => flatness(slice(s, 0.2, 0.6)))
-    expect(flatWith(0.8)).toBeGreaterThan(flatWith(0.1))
+  it('noise comes in gradually: a hint at a small weight, more step by step, as a colour and as a branch', () => {
+    for (const base of ['warm', 'bell', 'brass', 'organ', 'metallic'] as const) {
+      const noisiness = (w: number) => avg({ ...DEFAULT_CHOICES, pins: [pin(base, 1), pin('noise', w)] }, (s) => Math.log10(flatness(slice(s, 0.3, 0.8)) + 1e-9))
+      const steps = [0.03, 0.1, 0.2, 0.3, 0.45, 0.7].map(noisiness)
+      for (let i = 1; i < steps.length; i++) expect(steps[i], `${base} at step ${i}`).toBeGreaterThan(steps[i - 1])
+      // a hint is far from all noise (log flatness about −4 vs −0.3)
+      expect(steps[0], base).toBeLessThan(-2.5)
+    }
+  })
+
+  it('a noise pin uses a pair that can make noise, or comes in as a colour', () => {
+    const g = generate({ ...DEFAULT_CHOICES, pins: [pin('breath', 0.6), pin('noise', 0.4)] }, { seed: 1 })
+    expect(g.roles[1].as).toBe('transform')
+    // and never leaves a deep modulator at full level that isn't noise (a loud plain tone)
+    expect(getOp(g.voice, 4, 'outputLevel')).toBeLessThan(97)
   })
 })
 
