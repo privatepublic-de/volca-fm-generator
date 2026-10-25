@@ -63,6 +63,11 @@ export class Playback {
     if (patch.reverb !== undefined && this.fm2ToVolca()) send(this.output, [0xb0 | this.ch(), CC_REVERB, patch.reverb & 0x7f])
   }
 
+  /** MIDI access granted (the outputs can still be none) */
+  get midiReady() {
+    return this.access !== null
+  }
+
   get outputs(): string[] {
     return this.access ? outputNames(this.access) : []
   }

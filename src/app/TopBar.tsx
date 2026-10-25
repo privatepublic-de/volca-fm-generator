@@ -12,7 +12,16 @@ export function TopBar({ onStore, audioOn }: { onStore: () => void; audioOn: boo
   const s = playback.settings
   useEffect(() => { playback.onPorts = () => refresh((n) => n + 1) }, [])
   const set = (patch: Parameters<typeof playback.set>[0]) => { playback.set(patch); refresh((n) => n + 1) }
-  const connected = playback.outputs.length > 0
+  const ready = playback.midiReady
+  const out = playback.outputName
+  const modelName = model === 'fm' ? 'volca fm' : 'volca fm2'
+  // where the sound goes: the model and the port are in the selects next to it, so only what they don't say
+  const status = !ready ? null
+    : !playback.outputs.length ? 'No MIDI outputs: plug in the interface'
+    : !out ? 'Choose the volca\'s MIDI out'
+    : s.target === 'browser' ? 'Volca or Both sends to it'
+    : `Sending, channel ${s.channel}`
+  const statusTitle = out ? `${s.target === 'browser' ? 'Not sending yet' : 'Sending'} to the ${modelName} via ${out}, MIDI channel ${s.channel}` : undefined
 
   return (
     <header className="topbar">
@@ -25,37 +34,39 @@ export function TopBar({ onStore, audioOn }: { onStore: () => void; audioOn: boo
             <option value="fm">volca fm</option>
           </select>
         </label>
-        {connected ? (
+        {ready ? (
           <>
-            <select value={playback.outputName ?? ''} onChange={(e) => set({ port: e.target.value })} aria-label="MIDI out to the volca">
+            <select value={out ?? ''} onChange={(e) => set({ port: e.target.value })} aria-label="MIDI out to the volca">
+              <option value="" disabled>MIDI out…</option>
               {playback.outputs.map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
-            <label className="channel">ch
+            <label className="channel" title="The volca's MIDI channel">ch
               <input type="number" min={1} max={16} value={s.channel} onChange={(e) => set({ channel: Math.max(1, Math.min(16, Number(e.target.value) || 1)) })} />
             </label>
           </>
         ) : (
-          <button onClick={async () => setProblem((await playback.connect()) ?? '')} title="Needs Chrome or Edge and a MIDI interface into the volca's MIDI IN">Connect the volca</button>
+          <button onClick={async () => { setProblem((await playback.connect()) ?? ''); refresh((n) => n + 1) }} title="Needs Chrome or Edge and a MIDI interface into the volca's MIDI IN">Connect the volca</button>
         )}
-        {problem && <span className="topbar-problem">{problem}</span>}
+        {problem ? <span className="topbar-problem">{problem}</span> : status && <span className={`topbar-status${out && s.target !== 'browser' ? ' live' : ''}`} title={statusTitle}>{status}</span>}
       </div>
       <div className="topbar-group">
-        {!audioOn && s.target !== 'volca' && <span className="topbar-hint">Click anywhere or press a key to start the sound</span>}
+        {!audioOn && s.target !== 'volca' && <span className="topbar-hint">Click or press a key for sound</span>}
         <div className="segmented small" role="radiogroup" aria-label="Play on">
           {(['browser', 'volca', 'both'] as Target[]).map((t) => (
             <button key={t} role="radio" aria-checked={s.target === t} className={s.target === t ? 'on' : ''}
-              disabled={t !== 'browser' && !connected} onClick={() => set({ target: t })}>
+              disabled={t !== 'browser' && !out} onClick={() => set({ target: t })}
+              title={t !== 'browser' && !out ? 'Connect the volca first' : undefined}>
               {t === 'browser' ? 'Browser' : t === 'volca' ? 'Volca' : 'Both'}
             </button>
           ))}
         </div>
         <label className="volume" title="Volume of the browser's sound">
-          <span className="sr-only">Volume</span>
-          <input type="range" min={0} max={6} step={0.1} value={s.volume} aria-label="Volume"
+          <span>Volume</span>
+          <input type="range" min={0} max={6} step={0.1} value={s.volume}
             style={{ '--fill': `${(s.volume / 6) * 100}%` } as React.CSSProperties}
             onChange={(e) => set({ volume: Number(e.target.value) })} />
         </label>
-        <button onClick={onStore} disabled={!connected} title="How to keep this voice in the volca's memory">Store on the volca…</button>
+        <button onClick={onStore} title="How to keep this voice in the volca's memory">Store on the volca…</button>
       </div>
     </header>
   )

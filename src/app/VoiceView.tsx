@@ -39,6 +39,19 @@ function layout(alg: Algorithm): Node[] {
   return [1, 2, 3, 4, 5, 6].map((op) => ({ op, x: x.get(op)! - minX, depth: depth.get(op)! }))
 }
 
+/** The mix in words: "Bell, with a Warm layer and a touch of Tine". */
+function describeMix(roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'transform' }[]) {
+  const names = (as: string) => roles.filter((r) => r.as === as).map((r) => TONALITY_LABELS[r.tonality])
+  const list = (words: string[]) => (words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : words[0])
+  const layers = names('branch')
+  const touches = names('transform')
+  const parts = [
+    ...(layers.length ? [`a ${list(layers)} layer`] : []),
+    ...(touches.length ? [`a touch of ${list(touches)}`] : []),
+  ]
+  return `${names('skeleton')[0]}${parts.length ? `, with ${parts.join(' and ')}` : ''}`
+}
+
 const hueOf = (t: Tonality | undefined) => (t ? TONALITY_HUES[t] : 250)
 
 function AlgorithmDiagram({ voice, opTonality }: { voice: Voice; opTonality: Partial<Record<number, Tonality>> }) {
@@ -113,7 +126,7 @@ export function VoiceView() {
   const canForward = at >= 0 && at < length - 1
   const alg = algorithmOf(voice[VC.algorithm])
   const opTonality = generated?.opTonality ?? {}
-  const mix = generated?.roles.map((r) => `${TONALITY_LABELS[r.tonality]}${r.as === 'branch' ? ' alongside' : r.as === 'transform' ? ' as colour' : ''}`).join(', ')
+  const mix = generated && describeMix(generated.roles)
   return (
     <section className="voice">
       <div className="voice-head">
@@ -132,8 +145,8 @@ export function VoiceView() {
           const carrier = alg.carriers.includes(op)
           return (
             <li key={op} className={`op${level ? '' : ' silent'}${carrier ? ' carrier' : ''}`} style={{ '--h': hueOf(opTonality[op]) } as React.CSSProperties}
-              title={`OP${op}: ${carrier ? 'heard (a carrier)' : 'shapes the timbre (a modulator)'}`}>
-              <span className="op-num">{op}</span>
+              title={`OP${op}: ${carrier ? 'a carrier: you hear it' : 'a modulator: it shapes the timbre of the operator below it'}`}>
+              <span className="op-num">{op} <span className="op-role">{level ? (carrier ? 'heard' : 'shapes') : ''}</span></span>
               <span className="op-freq">{level ? frequency(voice, op) : 'off'}</span>
               <span className="op-level"><span style={{ width: `${(level / 99) * 100}%` }} /></span>
               {level > 0 && <EgCurve className="op-eg" eg={opEg(voice, op)} />}

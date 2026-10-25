@@ -73,7 +73,11 @@ kbd {
 .topbar .channel input { width: 3.6em; background: var(--raised); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; }
 .topbar-hint { color: var(--accent); font-size: 13px; }
 .topbar-problem { color: #ff9a8c; font-size: 13px; max-width: 28em; }
+.volume { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
 .volume input { width: 96px; }
+.topbar-status { color: var(--muted); font-size: 13px; }
+.topbar-status.live { color: var(--text); }
+.topbar-status.live::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #5cc98a; margin-right: 7px; vertical-align: 1px; }
 
 /* ---------- stage: wheel and controls ---------- */
 
@@ -297,6 +301,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .op { display: grid; gap: 3px; padding: 6px 8px; border-radius: var(--radius); background: var(--raised); border-left: 3px solid hsl(var(--h) 70% 62%); }
 .op.silent { background: none; border-left-color: var(--line); color: var(--dim); }
 .op-num { font: 600 13px var(--condensed); color: var(--muted); }
+.op-role { font: 400 12px var(--sans); color: var(--dim); margin-left: 3px; }
 .op.carrier .op-num { color: hsl(var(--h) 75% 75%); }
 .op-freq { font-size: 14px; }
 .op-level { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
@@ -364,7 +369,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .dialog ol { padding-left: 1.2em; display: grid; gap: 8px; margin: 14px 0; }
 .dialog li button { margin-top: 6px; display: block; }
 .dialog-note { color: var(--muted); font-size: 14px; }
-.dialog-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 
 @media (max-width: 640px) {
   .app { padding: 0 16px 24px; }

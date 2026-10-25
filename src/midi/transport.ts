@@ -17,10 +17,17 @@ export function outputNames(access: MIDIAccess): string[] {
   return [...access.outputs.values()].map((p) => p.name ?? '')
 }
 
-/** The output by name (a saved choice), else the first one whose name looks like a MIDI interface or volca. */
+/** Ports that are never the volca: the Mac's IAC bus and other software loopbacks. */
+const VIRTUAL = /\biac\b|\bbus\b|through|virtual|loopmidi|session/i
+/** Names that look like a hardware MIDI interface. */
+const INTERFACE = /usb|um-|uno|mio|interface|midisport|esi|roland|yamaha|focusrite|scarlett|motu|steinberg|midi/i
+
+/** The output by name (a saved choice), else one called volca, else the first that looks like a hardware MIDI
+ *  interface. Never a virtual port by itself: null then, and the person picks. */
 export function findOutput(access: MIDIAccess, name?: string): MIDIOutput | null {
   const list = [...access.outputs.values()]
-  return list.find((p) => name && p.name === name) ?? list.find((p) => /volca|midi|usb/i.test(p.name ?? '')) ?? list[0] ?? null
+  const named = (re: RegExp) => list.find((p) => re.test(p.name ?? '') && !VIRTUAL.test(p.name ?? ''))
+  return list.find((p) => name && p.name === name) ?? named(/volca/i) ?? named(INTERFACE) ?? null
 }
 
 /** Sends to the port while it's there; a port that has gone throws on send, so skip it. */
