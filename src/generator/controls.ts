@@ -26,6 +26,24 @@ export function applyBrightness(v: Voice, b: number) {
   if (v[VC.feedback] && Math.abs(b) > 0.4 && !hasNoiseSource(v)) setVc(v, 'feedback', v[VC.feedback] + Math.sign(b))
 }
 
+/** A pin's distance from the centre, 0 … 1 (½ the tonality as it comes): the depth of its modulation, mild to
+ *  extreme, ±16 levels on every modulator and a step of feedback past a quarter. Its own axis, not folded into the
+ *  brightness, so it is heard whatever the Brightness slider says (from Init, at its lowest, too). In place. */
+export function applyIntensity(v: Voice, intensity: number) {
+  const x = (Math.max(0, Math.min(1, intensity)) - 0.5) * 2
+  if (!x) return
+  const { carriers, modulators } = rolesOf(v)
+  const mods = modulators.filter((op) => level(v, op) > 0 && op !== noiseSource(v))
+  for (const op of mods) setLevel(v, op, level(v, op) + 16 * x)
+  if (!mods.length) {
+    // carriers side by side (drawbars): the ones above the lowest come in or fall back
+    const ratios = carriers.map((op) => opRatio(v, op) ?? 1)
+    const lowest = Math.min(...ratios)
+    carriers.forEach((op, i) => { if (ratios[i] > lowest && level(v, op) > 0) setLevel(v, op, level(v, op) + 16 * x) })
+  }
+  if (v[VC.feedback] && Math.abs(x) > 0.5 && !hasNoiseSource(v)) setVc(v, 'feedback', v[VC.feedback] + Math.sign(x))
+}
+
 /** How many operators sound for complexity 0 … 1 (½ keeps the tonality's own). */
 export const targetOperators = (complexity: number) => Math.round(2 + 4 * complexity)
 

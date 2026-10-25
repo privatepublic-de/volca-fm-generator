@@ -38,6 +38,16 @@ describe('pins', () => {
     expect(m.map((p) => p.tonality)).toEqual(['warm', 'bell', 'noise'])
     expect(m[0].weight).toBeCloseTo(0.7)
   })
+
+  it('the distance from the centre is heard, from Init too (Brightness at its lowest)', () => {
+    const init = { ...DEFAULT_CHOICES, shape: 'gate' as const, brightness: -1, complexity: 0 }
+    const bright = (t: Tonality, radius: number) =>
+      centroid(slice(play(generate({ ...init, pins: [{ angle: angleOf(t), radius, weight: 1 }] }, { seed: 7 }).voice, 1), 0.2, 0.7))
+    for (const t of ['metallic', 'bell', 'tine', 'reed', 'brass'] as Tonality[]) {
+      expect(bright(t, 0.95), t).toBeGreaterThan(bright(t, 0.5) * 1.15)
+      expect(bright(t, 0.5), t).toBeGreaterThan(bright(t, 0.05) * 1.05)
+    }
+  })
 })
 
 describe('every tonality alone', () => {

@@ -5,7 +5,7 @@ import { getOp, initVoice, OP, opBase, setOp, setVc, setVoiceName, VC, type Voic
 import { setRatio } from '../dx7/frequency'
 import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
-import { applyBrightness, applyComplexity, applyMotion, applyRegister, applyVelocity } from './controls'
+import { applyBrightness, applyComplexity, applyIntensity, applyMotion, applyRegister, applyVelocity } from './controls'
 import { normalizeLoudness, SILENT_DB } from './loudness'
 import { nameVoice, nameWithNoun } from './naming'
 import { rng as makeRng, type Rng } from './random'
@@ -54,7 +54,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, k
   const roles: Generated['roles'] = [{ tonality: dominant.tonality, as: 'skeleton' }]
   const opTonality: Generated['opTonality'] = {}
 
-  // 1. the skeleton; intensity moves it from mild to extreme like brightness does
+  // 1. the skeleton; the pin's distance from the centre deepens or softens its modulation
   const v = buildSkeleton(skeleton, rng, spread)
   const shape = c.shape ?? skeleton.shape
   if (inst?.eg && !c.shape) applyEgs(v, inst.eg, rng, spread)
@@ -64,6 +64,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, k
   // a tonality's own pitch fall comes now and then, more often the wilder (the Pitch accent switch: always)
   if (skeleton.pitchBlip && rng.chance(0.25 + 0.5 * Math.max(0, Math.min(1, wild)))) applyPitchBlip(v, skeleton.pitchBlip)
   if (inst) applyInstrument(v, inst, !c.shape, rng, spread)
+  else applyIntensity(v, dominant.intensity)
 
   // 2. the other tonalities: a free branch while there is one, else a transform. Each tonality's own operators are
   // noted (the skeleton's, a branch's two, the ones a transform changed), so pure can keep a pair of each
@@ -94,7 +95,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, k
 
   // 3. the controls
   applyLength(v, c.length)
-  applyBrightness(v, Math.max(-1, Math.min(1, c.brightness + (dominant.intensity - 0.5) * 0.6)))
+  applyBrightness(v, c.brightness)
   // a pair per pin (a pin between two tonalities is one pin), the heaviest tonalities first
   applyComplexity(v, c.complexity, rng, owned.slice(0, Math.max(1, c.pins.length)))
   applyMotion(v, c.motion, rng)

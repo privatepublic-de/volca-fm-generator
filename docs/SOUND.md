@@ -174,3 +174,13 @@ STEINWAY or Bosendorfr, the upright the TX7 UPRIGHT, the TX816 AC.PNO 1.1, GOOD 
 from the library's piano folders, not Yamaha's). An instrument can hold several originals (`variants`): each new
 voice picks one by its seed, so New voice moves between them. `tools/recipe-from-voice.ts` writes them with
 `id=NAME@place+NAME@place`.
+
+## A pin's distance from the centre (2026-10-25)
+
+It used to be folded into the brightness (±0.3 on the slider, then clamped), so from Init, with Brightness at its
+lowest, the inner half of the radius did nothing at all and the outer half moved the modulators by about 5 levels.
+Now it is its own axis (`applyIntensity`): ±16 levels on every modulator of the base tonality, a step of feedback
+past a quarter, and on an organ (carriers only) the drawbars above the lowest. Brightness at C4 from Init, centre →
+middle → rim: metallic 1.5 → 7.1 → 15.8, bell 1.1 → 1.5 → 2.5, reed 1.1 → 1.3 → 2.2, brass 1.1 → 1.3 → 2.3 (before:
+the first two always equal). For breath and noise the radius sets the amount of air, as before. Secondary pins
+already used it (a transform's amount, a branch's modulator).
