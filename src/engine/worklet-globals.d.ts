@@ -1,4 +1,5 @@
-// The AudioWorkletGlobalScope, which lib.dom doesn't describe.
+// The AudioWorkletGlobalScope, which lib.dom doesn't describe. Once compiled these are global for every file
+// (sampleRate too): use them only in worklet.ts.
 declare const sampleRate: number
 
 declare abstract class AudioWorkletProcessor {

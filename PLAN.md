@@ -178,7 +178,7 @@ A 6-operator DX7-style engine in an **AudioWorklet**, written here with tables a
 - **Model profiles**: voices (fm 3, fm2 6), velocity on or off, whatever Q5 finds.
 - Same code path for live play and offline rendering (tests, measures).
 
-Built 2026-10-25 (`src/engine/`, test page `/engine.html`), with three departures from MSFA, all to check by ear: the feedback loops of algorithms 4 and 6 are played (MSFA leaves them out), amplitude modulation is an own estimate (MSFA has none; `AMP_MOD_DEPTH`), and osc key sync is honoured (MSFA always restarts the phase). As in MSFA, feedback 6–7 on an operator at full level turns to noise.
+Built 2026-10-25 (`src/engine/`, test page `/engine.html`), with three departures from MSFA, all to check by ear: the feedback loops of algorithms 4 and 6 are played (MSFA leaves them out), amplitude modulation is an own estimate (MSFA has none; `AMP_MOD_DEPTH`), and osc key sync is honoured (MSFA always restarts the phase). As in MSFA, feedback 6–7 on an operator at full level turns to noise. Open: a new voice reaches only new notes; when the controls change a sounding voice on the fm2 by parameter changes, the engine's sounding notes must take the change too (rates and levels in place, as MSFA's `Env::setparam`).
 
 It doesn't need to match the volca to the bit; it needs to sound close enough that what you choose in the browser is what the volca plays. Checked by ear against the volcas and Dexed, voice by voice, with a fixed list in `docs/SOUND.md`.
 

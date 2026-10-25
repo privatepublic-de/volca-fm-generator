@@ -119,6 +119,18 @@ describe('modulation', () => {
     expect(crossings / 2 / 1.6).toBeCloseTo(hz, 0)
   })
 
+  it('LFO delay: steady at first, then the vibrato fades in', () => {
+    const vib = voice((v) => { setVc(v, 'lfoSpeed', 40); setVc(v, 'lfoPitchDepth', 60); setVc(v, 'pitchModSens', 7); setVc(v, 'lfoDelay', 60) })
+    const s = play(vib, { holdSeconds: 4 })
+    const spread = (from: number, to: number) => {
+      const p: number[] = []
+      for (let t = from; t < to; t += 0.03) p.push(pitch(slice(s, t, t + 0.03)))
+      return Math.max(...p) / Math.min(...p)
+    }
+    expect(spread(0.05, 0.4)).toBeLessThan(1.01)
+    expect(spread(3, 3.9)).toBeGreaterThan(1.1)
+  })
+
   it('LFO amplitude modulation pulses only with sensitivity', () => {
     const trem = (ams: number) => voice((v) => { setOp(v, 1, 'ampModSens', ams); setVc(v, 'lfoSpeed', 30); setVc(v, 'lfoAmpDepth', 99) })
     const spread = (v: Voice) => {
