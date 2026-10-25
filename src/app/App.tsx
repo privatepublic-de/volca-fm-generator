@@ -83,7 +83,6 @@ export function App() {
         <span><kbd>V</kbd> variation</span>
         <span><kbd>M</kbd> mutate</span>
         <span><kbd>Q</kbd> keep</span>
-        <span><kbd>A</kbd>–<kbd>;</kbd> play, <kbd>Z</kbd> <kbd>X</kbd> octave</span>
       </footer>
       <StoreDialog open={storing} onClose={() => setStoring(false)} />
     </div>

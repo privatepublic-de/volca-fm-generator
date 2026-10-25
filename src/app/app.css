@@ -374,14 +374,42 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 /* ---------- keyboard ---------- */
 
-.keyboard { position: relative; height: 112px; margin-top: 28px; user-select: none; touch-action: none; }
-.key { position: absolute; top: 0; border-radius: 0 0 5px 5px; cursor: pointer; }
-.key.white { height: 112px; background: #d9d4e6; border: 1px solid var(--ink); z-index: 1; }
-.key.black { height: 68px; background: #2b2740; border: 1px solid var(--ink); z-index: 2; }
+/* the keyboard: docked to the window's bottom on desktop screens, in the page on phones */
+.keyboard-dock { margin-top: 24px; }
+.keyboard-dock-inner { display: flex; align-items: stretch; gap: 10px; }
+.keyboard { position: relative; flex: 1; height: 96px; user-select: none; touch-action: none; }
+.key { position: absolute; top: 0; border-radius: 0 0 4px 4px; cursor: pointer; }
+.key.white { height: 100%; background: #d9d4e6; border: 1px solid var(--ink); z-index: 1; }
+.key.black { height: 60%; background: #2b2740; border: 1px solid var(--ink); z-index: 2; }
 .key.white.mapped { background: #e8e4f2; }
 .key.down.white { background: var(--accent); }
 .key.down.black { background: hsl(var(--h) 60% 45%); }
-.key-label { position: absolute; bottom: 5px; left: 0; right: 0; text-align: center; font-size: 11px; color: #6c6683; }
+.key-label { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 10px; color: #6c6683; }
+.keyboard-octave { display: flex; align-items: center; gap: 4px; font: 500 14px var(--condensed); color: var(--muted); }
+.keyboard-octave span { min-width: 2em; text-align: center; }
+.keyboard-octave button { width: 26px; height: 26px; padding: 0; background: none; font-size: 16px; line-height: 1; }
+.keyboard-fold { align-self: center; font-size: 12px; padding: 3px 8px; background: none; color: var(--muted); }
+.keyboard-dock.folded .keyboard-dock-inner { justify-content: flex-end; }
+
+@media (min-width: 961px) {
+  /* always at hand while the controls change: fixed along the bottom, the page ends with room for it */
+  .app { padding-bottom: 100px; }
+  .keyboard-dock {
+    position: fixed;
+    z-index: 5;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 6px 24px 8px;
+    background: rgb(21 19 31 / 0.94);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(6px);
+  }
+  .keyboard-dock-inner { max-width: 1292px; margin: 0 auto; }
+  .keyboard { height: 64px; }
+  .keyboard-dock.folded { padding: 3px 24px; }
+}
 
 .footer { display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: center; color: var(--dim); font-size: 13px; margin-top: 18px; }
 
