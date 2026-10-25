@@ -106,6 +106,24 @@ describe('the app store', () => {
     expect(now.voice.subarray(0, 145)).toEqual(made.subarray(0, 145))
   })
 
+  it('a voice kept after a change that adds no history step still keeps its pins and controls', () => {
+    const s = useApp.getState()
+    s.generateNew()
+    useApp.getState().setModel('fm')
+    useApp.getState().setModel('fm2')
+    expect(useApp.getState().currentId).toBeNull()
+    useApp.getState().setControl('motion', 0.3)
+    const voice = useApp.getState().voice
+    useApp.getState().keep()
+    const kept = useApp.getState().favourites.at(-1)!
+    expect(kept.made?.controls.motion).toBe(0.3)
+    useApp.getState().initVoice()
+    useApp.getState().recall(kept)
+    expect(useApp.getState().controls.motion).toBe(0.3)
+    expect(useApp.getState().voice).toEqual(voice)
+    expect(useApp.getState().generated).not.toBeNull()
+  })
+
   it('back and forward step through the session (undo, redo)', () => {
     const s = useApp.getState()
     s.generateNew()

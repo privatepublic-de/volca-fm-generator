@@ -34,13 +34,14 @@ button, select {
 }
 button:hover:not(:disabled), select:hover { border-color: var(--accent); }
 button:disabled { opacity: 0.4; cursor: default; }
+/* the one call to action: tinted in the sound's colour, not a solid block */
 button.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--ink);
+  background: hsl(var(--h) 60% 45% / 0.28);
+  border-color: hsl(var(--h) 70% 62% / 0.7);
+  color: var(--text);
   font-weight: 600;
 }
-button.primary:hover:not(:disabled) { background: hsl(var(--h) 85% 74%); }
+button.primary:hover:not(:disabled) { background: hsl(var(--h) 60% 50% / 0.4); border-color: var(--accent); }
 kbd {
   font: 500 12px var(--sans);
   border: 1px solid var(--line);
@@ -83,12 +84,12 @@ kbd {
 
 .stage {
   /* the wheel is as large as the screen's height allows with the voice band still in view */
-  --wheel: clamp(300px, calc(100vh - 380px), 500px);
+  --wheel: clamp(300px, calc(100vh - 440px), 470px);
   display: grid;
   grid-template-columns: var(--wheel) minmax(0, 1fr);
   gap: 32px;
   padding: 12px 0 0;
-  align-items: start;
+  align-items: stretch;
 }
 @media (max-width: 960px) { .stage { grid-template-columns: minmax(0, 1fr); --wheel: 100%; } }
 
@@ -165,7 +166,11 @@ kbd {
 .pins .pin-share { text-align: right; }
 .pin-remove { padding: 0; width: 26px; height: 26px; border-color: transparent; background: none; color: var(--muted); }
 
-.stage-controls { display: grid; gap: 14px; padding-top: 4px; }
+.stage-wheel { align-self: start; }
+/* as tall as the wheel's column: the spare height goes between the groups, the actions sit by the voice below */
+.stage-controls { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.stage-controls .controls { flex: 1; grid-template-rows: auto 1fr; align-items: stretch; }
+.stage-controls .controls-col { display: flex; flex-direction: column; justify-content: space-evenly; }
 /* the envelope across, then two columns: tone and new voices, playing and effects */
 .controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 32px; align-items: start; }
 .controls-wide { grid-column: 1 / -1; }
@@ -177,11 +182,11 @@ kbd {
 }
 .group { display: grid; gap: 6px; }
 .group h3 { font: 500 13px var(--sans); color: var(--muted); }
-.group-note { color: var(--dim); font-size: 13px; }
 
 .shapes { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
 @media (max-width: 640px) { .shapes { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.shapes button { display: grid; justify-items: center; gap: 0; padding: 4px 2px 3px; font-size: 12px; color: var(--muted); }
+.shapes button { display: grid; justify-items: center; gap: 0; padding: 4px 2px 3px; font-size: 12px; color: var(--muted); background: none; border-color: transparent; }
+.shapes button:hover:not(.on) { background: var(--panel); border-color: transparent; }
 .shapes button svg { width: 100%; height: 20px; }
 .shape-release { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 2; }
 .shapes button path { fill: none; stroke: var(--muted); stroke-width: 1.6; stroke-linejoin: round; }
@@ -199,7 +204,9 @@ kbd {
 }
 .slider-label { grid-area: label; }
 .slider-ends { display: contents; }
-.slider-ends span { font-size: 12px; color: var(--dim); }
+.slider-ends span { font-size: 12px; color: var(--dim); opacity: 0; transition: opacity 0.15s; }
+.slider:hover .slider-ends span, .slider:focus-within .slider-ends span { opacity: 1; }
+@media (hover: none) { .slider-ends span { opacity: 1; } }
 .slider-ends span:first-child { grid-area: left; text-align: right; }
 .slider-ends span:last-child { grid-area: right; }
 .field .segmented { flex-wrap: nowrap; }
@@ -260,8 +267,23 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .actions .primary { font-size: 16px; padding: 8px 22px; }
-.actions .kept { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-.action-hint { color: var(--muted); font-size: 13px; margin-top: 6px; min-height: 2.9em; max-width: 72ch; }
+.actions button:not(.primary):not(.kept) { background: none; }
+.actions .kept { border-color: transparent; color: var(--accent); background: none; }
+.actions .kept::before { content: '✓ '; }
+.actions-block { position: relative; }
+.action-hint {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 6px);
+  left: 0;
+  max-width: 60ch;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--raised);
+  color: var(--text);
+  font-size: 13px;
+  pointer-events: none;
+}
 .actions .toggle { margin-left: auto; }
 
 /* ---------- the voice ---------- */

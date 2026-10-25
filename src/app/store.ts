@@ -273,8 +273,12 @@ export const useApp = create<State>((set, get) => {
       const current = s.history.find((h) => h.id === s.currentId)
       const hue = current?.hue ?? hueOf(s.generated)
       if (s.favourites.some((f) => sameSound(f.voice, s.voice))) return
-      // with what made it, so it brings its pins and controls back
-      const made = current && sameSound(current.voice, s.voice) ? current.made : undefined
+      // with what made it, so it brings its pins and controls back: the history entry's, or (when the voice on stage
+      // isn't one, after a change that adds no step) the current pins and controls, if they make exactly this voice
+      const fromNow = { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: s.wild }
+      const made = current && sameSound(current.voice, s.voice) && current.made ? current.made
+        : s.generated && sameSound(s.generated.voice, s.voice) ? fromNow
+        : undefined
       const favourites = [...s.favourites, { id: nextId++, voice: s.voice, name: voiceName(s.voice), hue, made }]
       saveFavourites(favourites)
       set({ favourites })

@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, type Register, type Shape } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
 import { hueOfAngle, intensityWord, pinHint, pinLabel } from './Wheel'
-import { audition, MAX_PINS, playback, sameSound, useApp, type Controls as ControlValues } from './store'
+import { audition, playback, sameSound, useApp, type Controls as ControlValues } from './store'
 
 /** A slider that makes the voice again while it moves and plays it when let go. A double-click puts it back to
  *  `reset` (its neutral value: the middle for bipolar ones), which `mark` shows on the track when it isn't an end. */
@@ -152,13 +152,12 @@ export function PinList() {
           <button className="pin-remove" aria-label={`Remove ${pinLabel(p)}`} onClick={(e) => { e.stopPropagation(); removePin(p.id); audition() }}>×</button>
         </li>
       ))}
-      {pins.length < MAX_PINS && <li className="pins-more">Up to {MAX_PINS} pins: click the wheel for another.</li>}
     </ul>
   )
 }
 
-function Group({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
-  return <section className={`group${className ? ` ${className}` : ''}`}><h3>{title}</h3>{children}</section>
+function Group({ title, children, className, hint }: { title: string; children: ReactNode; className?: string; hint?: string }) {
+  return <section className={`group${className ? ` ${className}` : ''}`}><h3 title={hint}>{title}</h3>{children}</section>
 }
 
 /** The volca's effects: not part of the voice, a setting like the volume. The fm2's depths go to it as CCs (91, 93);
@@ -192,10 +191,9 @@ function EffectControls() {
     </label>
   )
   return (
-    <Group title="Effects">
-      {dial('Chorus', 'chorus', 'The fm2\'s chorus depth (CC 93)')}
-      {dial('Reverb', 'reverb', 'The fm2\'s reverb depth (CC 91)')}
-      <p className="group-note" title="Chorus and reverb are switched on and off at the volca; these dials set their depth. They belong to the volca, not to the voice: they aren't saved with it.">Switch them on at the volca; these set the depth.</p>
+    <Group title="Effects" hint="Chorus and reverb are switched on and off at the volca; these dials set their depth. They belong to the volca, not to the voice: they aren't saved with it.">
+      {dial('Chorus', 'chorus', 'The fm2\'s chorus depth (CC 93); switch the chorus on at the volca')}
+      {dial('Reverb', 'reverb', 'The fm2\'s reverb depth (CC 91); switch the reverb on at the volca')}
     </Group>
   )
 }
@@ -244,7 +242,7 @@ export function Controls() {
   )
 }
 
-/** What each action does, shown under them for the one pointed at (New voice's when none is). */
+/** What each action does, shown below them while one is pointed at or focused. */
 const ACTION_HINTS = {
   init: 'Init voice: back to the start, one mild Warm pin with everything dialled down: a plain sine, held like an organ. Explore from there.',
   generate: 'New voice: your pins and controls rolled again: other ratios and levels, and another algorithm where the tonality has a choice.',
@@ -260,10 +258,10 @@ export function Actions() {
   const kept = useApp((s) => s.favourites.find((f) => sameSound(f.voice, s.voice)))
   const autoplay = useApp((s) => s.autoplay)
   const setAutoplay = useApp((s) => s.setAutoplay)
-  const [hint, setHint] = useState<ActionKey>('generate')
+  const [hint, setHint] = useState<ActionKey | null>(null)
   const button = (key: ActionKey, label: string, shortcut: string, run: () => void, primary = false) => (
     <button className={primary ? 'primary' : ''} onClick={run} title={shortcut}
-      onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint('generate')} onBlur={() => setHint('generate')}>
+      onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>
       {label}
     </button>
   )
@@ -276,14 +274,14 @@ export function Actions() {
         {button('mutate', 'Mutate', 'M', () => { mutateCurrent(); audition() })}
         {kept
           ? <button className="kept" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out"
-              onPointerEnter={() => setHint('kept')} onFocus={() => setHint('kept')} onPointerLeave={() => setHint('generate')} onBlur={() => setHint('generate')}>Kept</button>
+              onPointerEnter={() => setHint('kept')} onFocus={() => setHint('kept')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Kept</button>
           : button('keep', 'Keep', 'Q', keep)}
         <label className="toggle small">
           <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
           <span title="Plays the note you played last (C4 until you play one) after every change">Play on change</span>
         </label>
       </div>
-      <p className="action-hint" aria-live="polite">{ACTION_HINTS[hint]}</p>
+      {hint && <p className="action-hint" role="status">{ACTION_HINTS[hint]}</p>}
     </div>
   )
 }
