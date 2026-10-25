@@ -298,8 +298,9 @@ describe('anything goes', () => {
       expect(g.loudness, what).toBeGreaterThan(TARGET_DB - 9)
       expect(peak(play(g.voice, 1.5)), what).toBeLessThan(1)
     }
-    // the generator is interactive: well under 50 ms a voice
-    expect((performance.now() - started) / 120).toBeLessThan(50)
+    // interactive: a voice (with its naming render, and this test's own render) well under 100 ms; while a control
+    // is dragged the naming is skipped
+    expect((performance.now() - started) / 120).toBeLessThan(100)
   })
 
 })

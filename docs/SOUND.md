@@ -84,3 +84,29 @@ they say, and 120 random choices give valid voices that are neither silent nor c
 - **Amplitude modulation** depth (`AMP_MOD_DEPTH` in the engine; used by Motion).
 - **Reed and string:** whether the odd harmonics and the saws read as such.
 - **Wooden:** the knock (the pitch blip and the fast modulators).
+
+## Names (2026-10-25)
+
+Names come from the sound, not the pins: a wild or mutated voice often doesn't sound like its pins any more.
+`src/generator/naming.ts` renders a held C4 once (16 kHz, 2.5 s) and reads a noun for the shape and an adjective
+for the most striking trait, in the DX7's 10 characters. `tools/names.ts` prints them with the traits behind them.
+
+| Noun | When |
+|---|---|
+| Hit / Noise | spectral flatness over 0.2, short (≤ 0.6 s) or not |
+| Pluck | gone to −20 dB within 1 s |
+| Bell / Gong | fades over seconds and is inharmonic (Gong when low) |
+| Keys | fades over seconds, harmonic |
+| Swell | held, slow start (over 0.4 s) and still 3 dB louder at the end |
+| Bass | held, the note below 140 Hz (C4 with the voice's transpose), attack under 0.3 s |
+| Pad | held, attack 0.08 s or more |
+| Sine | held, brightness under 1.1, steady, no noise |
+| Organ / Lead | held, quick: Organ when three carriers or more sound with hardly any modulation |
+
+Adjectives, the first that applies: Noisy (flatness over 0.02), Wobbly or Wavy (the LFO swings the pitch more than
+0.4 semitone), Metal or Clang (inharmonic: periodicity under 0.9, or a sounding operator at a non-whole ratio or a
+fixed frequency, noise sources aside), Airy (any noise: flatness over 10⁻⁵; clean tones measure 10⁻⁹ or less),
+Hollow or Reedy (odd harmonics, the even ones under 12 %), Bright or Shiny (centroid over 4× the note), Soft (under
+1.15×), Drift (a slow pitch envelope), Wide (carriers detuned 10 steps or more apart). A bell isn't called metal,
+noise isn't called noisy. A name already in the session gets a number ("Airy Pad 2", or "Keys 2" when the whole
+name and a number don't fit). Naming costs about 30 ms, so it is skipped while a control is dragged.

@@ -7,6 +7,7 @@ import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
 import { applyBrightness, applyComplexity, applyMotion, applyRegister, applyVelocity } from './controls'
 import { normalizeLoudness, SILENT_DB } from './loudness'
+import { nameVoice } from './naming'
 import { rng as makeRng, type Rng } from './random'
 import { applyLength, applyPitchBlip, applyShape, clamp99, makeTransient, rolesOf } from './shapes'
 import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseDb, noiseHostOp, noiseOps, noiseSource as noiseSourceOp, TONALITY_DEFS, useNoiseHost, within } from './tonalities'
@@ -16,6 +17,8 @@ export interface GenerateOptions {
   model?: Model
   /** 0 typical (near the templates' middle) … 1 wild (anywhere in their ranges) */
   wild?: number
+  /** the voice's name when not naming it (naming renders the voice once more: skipped while a control is dragged) */
+  keepName?: string
 }
 
 export interface Generated {
@@ -35,7 +38,7 @@ const spreadOf = (wild: number) => 0.3 + 0.7 * Math.max(0, Math.min(1, wild))
 /** A secondary needs this share of the dominant's weight to get a branch of its own. */
 const BRANCH_SHARE = 0.25
 
-export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }: GenerateOptions): Generated {
+export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, keepName }: GenerateOptions): Generated {
   const rng = makeRng(seed)
   const spread = spreadOf(wild)
   const mix = mixOf(c.pins)
@@ -95,7 +98,8 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   ensureAudible(v)
   let db = normalizeLoudness(v)
   if (db < SILENT_DB) { rescue(v); db = normalizeLoudness(v) }
-  setVoiceName(v, nameOf(mix, c))
+  // named by how it sounds, not by its pins (docs/SOUND.md)
+  setVoiceName(v, keepName ?? nameVoice(v))
   for (let op = 1; op <= 6; op++) if (getOp(v, op, 'outputLevel') > 0) opTonality[op] ??= dominant.tonality
   return { voice: v, mix, roles, loudness: db, opTonality }
 }
@@ -190,22 +194,6 @@ function rescue(v: Voice) {
   const op = rolesOf(v).carriers[0]
   setOp(v, op, 'outputLevel', 99)
   v.set([99, 60, 40, 50, 99, 90, 85, 0], opBase(op))
-}
-
-// ---------- names: within the DX7's 10 characters ----------
-
-const SHAPE_WORD: Partial<Record<NonNullable<GeneratorChoices['shape']>, string>> = { pad: 'Pad', pluck: 'Pluck', swell: 'Swell', reverse: 'Rev' }
-
-export function nameOf(mix: readonly MixPart[], c: GeneratorChoices): string {
-  const noun = TONALITY_DEFS[mix[0].tonality].noun
-  const words = [
-    ...mix.slice(1).map((p) => TONALITY_DEFS[p.tonality].adjective),
-    ...(c.brightness <= -0.4 ? ['Soft', 'Dark'] : c.brightness >= 0.4 ? ['Bright'] : []),
-    ...(c.shape && SHAPE_WORD[c.shape] ? [SHAPE_WORD[c.shape]!] : []),
-    ...(c.register === 'sub' || c.register === 'bass' ? ['Bass'] : []),
-  ]
-  for (const w of words) if (w !== noun && `${w} ${noun}`.length <= 10) return `${w} ${noun}`
-  return noun
 }
 
 /** Which algorithm and how it was built, for display. */

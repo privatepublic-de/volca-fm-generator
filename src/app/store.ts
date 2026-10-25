@@ -7,6 +7,7 @@ import type { Model } from '../engine/models'
 import { angleOf, DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, type Pin, type Tonality } from '../generator/choices'
 import { mutateChoices } from '../generator/explore'
 import { generate, type Generated } from '../generator/generate'
+import { distinctName } from '../generator/naming'
 import { rng as makeRng } from '../generator/random'
 import { newSeed } from '../generator/random'
 import { Playback } from '../ui/playback'
@@ -144,6 +145,13 @@ export const useApp = create<State>((set, get) => {
     let history = get().history
     if (record) {
       const s = get()
+      // a name already in this session gets a number: "Airy Pad 2"
+      const name = distinctName(voiceName(voice), [...s.history, ...s.favourites].map((e) => e.name))
+      if (name !== voiceName(voice)) {
+        voice = Uint8Array.from(voice)
+        setVoiceName(voice, name)
+        playback.setVoice(voice)
+      }
       const entry: Entry = {
         id: nextId++, voice, name: voiceName(voice), hue: hueOf(generated),
         made: generated ? { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: wildUsed } : undefined,
@@ -157,7 +165,8 @@ export const useApp = create<State>((set, get) => {
   /** The voice of the current pins and controls; `wild` for this roll only (Variation rolls wilder). */
   const make = (record: boolean, wild = get().wild) => {
     const s = get()
-    const g = generate(choicesOf(s), { seed: s.seed, model: s.model, wild })
+    // naming takes a render of its own: while a control is being dragged the voice keeps its name until let go
+    const g = generate(choicesOf(s), { seed: s.seed, model: s.model, wild, keepName: record ? undefined : voiceName(s.voice) })
     persist()
     show(g.voice, g, record, wild)
   }

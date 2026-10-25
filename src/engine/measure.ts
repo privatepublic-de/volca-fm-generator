@@ -84,8 +84,8 @@ export function spectrum({ samples, sampleRate }: Segment): { magnitudes: Float6
 }
 
 /** Brightness: the spectrum's centre of mass, in Hz. */
-export function centroid(seg: Segment): number {
-  const { magnitudes, binHz } = spectrum(seg)
+export function centroid(seg: Segment, spec = spectrum(seg)): number {
+  const { magnitudes, binHz } = spec
   let sum = 0
   let weighted = 0
   for (let i = 1; i < magnitudes.length; i++) { sum += magnitudes[i]; weighted += magnitudes[i] * i * binHz }
@@ -93,8 +93,8 @@ export function centroid(seg: Segment): number {
 }
 
 /** Noisiness: spectral flatness, 0 (pure tones) … 1 (white noise), over 50 Hz … 12 kHz. */
-export function flatness(seg: Segment): number {
-  const { magnitudes, binHz } = spectrum(seg)
+export function flatness(seg: Segment, spec = spectrum(seg)): number {
+  const { magnitudes, binHz } = spec
   let logSum = 0
   let sum = 0
   let n = 0
