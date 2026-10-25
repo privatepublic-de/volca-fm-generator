@@ -18,7 +18,7 @@ describe('names from the sound', () => {
     expect(named([['tine', 1]], { shape: 'pad' })).toMatch(/Pad$/)
     expect(named([['organ', 1]])).toBe('Organ')
     expect(named([['warm', 1]], { register: 'bass' })).toMatch(/Bass$/)
-    // Init voice: one mild Warm pin, everything down
+    // Init voice: one mild Sine pin, everything down
     expect(named([['warm', 1]], { shape: 'gate', brightness: -1, complexity: 0 }, 1, 0, 0)).toBe('Sine')
     expect(named([['noise', 1]])).toBe('Noise')
   })

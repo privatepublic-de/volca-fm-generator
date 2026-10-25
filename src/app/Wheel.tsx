@@ -29,6 +29,28 @@ export const hueOfAngle = (angle: number) => {
   // between two tonalities: the hue of the larger share (hues don't average well across the red end)
   return TONALITY_HUES[m[0].tonality]
 }
+/** A tonality's colour for text, as bright as the others: blues and violets look darker than yellows at the same
+ *  HSL lightness, so each hue gets the lightness that gives the same luminance. */
+export function rimColour(hue: number): string {
+  const luminance = (l: number) => {
+    // hsl(hue 70% l) to linear RGB, then relative luminance
+    const s = 0.7
+    const k = (n: number) => (n + hue / 30) % 12
+    const a = s * Math.min(l, 1 - l)
+    const [r, g, b] = [0, 8, 4].map((n) => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1)))
+    const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
+  }
+  let lo = 0.4
+  let hi = 0.95
+  for (let i = 0; i < 20; i++) {
+    const mid = (lo + hi) / 2
+    if (luminance(mid) < 0.42) lo = mid
+    else hi = mid
+  }
+  return `hsl(${hue} 70% ${Math.round(lo * 1000) / 10}%)`
+}
+
 /** Mild near the centre, extreme at the rim. */
 export const intensityWord = (radius: number) => (radius < 0.34 ? 'mild' : radius > 0.67 ? 'extreme' : 'typical')
 export const pinLabel = (p: AppPin) => mixOf([{ ...p, weight: 1 }]).map((m) => TONALITY_LABELS[m.tonality]).join(' / ')
@@ -159,6 +181,11 @@ export function Wheel() {
     if (onDial) return place('Turn the ring for weight')
     if (onPin) return place('Drag to move, off the wheel to remove; turn the ring for weight')
     if (dist < CENTRE) return place('New voice')
+    // by the names on the rim: what that tonality sounds like (the names themselves don't take clicks)
+    if (dist > 1.02 && dist < 1.3) {
+      const t = TONALITIES[Math.round(angle / SECTOR) % TONALITIES.length]
+      return place(`${TONALITY_LABELS[t]}: ${TONALITY_HINTS[t]}`)
+    }
     if (dist > 1.02) return setTip(null)
     if (useApp.getState().pins.length >= MAX_PINS) return place('Three pins at most: drag one off to make room')
     place(`Pin ${where()}`)
@@ -265,19 +292,14 @@ export function Wheel() {
           return <line key={t} className="wheel-tick" x1={tick1.x} y1={tick1.y} x2={tick2.x} y2={tick2.y} />
         })}
         {TONALITIES.map((t) => {
+          // upright, quicker to read than along the rim: on the sides they start (or end) just outside it, at the
+          // top and bottom they sit centred a little further out, clear of the rim by their height
           const a = angleOf(t)
-          const { x, y } = polar(a, 1.13)
-          const flip = a > 90 && a < 270
+          const side = Math.sin((a * Math.PI) / 180)
+          const { x, y } = polar(a, 1.06 + 0.05 * Math.abs(Math.cos((a * Math.PI) / 180)))
           return (
-            <text
-              key={t}
-              className="wheel-label"
-              x={x}
-              y={y}
-              transform={`rotate(${flip ? a + 180 : a} ${x} ${y})`}
-              style={{ fill: `hsl(${TONALITY_HUES[t]} 70% 72%)` }}
-            >
-              <title>{TONALITY_HINTS[t]}</title>
+            <text key={t} className="wheel-label" x={x} y={y} textAnchor={side > 0.25 ? 'start' : side < -0.25 ? 'end' : 'middle'}
+              style={{ fill: rimColour(TONALITY_HUES[t]) }}>
               {TONALITY_LABELS[t]}
             </text>
           )

@@ -225,3 +225,11 @@ inharmonicity) over 12 presses:
 - Mutate moves the pins and pushes the controls as before; an instrument without pins always gets a first one.
 - New voice rolls the wheel afresh: one to three pins anywhere, the controls at their defaults (the register stays),
   no instrument. The wheel's centre does the same.
+
+## Tonality names (2026-10-25)
+
+On the wheel and everywhere a tonality is named: Metallic is Metal, Wooden is Wood, and Warm is Sine (round, few
+harmonics: what "warm" stood for, in FM's own word), so all twelve read as nouns, places on a map. The code keeps
+the ids (`metallic`, `wooden`, `warm`). The rim names stand upright, a little larger, each in its hue at the
+lightness that gives the same luminance (blues and violets come out lighter, yellows darker), and pointing near one
+shows what it sounds like.

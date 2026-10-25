@@ -105,7 +105,7 @@ export function makeNoise(v: Voice, op: number, releaseRate = 60) {
 export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
   // three stacks at 1:1, gently modulated, an octave below
   warm: {
-    noun: 'Warm', adjective: 'Warm',
+    noun: 'Sine', adjective: 'Round',
     skeleton: {
       algorithms: [5, 6], shape: 'bowed', feedback: [0, 2], branches: [[5, 6]],
       ops: {

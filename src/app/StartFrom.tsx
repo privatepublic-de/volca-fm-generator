@@ -26,7 +26,7 @@ export function StartFromMenu({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="start-from" ref={ref} role="dialog" aria-label="Start from an instrument">
-      <button className="start-init" title="One mild Warm pin, everything dialled down: a plain sine, held like an organ (I)"
+      <button className="start-init" title="One mild Sine pin, everything dialled down: a plain sine, held like an organ (I)"
         onClick={() => { initVoice(); onClose(); audition() }}>
         Init voice <span>a plain sine, everything dialled down: explore from there</span>
       </button>

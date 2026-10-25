@@ -17,7 +17,7 @@ describe('what a step changed', () => {
 
   it('pins: added, taken off, moved to another tonality, further out, heavier', () => {
     const before = made()
-    expect(describeChange(before, made({ pins: [...before.pins, { id: 2, angle: angleOf('warm'), radius: 0.5, weight: 0.4 }] }))).toBe('Pin: Warm')
+    expect(describeChange(before, made({ pins: [...before.pins, { id: 2, angle: angleOf('warm'), radius: 0.5, weight: 0.4 }] }))).toBe('Pin: Sine')
     expect(describeChange(before, made({ pins: [] }))).toBe('Pin off: Bell')
     expect(describeChange(before, made({ pins: [{ ...before.pins[0], angle: angleOf('glass') }] }))).toBe('Bell → Glass')
     expect(describeChange(before, made({ pins: [{ ...before.pins[0], radius: 0.9 }] }))).toBe('Bell more extreme')

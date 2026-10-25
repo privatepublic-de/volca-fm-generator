@@ -77,7 +77,7 @@ interface State extends Saved {
   /** the same seed again (after a change); `record` puts it in the history */
   regenerate(record?: boolean): void
   generateNew(): void
-  /** back to the start: one mild Warm pin, everything dialled down, a plain held sine */
+  /** back to the start: one mild Sine pin, everything dialled down, a plain held sine */
   initVoice(): void
   /** an instrument as the base, no pins, its own control settings */
   startFrom(id: InstrumentId): void

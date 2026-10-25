@@ -10,8 +10,8 @@ export type Tonality = (typeof TONALITIES)[number]
 export const SECTOR = 360 / TONALITIES.length
 
 export const TONALITY_LABELS: Record<Tonality, string> = {
-  noise: 'Noise', metallic: 'Metallic', bell: 'Bell', glass: 'Glass', tine: 'Tine', wooden: 'Wooden',
-  organ: 'Organ', warm: 'Warm', reed: 'Reed', brass: 'Brass', string: 'String', breath: 'Breath',
+  noise: 'Noise', metallic: 'Metal', bell: 'Bell', glass: 'Glass', tine: 'Tine', wooden: 'Wood',
+  organ: 'Organ', warm: 'Sine', reed: 'Reed', brass: 'Brass', string: 'String', breath: 'Breath',
 }
 export const TONALITY_HINTS: Record<Tonality, string> = {
   noise: 'Noise as the sound: hiss, wind, cymbals, sweeps',

@@ -42,7 +42,7 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
           <h3>The wheel</h3>
           <HelpWheel />
           <dl className="help-wheel-list">
-            <dt>Around the wheel</dt><dd>which tonality: Noise, Metallic, Bell, Glass, Tine, Wooden, Organ, Warm, Reed, Brass, String, Breath. Between two names a pin is a bit of both.</dd>
+            <dt>Around the wheel</dt><dd>which tonality: Noise, Metal, Bell, Glass, Tine, Wood, Organ, Sine, Reed, Brass, String, Breath. Between two names a pin is a bit of both.</dd>
             <dt>Out from the centre</dt><dd>how far it goes: mild near the middle, extreme at the rim.</dd>
             <dt>The ring around a pin</dt><dd>its weight. Turn it, scroll on the pin, or use its slider under the wheel.</dd>
             <dt>The diamond</dt><dd>the instrument you started from. Click it to choose another, drag it off to remove it.</dd>

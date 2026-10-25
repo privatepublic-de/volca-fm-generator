@@ -134,11 +134,10 @@ kbd {
 .wheel-svg.dragging:not(.turning), .wheel-svg.dragging:not(.turning) * { cursor: grabbing; }
 .wheel-tick { stroke: rgb(21 19 31 / 0.55); stroke-width: 0.006; pointer-events: none; }
 .wheel-label {
-  font: 500 0.08px var(--condensed);
-  text-anchor: middle;
+  font: 500 0.092px var(--condensed);
+  letter-spacing: 0.002px;
   dominant-baseline: middle;
   pointer-events: none;
-  opacity: 0.85;
 }
 
 .pin { cursor: grab; outline: none; transition: opacity 0.15s; }
