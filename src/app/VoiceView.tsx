@@ -6,6 +6,7 @@ import { getOp, OP, opBase, VC, voiceName, type Voice } from '../dx7/voice'
 import { TONALITY_HUES, TONALITY_LABELS, type Tonality } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
 import { EgCurve } from './Controls'
+import { instrumentName, INSTRUMENTS } from '../generator/instruments'
 import { useApp } from './store'
 
 interface Node { op: number; x: number; depth: number }
@@ -40,7 +41,7 @@ function layout(alg: Algorithm): Node[] {
 }
 
 /** The mix in words: "Bell, with a Warm layer and a touch of Tine". */
-function describeMix(roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'transform' }[]) {
+function describeMix(roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'transform' }[], base?: string) {
   const names = (as: string) => roles.filter((r) => r.as === as).map((r) => TONALITY_LABELS[r.tonality])
   const list = (words: string[]) => (words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : words[0])
   const layers = names('branch')
@@ -49,7 +50,7 @@ function describeMix(roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 't
     ...(layers.length ? [`a ${list(layers)} layer`] : []),
     ...(touches.length ? [`a touch of ${list(touches)}`] : []),
   ]
-  return `${names('skeleton')[0]}${parts.length ? `, with ${parts.join(' and ')}` : ''}`
+  return `${base ?? names('skeleton')[0]}${parts.length ? `, with ${parts.join(' and ')}` : ''}`
 }
 
 const hueOf = (t: Tonality | undefined) => (t ? TONALITY_HUES[t] : 250)
@@ -121,7 +122,7 @@ export function VoiceView() {
   const made = useApp((s) => [...s.history, ...s.favourites].find((e) => e.id === s.currentId)?.made)
   const alg = algorithmOf(voice[VC.algorithm])
   const opTonality = generated?.opTonality ?? {}
-  const mix = generated && describeMix(generated.roles)
+  const mix = generated && describeMix(generated.roles, generated.instrument ? instrumentName(INSTRUMENTS[generated.instrument]) : undefined)
   return (
     <section className="voice">
       <div className="voice-head">

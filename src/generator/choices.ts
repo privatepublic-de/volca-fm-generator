@@ -1,3 +1,5 @@
+import type { InstrumentId } from './instruments'
+
 // What a style is made of (PLAN §4): pins on the wheel of tonalities, and the controls next to it. Every control
 // has a neutral value, so pins alone make a voice in the tonality's own way.
 
@@ -64,6 +66,8 @@ export interface Pin {
 
 export interface GeneratorChoices {
   pins: Pin[]
+  /** an instrument to start from: the base of the voice in place of the heaviest pin, the pins colour it */
+  instrument: InstrumentId | null
   /** null: the dominant tonality's own */
   shape: Shape | null
   /** −1 short … +1 long */
@@ -83,7 +87,7 @@ export interface GeneratorChoices {
 }
 
 export const DEFAULT_CHOICES: GeneratorChoices = {
-  pins: [], shape: null, length: 0, brightness: 0, complexity: 0.5, motion: 0, register: null, velocity: 0, pitchAccent: false,
+  pins: [], instrument: null, shape: null, length: 0, brightness: 0, complexity: 0.5, motion: 0, register: null, velocity: 0, pitchAccent: false,
 }
 
 /** A tonality in the mix, after the pins are read. */

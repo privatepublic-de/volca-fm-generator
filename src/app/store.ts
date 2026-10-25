@@ -8,6 +8,7 @@ import { angleOf, DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, 
 import { mutateChoices } from '../generator/explore'
 import { generate, type Generated } from '../generator/generate'
 import { distinctName } from '../generator/naming'
+import { instrumentName, INSTRUMENTS, type InstrumentId } from '../generator/instruments'
 import { describeChange } from './changes'
 import { rng as makeRng } from '../generator/random'
 import { newSeed } from '../generator/random'
@@ -73,6 +74,10 @@ interface State extends Saved {
   generateNew(): void
   /** back to the start: one mild Warm pin, everything dialled down, a plain held sine */
   initVoice(): void
+  /** an instrument as the base, no pins, its own control settings */
+  startFrom(id: InstrumentId): void
+  /** back to the wheel alone (the pins stay) */
+  clearInstrument(): void
   variation(): void
   mutateCurrent(): void
   recall(entry: Entry): void
@@ -86,7 +91,7 @@ interface State extends Saved {
 }
 
 let nextId = 1
-const hueOf = (g: Generated | null) => TONALITY_HUES[g?.mix[0]?.tonality ?? 'warm']
+const hueOf = (g: Generated | null) => TONALITY_HUES[g?.roles[0]?.tonality ?? 'warm']
 
 function load(): Saved {
   const fallback: Saved = {
@@ -125,7 +130,7 @@ function saveFavourites(list: Entry[]) {
 }
 
 /** Init voice's controls: everything down, the gate envelope. */
-const { pins: _noPins, ...DEFAULT_CONTROLS } = DEFAULT_CHOICES
+export const { pins: _noPins, ...DEFAULT_CONTROLS } = DEFAULT_CHOICES
 export const INIT_CONTROLS: Controls = { ...DEFAULT_CONTROLS, shape: 'gate', brightness: -1, complexity: 0, motion: 0, length: 0, velocity: 0, pitchAccent: false, register: null }
 
 /** The same sound: every byte but the name (a renamed kept voice is still the voice the wheel made). */
@@ -234,6 +239,20 @@ export const useApp = create<State>((set, get) => {
         selectedPin: null,
       })
       make(true, undefined, 'Init voice')
+    },
+    startFrom(id) {
+      set({
+        pins: [],
+        controls: { ...DEFAULT_CONTROLS, ...INSTRUMENTS[id].controls, instrument: id },
+        wild: 0,
+        seed: newSeed(),
+        selectedPin: null,
+      })
+      make(true, undefined, `Start: ${instrumentName(INSTRUMENTS[id])}`)
+    },
+    clearInstrument() {
+      set({ controls: { ...get().controls, instrument: null } })
+      make(true, undefined, 'Instrument off')
     },
     generateNew() {
       set({ seed: newSeed() })

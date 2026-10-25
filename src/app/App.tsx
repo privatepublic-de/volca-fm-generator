@@ -14,7 +14,7 @@ import { Wheel } from './Wheel'
 export function App() {
   const [storing, setStoring] = useState(false)
   const [audioOn, setAudioOn] = useState(playback.started)
-  const hue = useApp((s) => (s.generated ? TONALITY_HUES[s.generated.mix[0].tonality] : s.history.find((h) => h.id === s.currentId)?.hue ?? 260))
+  const hue = useApp((s) => (s.generated ? TONALITY_HUES[s.generated.roles[0].tonality] : s.history.find((h) => h.id === s.currentId)?.hue ?? 260))
 
   useEffect(() => {
     // the first voice goes into the history like every other (once: React runs this twice in development)

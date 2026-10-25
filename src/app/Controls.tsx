@@ -1,9 +1,11 @@
 // The controls next to the wheel (PLAN §4.3): the pins as a list, the envelope as small drawings, the sliders, and
 // the actions.
 import { useState, type ReactNode } from 'react'
-import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, type Register, type Shape } from '../generator/choices'
+import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, TONALITY_HUES, type Register, type Shape } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
 import { hueOfAngle, intensityWord, pinHint, pinLabel } from './Wheel'
+import { StartFromMenu } from './StartFrom'
+import { instrumentName, INSTRUMENTS } from '../generator/instruments'
 import { audition, playback, sameSound, useApp, type Controls as ControlValues } from './store'
 
 /** A slider that makes the voice again while it moves and plays it when let go. A double-click puts it back to
@@ -129,13 +131,36 @@ const REGISTER_HINTS: Record<Register, string> = {
   lead: 'An octave up', high: 'Two octaves up, tamer at the top',
 }
 
+function BaseChip() {
+  const id = useApp((s) => s.controls.instrument)
+  const clear = useApp((s) => s.clearInstrument)
+  if (!id) return null
+  const inst = INSTRUMENTS[id]
+  return (
+    <div className="base-chip" title={`${inst.hint}. The base of the voice: pins on the wheel colour it.`}>
+      <span className="pin-swatch" style={{ background: `hsl(${TONALITY_HUES[inst.family]} 85% 64%)` }} />
+      <span className="base-name">{instrumentName(inst)}</span>
+      <span className="base-tag">base</span>
+      <button className="pin-remove" aria-label={`Back to the wheel alone, without ${instrumentName(inst)}`} title="Back to the wheel alone" onClick={() => { clear(); audition() }}>×</button>
+    </div>
+  )
+}
+
 export function PinList() {
   const pins = useApp((s) => s.pins)
   const selected = useApp((s) => s.selectedPin)
+  const instrument = useApp((s) => s.controls.instrument)
   const { setWeight, removePin, selectPin, regenerate } = useApp.getState()
   const total = pins.reduce((s, p) => s + p.weight, 0)
-  if (!pins.length) return <p className="pins-empty">Click the wheel to pin a tonality. With none, every new voice picks one.</p>
+  if (!pins.length) return (
+    <div className="pin-area">
+      <BaseChip />
+      <p className="pins-empty">{instrument ? 'Click the wheel to colour it with a tonality.' : 'Click the wheel to pin a tonality. With none, every new voice picks one.'}</p>
+    </div>
+  )
   return (
+    <div className="pin-area">
+    <BaseChip />
     <ul className="pins">
       {pins.map((p) => (
         <li key={p.id} className={selected === p.id ? 'selected' : ''} onClick={() => selectPin(p.id)} title={pinHint(p)}>
@@ -153,6 +178,7 @@ export function PinList() {
         </li>
       ))}
     </ul>
+    </div>
   )
 }
 
@@ -244,7 +270,7 @@ export function Controls() {
 
 /** What each action does, shown below them while one is pointed at or focused. */
 const ACTION_HINTS = {
-  init: 'Init voice: back to the start, one mild Warm pin with everything dialled down: a plain sine, held like an organ. Explore from there.',
+  start: 'Start from: an instrument as the base (piano, guitar, vibes, bass, drums, choir…), or Init voice, a plain sine (I).',
   generate: 'New voice: your pins and controls rolled again: other ratios and levels, and another algorithm where the tonality has a choice.',
   variation: 'Variation: your pins and controls rolled much freer, at least three quarters wild: further from the usual sound.',
   mutate: 'Mutate: the pins wander around the wheel and in or out, the controls get a push, sometimes a pin comes or goes; then a new voice.',
@@ -256,7 +282,7 @@ const ACTION_HINTS = {
 type ActionKey = keyof typeof ACTION_HINTS
 
 export function Actions() {
-  const { initVoice, generateNew, variation, mutateCurrent, keep, unkeep, back, forward } = useApp.getState()
+  const { generateNew, variation, mutateCurrent, keep, unkeep, back, forward } = useApp.getState()
   const at = useApp((s) => s.history.findIndex((h) => h.id === s.currentId))
   const length = useApp((s) => s.history.length)
   const canUndo = at < 0 ? length > 0 : at > 0
@@ -265,6 +291,7 @@ export function Actions() {
   const autoplay = useApp((s) => s.autoplay)
   const setAutoplay = useApp((s) => s.setAutoplay)
   const [hint, setHint] = useState<ActionKey | null>(null)
+  const [choosing, setChoosing] = useState(false)
   const button = (key: ActionKey, label: string, shortcut: string, run: () => void, primary = false, disabled = false) => (
     <button className={primary ? 'primary' : ''} onClick={run} title={shortcut} disabled={disabled}
       onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>
@@ -274,7 +301,8 @@ export function Actions() {
   return (
     <div className="actions-block">
       <div className="actions">
-        {button('init', 'Init voice', 'I', () => { initVoice(); audition() })}
+        <button data-start-toggle aria-expanded={choosing} onClick={() => setChoosing((c) => !c)}
+          onPointerEnter={() => setHint('start')} onFocus={() => setHint('start')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Start from…</button>
         {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, true)}
         {button('variation', 'Variation', 'V', () => { variation(); audition() })}
         {button('mutate', 'Mutate', 'M', () => { mutateCurrent(); audition() })}
@@ -291,7 +319,8 @@ export function Actions() {
           <span title="Plays the note you played last (C4 until you play one) after every change">Play on change</span>
         </label>
       </div>
-      {hint && <p className="action-hint" role="status">{ACTION_HINTS[hint]}</p>}
+      {hint && !choosing && <p className="action-hint" role="status">{ACTION_HINTS[hint]}</p>}
+      {choosing && <StartFromMenu onClose={() => setChoosing(false)} />}
     </div>
   )
 }

@@ -9,6 +9,7 @@ import { algorithmOf } from '../src/dx7/algorithms'
 const rolesOfVoice = (v: Voice) => algorithmOf(v[VC.algorithm])
 import { rng } from '../src/generator/random'
 import { mutateChoices } from '../src/generator/explore'
+import { INSTRUMENT_IDS, INSTRUMENTS } from '../src/generator/instruments'
 
 const SR = 24000
 const play = (v: Voice, holdSeconds = 2, note = 60): Segment => ({ samples: renderNote(v, { sampleRate: SR, holdSeconds, note }), sampleRate: SR })
@@ -279,6 +280,40 @@ describe('going further', () => {
   })
 })
 
+describe('starting from an instrument', () => {
+  it('every instrument: valid, audible, named after itself', () => {
+    for (const id of INSTRUMENT_IDS) {
+      const g = generate({ ...DEFAULT_CHOICES, pins: [], instrument: id }, { seed: 1 })
+      expect(isValidVoice(g.voice), id).toBe(true)
+      expect(g.loudness, id).toBeGreaterThan(TARGET_DB - 9)
+      expect(peak(play(g.voice, 1.5)), id).toBeLessThan(1)
+      expect(g.instrument, id).toBe(id)
+      expect(voiceName(g.voice).trim(), id).toBe(INSTRUMENTS[id].label)
+      expect(g.roles.length, id).toBeGreaterThan(0)
+    }
+  })
+
+  it('struck and plucked instruments die away, bowed and blown ones hold', () => {
+    for (const id of INSTRUMENT_IDS) {
+      const { group } = INSTRUMENTS[id]
+      const g = generate({ ...DEFAULT_CHOICES, pins: [], instrument: id }, { seed: 2 })
+      const s = play(g.voice, 3)
+      const early = slice(s, 0.1, 0.3)
+      const late = slice(s, 2.6, 2.9)
+      const ratio = Math.sqrt(late.samples.reduce((a, x) => a + x * x, 0) / late.samples.length)
+        / Math.sqrt(early.samples.reduce((a, x) => a + x * x, 0) / early.samples.length)
+      if (group === 'percussion' || group === 'plucked') expect(ratio, id).toBeLessThan(0.5)
+      if (group === 'winds' || group === 'voices') expect(ratio, id).toBeGreaterThan(0.3)
+    }
+  })
+
+  it('a pin colours the instrument and keeps its name as the noun', () => {
+    const g = generate({ ...DEFAULT_CHOICES, pins: [{ angle: angleOf('glass'), radius: 0.6, weight: 0.6 }], instrument: 'harpsichord' }, { seed: 3 })
+    expect(voiceName(g.voice)).toMatch(/Harpsi/)
+    expect(g.mix.some((m) => m.tonality === 'glass')).toBe(true)
+  })
+})
+
 describe('anything goes', () => {
   it('random choices: valid, audible, not too loud, quick', () => {
     const r = rng(2026)
@@ -289,6 +324,7 @@ describe('anything goes', () => {
         shape: r.chance(0.5) ? r.pick(SHAPES) : null,
         length: r.range(-1, 1), brightness: r.range(-1, 1), complexity: r.next(), motion: r.next(),
         register: r.chance(0.5) ? r.pick(REGISTERS) : null, velocity: r.next(), pitchAccent: r.chance(0.3),
+        instrument: r.chance(0.3) ? r.pick(INSTRUMENT_IDS) : null,
       }
       const g = generate(c, { seed: i, wild: r.next() })
       const what = `${i}: ${JSON.stringify(c)}`

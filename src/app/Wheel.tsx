@@ -48,7 +48,7 @@ export function Wheel() {
 
   const maxWeight = Math.max(0.0001, ...pins.map((p) => p.weight))
   const totalWeight = pins.reduce((s, p) => s + p.weight, 0)
-  const dominantHue = generated ? TONALITY_HUES[generated.mix[0].tonality] : pins.length ? hueOfAngle(pins[0].angle) : 260
+  const dominantHue = generated ? TONALITY_HUES[generated.roles[0].tonality] : pins.length ? hueOfAngle(pins[0].angle) : 260
 
   /** Where a pointer is, in wheel units (the rim is 1). */
   const at = (e: { clientX: number; clientY: number }) => {

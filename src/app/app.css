@@ -147,7 +147,19 @@ kbd {
 .wheel-name { font: 600 0.074px var(--condensed); fill: var(--text); text-anchor: middle; dominant-baseline: middle; }
 .wheel-hint { font: 400 0.042px var(--sans); fill: var(--muted); text-anchor: middle; }
 
-.pins { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 0; align-content: start; }
+.pin-area { margin-top: 10px; }
+.base-chip {
+  display: grid;
+  grid-template-columns: 12px auto auto 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 8px;
+  height: 30px;
+}
+.base-name { font-weight: 600; }
+.base-tag { font-size: 12px; color: var(--dim); }
+.base-chip .pin-remove { grid-column: 5; }
+.pins { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; align-content: start; }
 /* room for three pins always, so adding or removing one doesn't move what's below */
 .pins, .pins-empty { min-height: 90px; }
 .pins li { height: 30px; }
@@ -161,7 +173,7 @@ kbd {
   cursor: pointer;
 }
 .pins li.selected { background: var(--panel); }
-.pins-empty { margin-top: 10px; }
+.pins-empty { margin-top: 0; }
 .pins li.pins-more, .pins-empty { display: block; color: var(--dim); font-size: 13px; cursor: default; padding: 6px 8px; }
 .pin-swatch { width: 12px; height: 12px; border-radius: 50%; }
 .pin-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
@@ -275,6 +287,30 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .actions .kept { border-color: transparent; color: var(--accent); background: none; }
 .actions .kept::before { content: '✓ '; }
 .actions-block { position: relative; }
+/* the instruments to start from: above the action row, over the controls */
+.start-from {
+  position: absolute;
+  z-index: 6;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 16px;
+  padding: 14px 16px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.45);
+}
+.start-from .start-init { grid-column: 1 / -1; display: flex; gap: 12px; align-items: baseline; }
+.start-from .start-init span { font: 400 13px var(--sans); color: var(--muted); }
+.start-from section { display: grid; gap: 2px; align-content: start; }
+.start-from h4 { margin: 0 0 4px; font: 500 13px var(--sans); color: var(--muted); }
+.start-from button { text-align: left; background: none; border-color: transparent; padding: 3px 8px; font: 500 15px var(--condensed); }
+.start-from button:hover { background: hsl(var(--h) 50% 40% / 0.25); border-color: transparent; }
+.start-from button.on { color: hsl(var(--h) 80% 75%); background: hsl(var(--h) 50% 40% / 0.25); }
+@media (max-width: 640px) { .start-from { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .action-hint {
   position: absolute;
   z-index: 3;

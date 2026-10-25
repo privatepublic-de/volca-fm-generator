@@ -1,6 +1,7 @@
 // What a step in the session changed, in a few words: "Mutate", "Brightness ↑", "Envelope: Pad", "Pin: Bell". The
 // recent-changes list names steps by this rather than by the voice's name (many voices are a "Lead").
 import { mixOf, REGISTER_LABELS, SHAPE_LABELS, TONALITY_LABELS, type Pin } from '../generator/choices'
+import { instrumentName, INSTRUMENTS } from '../generator/instruments'
 import type { AppPin, Controls } from './store'
 
 export interface Made {
@@ -32,6 +33,7 @@ export function describeChange(before: Made | undefined, after: Made): string {
   for (const old of before.pins) if (!after.pins.some((p) => p.id === old.id)) parts.push(`Pin off: ${pinName(old)}`)
   const a = after.controls
   const b = before.controls
+  if (a.instrument !== b.instrument) parts.push(a.instrument ? `Start: ${instrumentName(INSTRUMENTS[a.instrument])}` : 'Instrument off')
   if (a.shape !== b.shape) parts.push(`Envelope: ${a.shape ? SHAPE_LABELS[a.shape] : 'own'}`)
   for (const [key, label] of SLIDERS) {
     const x = a[key] as number

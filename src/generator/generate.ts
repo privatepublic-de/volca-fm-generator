@@ -7,10 +7,11 @@ import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
 import { applyBrightness, applyComplexity, applyMotion, applyRegister, applyVelocity } from './controls'
 import { normalizeLoudness, SILENT_DB } from './loudness'
-import { nameVoice } from './naming'
+import { nameVoice, nameWithNoun } from './naming'
 import { rng as makeRng, type Rng } from './random'
-import { applyLength, applyPitchBlip, applyShape, clamp99, makeTransient, rolesOf } from './shapes'
-import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseDb, noiseHostOp, noiseOps, noiseSource as noiseSourceOp, TONALITY_DEFS, useNoiseHost, within } from './tonalities'
+import { applyLength, applyPitchBlip, applyShape, clamp99, makeTransient, rolesOf, setEg, type Eg } from './shapes'
+import { INSTRUMENTS, type Instrument, type InstrumentId } from './instruments'
+import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseDb, noiseHostOp, noiseOps, noiseSource as noiseSourceOp, TONALITY_DEFS, useNoiseHost, within, type Skeleton } from './tonalities'
 
 export interface GenerateOptions {
   seed: number
@@ -31,6 +32,8 @@ export interface Generated {
   loudness: number
   /** which tonality each sounding operator belongs to (1–6), for drawing */
   opTonality: Partial<Record<number, Tonality>>
+  /** the instrument it was started from, if any (the base in place of the heaviest pin) */
+  instrument: InstrumentId | null
 }
 
 /** How far a voice strays from its template at wild 0 and 1. */
@@ -42,28 +45,33 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, k
   const rng = makeRng(seed)
   const spread = spreadOf(wild)
   const mix = mixOf(c.pins)
-  // no pins: a tonality picked by the seed
-  if (!mix.length) mix.push({ tonality: rng.pick(Object.keys(TONALITY_DEFS) as Tonality[]), weight: 1, intensity: 0.5 })
-  const [dominant, ...rest] = mix
-  const def = TONALITY_DEFS[dominant.tonality]
+  const inst = c.instrument ? INSTRUMENTS[c.instrument] : null
+  // the base: an instrument (then every pin is a colour on it), else the heaviest pin, else a tonality picked by the
+  // seed
+  if (!inst && !mix.length) mix.push({ tonality: rng.pick(Object.keys(TONALITY_DEFS) as Tonality[]), weight: 1, intensity: 0.5 })
+  const [dominant, ...rest] = inst ? [{ tonality: inst.family, weight: 1, intensity: 0.5 }, ...mix] : mix
+  const skeleton: Skeleton = inst ? inst.skeleton : TONALITY_DEFS[dominant.tonality].skeleton
   const roles: Generated['roles'] = [{ tonality: dominant.tonality, as: 'skeleton' }]
   const opTonality: Generated['opTonality'] = {}
 
   // 1. the skeleton; intensity moves it from mild to extreme like brightness does
-  const v = buildSkeleton(dominant.tonality, rng, spread)
-  const shape = c.shape ?? def.skeleton.shape
-  applyShape(v, shape, rng, spread)
-  for (const op of fastOps(def.skeleton.ops)) makeTransient(v, op)
-  for (const op of noiseOps(def.skeleton.ops)) makeNoise(v, op, carrierRelease(v))
+  const v = buildSkeleton(skeleton, rng, spread)
+  const shape = c.shape ?? skeleton.shape
+  if (inst?.eg && !c.shape) applyEgs(v, inst.eg, rng, spread)
+  else applyShape(v, shape, rng, spread)
+  for (const op of fastOps(skeleton.ops)) makeTransient(v, op)
+  for (const op of noiseOps(skeleton.ops)) makeNoise(v, op, carrierRelease(v))
   // a tonality's own pitch fall comes now and then, more often the wilder (the Pitch accent switch: always)
-  if (def.skeleton.pitchBlip && rng.chance(0.25 + 0.5 * Math.max(0, Math.min(1, wild)))) applyPitchBlip(v, def.skeleton.pitchBlip)
+  if (skeleton.pitchBlip && rng.chance(0.25 + 0.5 * Math.max(0, Math.min(1, wild)))) applyPitchBlip(v, skeleton.pitchBlip)
+  if (inst) applyInstrument(v, inst)
 
   // 2. the other tonalities: a free branch while there is one, else a transform. Each tonality's own operators are
   // noted (the skeleton's, a branch's two, the ones a transform changed), so pure can keep a pair of each
   const owned: number[][] = [[1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0)]
-  const freeBranches = [...(def.skeleton.branches ?? [])]
+  const freeBranches = [...(skeleton.branches ?? [])]
   for (const part of rest) {
-    const share = part.weight / dominant.weight
+    // on an instrument a pin's weight is its share outright (an instrument has no weight of its own)
+    const share = inst ? Math.min(1, part.weight) : part.weight / dominant.weight
     // a noise branch needs the pair whose modulator can be the noise source
     const fits = (br: readonly [number, number]) => !TONALITY_DEFS[part.tonality].branch.modulator.noise || br[1] === noiseHostOp(v)
     const free = freeBranches.findIndex(fits)
@@ -99,9 +107,10 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, k
   let db = normalizeLoudness(v)
   if (db < SILENT_DB) { rescue(v); db = normalizeLoudness(v) }
   // named by how it sounds, not by its pins (docs/SOUND.md)
-  setVoiceName(v, keepName ?? nameVoice(v))
+  // an instrument names its voices; coloured by pins, with the sound's most striking trait in front
+  setVoiceName(v, keepName ?? (inst ? (c.pins.length ? nameWithNoun(v, inst.label) : inst.label) : nameVoice(v)))
   for (let op = 1; op <= 6; op++) if (getOp(v, op, 'outputLevel') > 0) opTonality[op] ??= dominant.tonality
-  return { voice: v, mix, roles, loudness: db, opTonality }
+  return { voice: v, mix, roles, loudness: db, opTonality, instrument: c.instrument ?? null }
 }
 
 /** The top half of Wild leaves the textbook: modulators at unusual ratios (whole, odd and inharmonic), other feedback,
@@ -123,8 +132,7 @@ function goWild(v: Voice, wild: number, rng: Rng) {
 }
 
 /** The dominant tonality's operators, algorithm, feedback and vibrato on top of INIT VOICE. */
-function buildSkeleton(t: Tonality, rng: Rng, spread: number): Voice {
-  const s = TONALITY_DEFS[t].skeleton
+function buildSkeleton(s: Skeleton, rng: Rng, spread: number): Voice {
   const v = initVoice()
   setVc(v, 'algorithm', choose(s.algorithms, rng, spread) - 1)
   for (let op = 1; op <= 6; op++) {
@@ -142,6 +150,42 @@ function buildSkeleton(t: Tonality, rng: Rng, spread: number): Voice {
     setVc(v, 'lfoPitchDepth', 0)
   }
   return v
+}
+
+/** An instrument's own envelopes, by role, the rates a little apart. In place. */
+function applyEgs(v: Voice, egs: NonNullable<Instrument['eg']>, rng: Rng, spread: number) {
+  const { carriers } = rolesOf(v)
+  for (let op = 1; op <= 6; op++) {
+    const e = carriers.includes(op) ? egs.carrier : egs.modulator
+    setEg(v, op, { rates: e.rates.map((r) => (r === 99 ? r : r + Math.round((rng.next() - 0.5) * 4 * spread))) as unknown as Eg['rates'], levels: e.levels })
+  }
+}
+
+/** What an instrument needs beyond its skeleton: register, keyboard scaling, tremolo, a drum's pitch drop, an
+ *  accent. In place. */
+function applyInstrument(v: Voice, inst: Instrument) {
+  if (inst.transpose) setVc(v, 'transpose', 24 + inst.transpose)
+  const { carriers, modulators } = rolesOf(v)
+  if (inst.rateScaling) for (let op = 1; op <= 6; op++) setOp(v, op, 'rateScaling', inst.rateScaling)
+  if (inst.treble) for (const op of modulators) {
+    // right of C3: −lin (darker up the keys) or +lin (brighter)
+    setOp(v, op, 'breakPoint', 39)
+    setOp(v, op, 'rightDepth', Math.round(Math.abs(inst.treble) * 60))
+    setOp(v, op, 'rightCurve', inst.treble < 0 ? 0 : 3)
+  }
+  if (inst.tremolo) {
+    setVc(v, 'lfoSpeed', inst.tremolo[0])
+    setVc(v, 'lfoAmpDepth', inst.tremolo[1])
+    setVc(v, 'lfoWave', 0)
+    setVc(v, 'lfoDelay', 0)
+    for (const op of carriers) setOp(v, op, 'ampModSens', 1)
+  }
+  if (inst.pitchDrop) {
+    // the pitch jumps up at once and falls to the note; it starts and ends on the note, so a release doesn't glide
+    const [level, rate] = inst.pitchDrop
+    v.set([99, rate, 99, 99, level, 50, 50, 50], VC.pitchRate1)
+  }
+  if (inst.accent) applyPitchBlip(v, inst.accent)
 }
 
 /** A secondary tonality as a second voice in the dominant's free operators, as loud as its share (−6 dB at half). */

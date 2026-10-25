@@ -188,6 +188,14 @@ export function nameOfSound(t: SoundTraits): string {
 
 export const nameVoice = (v: Voice) => nameOfSound(soundTraits(v))
 
+/** `noun` (an instrument's name) with the sound's most striking trait in front, if both fit 10 characters. */
+export function nameWithNoun(v: Voice, noun: string): string {
+  const adjective = adjectiveOf(soundTraits(v), noun)
+  if (!adjective) return noun
+  for (const a of adjective) if (`${a} ${noun}`.length <= 10) return `${a} ${noun}`
+  return noun
+}
+
 /** `name` made distinct from `taken` by a number: "Airy Pad 2" (the short form, or the noun alone, to fit 10). */
 export function distinctName(name: string, taken: readonly string[]): string {
   if (!taken.includes(name)) return name

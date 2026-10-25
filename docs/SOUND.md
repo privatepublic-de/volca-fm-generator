@@ -110,3 +110,22 @@ Hollow or Reedy (odd harmonics, the even ones under 12 %), Bright or Shiny (cent
 1.15×), Drift (a slow pitch envelope), Wide (carriers detuned 10 steps or more apart). A bell isn't called metal,
 noise isn't called noisy. A name already in the session gets a number ("Airy Pad 2", or "Keys 2" when the whole
 name and a number don't fit). Naming costs about 30 ms, so it is skipped while a control is dragged.
+
+## Instruments (2026-10-25)
+
+"Start from…" offers the sounds FM was first sold on, as bases for the wheel: 35 recipes in
+`src/generator/instruments.ts`, in eight groups (keys, plucked, mallets, bass, winds, strings, percussion, voices),
+plus the plain-sine Init voice. A recipe is a skeleton like a tonality's (algorithms, ratios, levels, feedback) with
+its own envelopes and a few touches: transpose, keyboard rate scaling, treble (level scaling), tremolo, a pitch drop
+(drums: the pitch jumps up and falls to the note, starting and ending on it so a release doesn't glide) or a pitch
+accent. Its family (a tonality) gives the colour.
+
+With an instrument chosen it is the voice's base at full weight; pins colour it by their own weight (a light pin as a
+transform, a heavy one as a branch in the free operators). The name is the instrument's (10 characters), with the
+sound's adjective in front when a pin is set and it fits. × on the base chip goes back to the wheel alone.
+
+`tools/instruments.ts` prints each instrument's traits: attack, decay to −20 dB, brightness early → body, noise,
+periodicity, pitch early → body, loudness. All within 2 dB of the target; struck and plucked ones decay within
+0.1–2.5 s, winds, strings and voices hold. (The early pitch reads wrong on the basses: 35 ms is too short for 65 Hz.)
+To tune by ear: piano and e-piano hammer brightness, the harpsichord's buzz, the basses' attack click, snare and
+hi-hat noise against the tone, the choir's vowel.
