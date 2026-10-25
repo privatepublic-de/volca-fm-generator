@@ -70,9 +70,10 @@ const setLevel = (v: Voice, op: number, l: number) => setOp(v, op, 'outputLevel'
 const activeModulators = (v: Voice) => rolesOf(v).modulators.filter((op) => level(v, op) > 0 && op !== noiseSource(v))
 const activeCarriers = (v: Voice) => rolesOf(v).carriers.filter((op) => level(v, op) > 0)
 const feedbackOp = (v: Voice) => rolesOf(v).algorithm.feedback.to
+/** An operator's ratio times `factor`; high partials (above 8:1, a glass or tine sparkle) stay where they are. */
 const scaleRatio = (v: Voice, op: number, factor: number) => {
   const r = opRatio(v, op)
-  if (r !== null) setRatio(v, op, r * factor)
+  if (r !== null && r <= 8) setRatio(v, op, r * factor)
 }
 /** Slower (positive) or faster rates on one operator's envelope. */
 const slower = (v: Voice, op: number, by: number, stages: readonly number[] = [0, 1, 2, 3]) => {

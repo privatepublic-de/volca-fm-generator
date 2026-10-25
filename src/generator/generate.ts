@@ -54,20 +54,25 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   // a tonality's own pitch fall comes now and then, more often the wilder (the Pitch accent switch: always)
   if (def.skeleton.pitchBlip && rng.chance(0.25 + 0.5 * Math.max(0, Math.min(1, wild)))) applyPitchBlip(v, def.skeleton.pitchBlip)
 
-  // 2. the other tonalities: a free branch while there is one (and complexity allows), else a transform
+  // 2. the other tonalities: a free branch while there is one, else a transform. Each tonality's own operators are
+  // noted (the skeleton's, a branch's two, the ones a transform changed), so pure can keep a pair of each
+  const owned: number[][] = [[1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0)]
   const freeBranches = [...(def.skeleton.branches ?? [])]
   for (const part of rest) {
     const share = part.weight / dominant.weight
     // a noise branch needs the pair whose modulator can be the noise source
     const fits = (br: readonly [number, number]) => !TONALITY_DEFS[part.tonality].branch.modulator.noise || br[1] === noiseHostOp(v)
     const free = freeBranches.findIndex(fits)
-    if (share >= BRANCH_SHARE && c.complexity >= 0.35 && free >= 0) {
+    if (share >= BRANCH_SHARE && free >= 0) {
       const [branch] = freeBranches.splice(free, 1)
       fillBranch(v, branch, part, share, shape, rng, spread)
       for (const op of branch) opTonality[op] = part.tonality
+      owned.push([...branch])
       roles.push({ tonality: part.tonality, as: 'branch' })
     } else {
+      const before = Uint8Array.from(v)
       TONALITY_DEFS[part.tonality].transform(v, Math.min(1, share * (0.4 + 0.6 * part.intensity)), rng)
+      owned.push([1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0 && v.subarray(opBase(op), opBase(op) + 21).some((b, i) => b !== before[opBase(op) + i])))
       roles.push({ tonality: part.tonality, as: 'transform' })
     }
   }
@@ -75,7 +80,8 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   // 3. the controls
   applyLength(v, c.length)
   applyBrightness(v, Math.max(-1, Math.min(1, c.brightness + (dominant.intensity - 0.5) * 0.6)))
-  applyComplexity(v, c.complexity, rng)
+  // a pair per pin (a pin between two tonalities is one pin), the heaviest tonalities first
+  applyComplexity(v, c.complexity, rng, owned.slice(0, Math.max(1, c.pins.length)))
   applyMotion(v, c.motion, rng)
   applyRegister(v, c.register)
   if (MODELS[model].fixedVelocity === null) applyVelocity(v, c.velocity)

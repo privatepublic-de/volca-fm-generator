@@ -29,10 +29,10 @@ export function applyBrightness(v: Voice, b: number) {
 /** How many operators sound for complexity 0 … 1 (½ keeps the tonality's own). */
 export const targetOperators = (complexity: number) => Math.round(2 + 4 * complexity)
 
-/** Pure (0) … dense (1). Below ½ operators fall silent, the least important first (pure keeps one carrier and its
- *  modulator); above, silent operators come in as extra carriers and gentle modulators at whole ratios, and the
- *  stacks get a little deeper. */
-export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
+/** Pure (0) … dense (1). Below ½ operators fall silent, the least important first, but each pinned tonality keeps an
+ *  FM pair of its own (`owned`: per tonality, the operators it made or changed); above, silent operators come in as
+ *  extra carriers and gentle modulators at whole ratios, and the stacks get a little deeper. */
+export function applyComplexity(v: Voice, complexity: number, rng: Rng, owned: readonly (readonly number[])[] = []) {
   if (complexity === 0.5) return
   const { carriers, algorithm } = rolesOf(v)
   const sounding = () => [1, 2, 3, 4, 5, 6].filter((op) => level(v, op) > 0)
@@ -43,9 +43,8 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
   const kept = noise === null ? [] : [noise, ...carriers.filter((c) => algorithm.modulators[c].includes(noise))]
   const own = () => sounding().filter((op) => !kept.includes(op))
   if (complexity < 0.5) {
-    // keep by importance: the loudest carrier, then what modulates it (deepest first, down its stack), then the next
-    // carrier and its stack. So pure is one FM pair, a carrier and the modulator that gives it its timbre, never two
-    // bare sines (brightness works through the modulators)
+    // importance: the loudest carrier, then what modulates it (deepest first, down its stack), then the next carrier
+    // and its stack
     const order: number[] = []
     const visit = (op: number) => {
       if (order.includes(op) || kept.includes(op) || level(v, op) === 0) return
@@ -53,7 +52,21 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
       for (const m of [...algorithm.modulators[op]].sort((x, y) => level(v, y) - level(v, x))) visit(m)
     }
     for (const c of [...carriers].sort((x, y) => level(v, y) - level(v, x))) visit(c)
-    for (const op of order.slice(Math.max(1, target))) setLevel(v, op, 0)
+    // every pinned tonality keeps one FM pair of its own operators, so a pure mix is still the mix: its most
+    // important operator, with the strongest modulator it has (a carrier) or the operator it modulates (a modulator)
+    const keep = new Set<number>()
+    for (const group of owned) {
+      const top = order.find((op) => group.includes(op))
+      if (top === undefined) continue
+      keep.add(top)
+      const partner = carriers.includes(top)
+        ? order.find((m) => algorithm.modulators[top].includes(m))
+        : order.find((t) => algorithm.modulators[t].includes(top))
+      if (partner !== undefined) keep.add(partner)
+    }
+    // then by importance up to the count (pure: one pair, when nothing else asked for more)
+    for (const op of order) if (keep.size < Math.max(2, target)) keep.add(op)
+    for (const op of order) if (!keep.has(op)) setLevel(v, op, 0)
     return
   }
   const depth = (complexity - 0.5) * 2

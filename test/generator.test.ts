@@ -17,6 +17,7 @@ const only = (t: Tonality, more: Partial<GeneratorChoices> = {}): GeneratorChoic
 const avg = (c: GeneratorChoices, m: (s: Segment, v: Voice) => number, seeds = [1, 2, 3]) =>
   seeds.reduce((sum, seed) => { const v = generate(c, { seed }).voice; return sum + m(play(v), v) }, 0) / seeds.length
 const bright = (s: Segment) => centroid(slice(s, 0.3, 0.8))
+const sounding1 = (v: Voice) => [1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0).length
 const sounding = (v: Voice) => [1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0).length
 
 describe('pins', () => {
@@ -173,6 +174,28 @@ describe('controls', () => {
     // the case that showed it: tine, string, glass and bell, pad, bright, pure
     const c = { ...DEFAULT_CHOICES, shape: 'pad' as const, brightness: 1, complexity: 0, pins: [pin('tine', 0.45, 1), pin('string', 0.41, 1), { angle: angleOf('glass') - 10, radius: 1, weight: 0.14 }] }
     expect(avg(c, (s) => centroid(slice(s, 1, 1.5)))).toBeGreaterThan(261.6 * 1.5)
+  })
+
+  it('a pure mix keeps a pair of each pinned tonality', () => {
+    const c = { ...DEFAULT_CHOICES, complexity: 0, pins: [pin('tine', 0.45), pin('string', 0.41), pin('bell', 0.14)] }
+    for (const seed of [1, 2, 3]) {
+      const g = generate(c, { seed })
+      const v = g.voice
+      const sounding = [1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0)
+      expect(g.roles.map((r) => r.as)).toEqual(['skeleton', 'branch', 'transform'])
+      // the string branch (OP5 with OP6) sounds next to the tine's own pair
+      expect(sounding, `seed ${seed}`).toEqual(expect.arrayContaining([5, 6]))
+      expect(sounding.filter((op) => g.opTonality[op] === 'tine').length, `seed ${seed}`).toBeGreaterThanOrEqual(2)
+      expect(sounding.length).toBeLessThanOrEqual(5)
+    }
+    // a pin between two tonalities is one pin: three pins, at most three pairs
+    const split = generate({ ...DEFAULT_CHOICES, complexity: 0, pins: [pin('tine', 0.45), pin('string', 0.41), { angle: angleOf('glass') - 15, radius: 1, weight: 0.14 }] }, { seed: 1 })
+    expect(split.roles).toHaveLength(4)
+    expect([1, 2, 3, 4, 5, 6].filter((op) => getOp(split.voice, op, 'outputLevel') > 0).length).toBeLessThanOrEqual(6)
+    // and no runaway ratios from colours stacking (glass's 14:1 times bell's 2.78)
+    for (let op = 1; op <= 6; op++) if (!getOp(split.voice, op, 'oscMode')) expect(getOp(split.voice, op, 'coarse')).toBeLessThanOrEqual(16)
+    // one pin: still one pair
+    expect(sounding1(generate(only('tine', { complexity: 0 }), { seed: 1 }).voice)).toBe(2)
   })
 
   it('shape and length', () => {
