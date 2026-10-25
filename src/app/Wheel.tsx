@@ -1,8 +1,9 @@
-// The wheel (PLAN §6.1): the twelve tonalities as a colour field, pins on it. Click the field to pin, drag a pin to
+// The wheel (PLAN §6.1): the twelve tonalities as a colour field, pins on it. The names on the rim are labels only (a
+// click near them shouldn't pin anything: the bottom one sits right above the pin sliders). Click the field to pin, drag a pin to
 // move it (towards the rim: more extreme), drag it off the wheel to take it away, scroll on it for its weight.
 // The centre makes a new voice. Pins can be moved with the keyboard too.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
-import { SECTOR, TONALITIES, TONALITY_HINTS, TONALITY_HUES, TONALITY_LABELS, angleOf, mixOf, type Tonality } from '../generator/choices'
+import { SECTOR, TONALITIES, TONALITY_HINTS, TONALITY_HUES, TONALITY_LABELS, angleOf, mixOf } from '../generator/choices'
 import { voiceName } from '../dx7/voice'
 import { audition, useApp, type AppPin } from './store'
 
@@ -144,13 +145,6 @@ export function Wheel() {
     if (e.key.startsWith('Arrow') || ['+', '=', '-'].includes(e.key)) { regenerate(true); audition() }
   }
 
-  /** A tonality's name on the rim: pins it at its centre, or selects the pin already there. */
-  const pinTonality = (t: Tonality) => {
-    const there = pins.find((p) => mixOf([p]).length === 1 && mixOf([p])[0].tonality === t)
-    if (there) { selectPin(there.id); return }
-    if (addPin(angleOf(t), 0.5) !== null) { regenerate(true); audition() }
-  }
-
   // the glow: each pin lights the field around it in its colour, as strong as its weight
   const glow = pins.map((p) => {
     const { x, y } = polar(p.angle, toRadius(p.radius))
@@ -193,7 +187,6 @@ export function Wheel() {
               x={x}
               y={y}
               transform={`rotate(${flip ? a + 180 : a} ${x} ${y})`}
-              onClick={() => pinTonality(t)}
               style={{ fill: `hsl(${TONALITY_HUES[t]} 70% 72%)` }}
             >
               <title>{TONALITY_HINTS[t]}</title>

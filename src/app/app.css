@@ -109,10 +109,9 @@ kbd {
   font: 500 0.072px var(--condensed);
   text-anchor: middle;
   dominant-baseline: middle;
-  cursor: pointer;
+  pointer-events: none;
   opacity: 0.85;
 }
-.wheel-label:hover { opacity: 1; text-decoration: underline; }
 
 .pin { cursor: grab; outline: none; transition: opacity 0.15s; }
 .pin-dot { stroke: var(--ink); stroke-width: 0.014; }
@@ -128,7 +127,7 @@ kbd {
 .wheel-name { font: 600 0.074px var(--condensed); fill: var(--text); text-anchor: middle; dominant-baseline: middle; }
 .wheel-hint { font: 400 0.042px var(--sans); fill: var(--muted); text-anchor: middle; }
 
-.pins { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; }
+.pins { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 4px; }
 .pins li {
   display: grid;
   grid-template-columns: 12px minmax(5em, 1fr) 4.5em minmax(80px, 1.4fr) 3em 28px;
@@ -139,6 +138,7 @@ kbd {
   cursor: pointer;
 }
 .pins li.selected { background: var(--panel); }
+.pins-empty { margin-top: 16px; }
 .pins li.pins-more, .pins-empty { display: block; color: var(--dim); font-size: 13px; cursor: default; padding: 6px 8px; }
 .pin-swatch { width: 12px; height: 12px; border-radius: 50%; }
 .pin-name { font-weight: 500; }
