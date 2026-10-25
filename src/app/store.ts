@@ -220,7 +220,9 @@ export const useApp = create<State>((set, get) => {
       // the entry's own bytes (a mutation can't be made again from pins), with the generator's view when it has one
       const g = entry.made ? generate(choicesOf(get()), { seed: get().seed, model: get().model, wild: get().wild }) : null
       playback.setVoice(entry.voice)
-      set({ voice: entry.voice, generated: g && voiceName(g.voice) === entry.name ? g : null, currentId: entry.id })
+      // the generator's view only if it makes exactly these bytes (another model, or a mutation, doesn't)
+      const same = g !== null && g.voice.every((b, i) => b === entry.voice[i])
+      set({ voice: entry.voice, generated: same ? g : null, currentId: entry.id })
     },
     keep() {
       const s = get()

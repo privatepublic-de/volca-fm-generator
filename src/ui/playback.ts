@@ -100,6 +100,8 @@ export class Playback {
       const fill = () => {
         this.output = findOutput(this.access!, this.settings.port)
         this.volcaHasVoice = false
+        // the volca gets the voice on stage as soon as it can
+        if (this.voice && this.toVolca()) this.sendToVolca()
         this.onPorts()
       }
       this.access.onstatechange = fill
