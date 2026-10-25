@@ -77,3 +77,10 @@ export function applyLength(v: Voice, length: number) {
     for (let i = 0; i < 4; i++) if (v[b + OP.rate1 + i] < 99) v[b + OP.rate1 + i] = clamp99(v[b + OP.rate1 + i] - 12 * length)
   }
 }
+
+/** A short pitch fall (from above) or scoop (from below) into each note: about 2 semitones off, back on the note in
+ *  ~50 ms. The envelope starts and ends on the note (L4 = 50, the first stage jumps off it in ~13 ms): the DX7
+ *  returns to L4 when the key is released, so an L4 off the note would glide there on every release. In place. */
+export function applyPitchBlip(v: Voice, from: 'above' | 'below' = 'above') {
+  v.set([99, 75, 99, 99, from === 'above' ? 55 : 45, 50, 50, 50], VC.pitchRate1)
+}

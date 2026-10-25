@@ -155,6 +155,23 @@ describe('controls', () => {
   })
 })
 
+describe('pitch', () => {
+  it('a pitch accent falls into the note and leaves the release alone', () => {
+    const v = generate(only('warm', { pitchAccent: true }), { seed: 1 }).voice
+    const s = { samples: renderNote(v, { sampleRate: SR, holdSeconds: 1, releaseSeconds: 0.5 }), sampleRate: SR }
+    expect(pitch(slice(s, 0.005, 0.03))).toBeGreaterThan(261.6 * 1.04)
+    expect(pitch(slice(s, 0.4, 0.9))).toBeCloseTo(261.6, 0)
+    expect(pitch(slice(s, 1.02, 1.12))).toBeCloseTo(261.6, 0)
+  })
+
+  it('brass and wood fall into the note only now and then, more often when wild', () => {
+    const blips = (wild: number) => [...Array(40).keys()].filter((seed) => generate(only('brass'), { seed, wild }).voice[VC.pitchLevel1] !== 50).length
+    expect(blips(0)).toBeGreaterThan(2)
+    expect(blips(0)).toBeLessThan(20)
+    expect(blips(1)).toBeGreaterThan(blips(0))
+  })
+})
+
 describe('anything goes', () => {
   it('random choices: valid, audible, not too loud, quick', () => {
     const r = rng(2026)
@@ -169,6 +186,8 @@ describe('anything goes', () => {
       const g = generate(c, { seed: i, wild: r.next() })
       const what = `${i}: ${JSON.stringify(c)}`
       expect(isValidVoice(g.voice), what).toBe(true)
+      // the pitch envelope starts, holds and ends on the note: no glide when a key is released
+      expect([VC.pitchLevel3, VC.pitchLevel4].map((at) => g.voice[at]), what).toEqual([50, 50])
       expect(g.loudness, what).toBeGreaterThan(TARGET_DB - 9)
       expect(peak(play(g.voice, 1.5)), what).toBeLessThan(1)
     }

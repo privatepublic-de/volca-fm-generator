@@ -127,8 +127,3 @@ export function applyVelocity(v: Voice, x: number) {
   for (const op of modulators) setOp(v, op, 'velocitySens', Math.max(getOp(v, op, 'velocitySens'), Math.round(2 + 5 * x)))
   for (const op of carriers) setOp(v, op, 'velocitySens', Math.max(getOp(v, op, 'velocitySens'), Math.round(1 + 2 * x)))
 }
-
-/** A short pitch fall into each note: ~2 semitones above, back in ~40 ms. */
-export function applyPitchBlip(v: Voice) {
-  v.set([75, 99, 99, 99, 50, 50, 50, 56], VC.pitchRate1)
-}

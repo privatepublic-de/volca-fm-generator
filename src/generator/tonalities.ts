@@ -9,7 +9,7 @@ import { getOp, OP, opBase, setOp, setVc, VC, type Voice } from '../dx7/voice'
 import { opRatio, setFixed, setRatio } from '../dx7/frequency'
 import type { Shape, Tonality } from './choices'
 import type { Rng } from './random'
-import { clamp99, makeTransient, rolesOf } from './shapes'
+import { applyPitchBlip, clamp99, makeTransient, rolesOf } from './shapes'
 
 /** A list is a choice, a [lo, hi] pair a range (spread around its middle). */
 type Choice = number | readonly number[]
@@ -41,8 +41,8 @@ export interface Skeleton {
   branches?: readonly (readonly [number, number])[]
   /** delayed vibrato: LFO speed, delay, pitch depth (sensitivity 3) */
   vibrato?: readonly [speed: number, delay: number, depth: number]
-  /** a short pitch fall into the note */
-  pitchBlip?: boolean
+  /** sometimes a short pitch fall (above) or scoop (below) into the note */
+  pitchBlip?: 'above' | 'below'
 }
 
 /** What a tonality brings as a second voice inside another: a carrier and its modulator. */
@@ -146,7 +146,7 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
   brass: {
     noun: 'Brass', adjective: 'Brassy',
     skeleton: {
-      algorithms: [22], shape: 'swell', feedback: [5, 6], pitchBlip: true,
+      algorithms: [22], shape: 'swell', feedback: [5, 6], pitchBlip: 'below',
       ops: {
         1: { ratio: [1], level: 99 }, 2: { ratio: [1], level: [80, 88], velocity: [3, 5] },
         3: { ratio: [1], level: [86, 94], detune: [-4, -2] }, 4: { ratio: [1], level: [86, 94], detune: [2, 4] },
@@ -154,13 +154,12 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       },
     },
     branch: { carrier: { ratio: [1], level: [84, 92] }, modulator: { ratio: [1], level: [78, 86], velocity: [3, 4] } },
-    transform(v, a) {
+    transform(v, a, rng) {
       for (const op of activeModulators(v)) {
         setLevel(v, op, level(v, op) + 6 * a)
         slower(v, op, 10 * a, [0])
       }
-      setVc(v, 'pitchLevel4', 48)
-      setVc(v, 'pitchRate1', 72)
+      if (rng.chance(0.5 * a)) applyPitchBlip(v, 'below')
     },
   },
   // three detuned saws side by side, bowed, with vibrato
@@ -325,18 +324,17 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
   wooden: {
     noun: 'Marimba', adjective: 'Wood',
     skeleton: {
-      algorithms: [5], shape: 'pluck', branches: [[5, 6]], pitchBlip: true,
+      algorithms: [5], shape: 'pluck', branches: [[5, 6]], pitchBlip: 'above',
       ops: {
         1: { ratio: [1], level: 99 }, 2: { ratio: [3, 4], level: [62, 74], fast: true },
         3: { ratio: [4, 3], level: [60, 72] }, 4: { ratio: [1, 2], level: [50, 62], fast: true },
       },
     },
     branch: { carrier: { ratio: [4], level: [62, 72] }, modulator: { ratio: [1], level: [50, 60], fast: true } },
-    transform(v, a) {
+    transform(v, a, rng) {
       for (let op = 1; op <= 6; op++) if (level(v, op) > 0) slower(v, op, -10 * a, [1, 2, 3])
       for (const op of activeModulators(v)) makeTransient(v, op)
-      setVc(v, 'pitchLevel4', 54)
-      setVc(v, 'pitchRate1', 80)
+      if (rng.chance(0.5 * a)) applyPitchBlip(v, 'above')
     },
   },
   // drawbars: six carriers at harmonic ratios

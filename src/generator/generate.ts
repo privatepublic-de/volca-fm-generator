@@ -4,10 +4,10 @@ import { algorithmOf } from '../dx7/algorithms'
 import { getOp, initVoice, OP, opBase, setOp, setVc, setVoiceName, VC, type Voice } from '../dx7/voice'
 import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
-import { applyBrightness, applyComplexity, applyMotion, applyPitchBlip, applyRegister, applyVelocity } from './controls'
+import { applyBrightness, applyComplexity, applyMotion, applyRegister, applyVelocity } from './controls'
 import { normalizeLoudness, SILENT_DB } from './loudness'
 import { rng as makeRng, type Rng } from './random'
-import { applyLength, applyShape, clamp99, makeTransient, rolesOf } from './shapes'
+import { applyLength, applyPitchBlip, applyShape, clamp99, makeTransient, rolesOf } from './shapes'
 import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseOps, TONALITY_DEFS, within } from './tonalities'
 
 export interface GenerateOptions {
@@ -51,7 +51,8 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0 }:
   applyShape(v, shape, rng, spread)
   for (const op of fastOps(def.skeleton.ops)) makeTransient(v, op)
   for (const op of noiseOps(def.skeleton.ops)) makeNoise(v, op, carrierRelease(v))
-  if (def.skeleton.pitchBlip) applyPitchBlip(v)
+  // a tonality's own pitch fall comes now and then, more often the wilder (the Pitch accent switch: always)
+  if (def.skeleton.pitchBlip && rng.chance(0.25 + 0.5 * Math.max(0, Math.min(1, wild)))) applyPitchBlip(v, def.skeleton.pitchBlip)
 
   // 2. the other tonalities: a free branch while there is one (and complexity allows), else a transform
   const freeBranches = [...(def.skeleton.branches ?? [])]
