@@ -140,6 +140,10 @@ kbd {
 .pin.selected .pin-ring, .pin:focus-visible .pin-ring { stroke: rgb(255 255 255 / 0.55); }
 .pin.selected .pin-dot, .pin:focus-visible .pin-dot { stroke: #fff; }
 .pin.removing { opacity: 0.3; }
+.pin-dial { fill: none; stroke: transparent; stroke-width: 0.05; pointer-events: stroke; cursor: grab; }
+.pin-knob { fill: #fff; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.pin:hover .pin-knob, .pin.selected .pin-knob, .pin:focus-visible .pin-knob { opacity: 0.9; }
+.wheel-svg.dragging .pin-dial { cursor: grabbing; }
 
 .wheel-centre { cursor: pointer; outline: none; }
 .wheel-centre circle { fill: var(--ink); stroke: var(--accent); stroke-width: 0.008; transition: fill 0.15s; }

@@ -1,6 +1,7 @@
 // The wheel (PLAN §6.1): the twelve tonalities as a colour field, pins on it. The names on the rim are labels only (a
 // click near them shouldn't pin anything: the bottom one sits right above the pin sliders). Click the field to pin, drag a pin to
-// move it (towards the rim: more extreme), drag it off the wheel to take it away, scroll on it for its weight.
+// move it (towards the rim: more extreme), drag it off the wheel to take it away. The ring around a pin is a dial
+// for its weight: turn it (or scroll on the pin).
 // The centre makes a new voice. Pins can be moved with the keyboard too.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
 import { SECTOR, TONALITIES, TONALITY_HINTS, TONALITY_HUES, TONALITY_LABELS, angleOf, mixOf } from '../generator/choices'
@@ -42,12 +43,11 @@ export function Wheel() {
   const generated = useApp((s) => s.generated)
   const { addPin, movePin, setWeight, removePin, selectPin, regenerate, generateNew } = useApp.getState()
   const svg = useRef<SVGSVGElement>(null)
-  const [drag, setDrag] = useState<{ id: number; removing: boolean } | null>(null)
+  const [drag, setDrag] = useState<{ id: number; removing: boolean; weight?: boolean } | null>(null)
   const pending = useRef<{ id: number; angle: number; radius: number } | null>(null)
   const frame = useRef(0)
 
   const maxWeight = Math.max(0.0001, ...pins.map((p) => p.weight))
-  const totalWeight = pins.reduce((s, p) => s + p.weight, 0)
   const dominantHue = generated ? TONALITY_HUES[generated.roles[0].tonality] : pins.length ? hueOfAngle(pins[0].angle) : 260
 
   /** Where a pointer is, in wheel units (the rim is 1). */
@@ -55,7 +55,7 @@ export function Wheel() {
     const r = svg.current!.getBoundingClientRect()
     const x = ((e.clientX - r.left) / r.width) * 2 * VIEW - VIEW
     const y = ((e.clientY - r.top) / r.height) * 2 * VIEW - VIEW
-    return { angle: ((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360, dist: Math.hypot(x, y) }
+    return { angle: ((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360, dist: Math.hypot(x, y), x, y }
   }
 
   /** Moves are applied once per frame: generating takes ~12 ms. */
@@ -88,9 +88,35 @@ export function Wheel() {
     setDrag({ id, removing: false })
   }
 
+  /** The ring is a dial: the weight is where the pointer is around the pin, clockwise from the top (it stops at
+   *  either end rather than wrapping round). */
+  const onDialDown = (e: PointerEvent<SVGElement>, id: number) => {
+    e.stopPropagation()
+    svg.current!.setPointerCapture(e.pointerId)
+    selectPin(id)
+    setDrag({ id, removing: false, weight: true })
+  }
+  const turnDial = (id: number, x: number, y: number) => {
+    const p = useApp.getState().pins.find((q) => q.id === id)
+    if (!p) return
+    const c = polar(p.angle, toRadius(p.radius))
+    const turn = (((Math.atan2(x - c.x, -(y - c.y)) * 180) / Math.PI + 360) % 360) / 360
+    // past the top in either direction: stay at the end it came from
+    const weight = Math.abs(turn - p.weight) > 0.5 ? (p.weight > 0.5 ? 1 : 0.05) : turn
+    const stepped = Math.max(0.05, Math.round(weight * 20) / 20)
+    if (stepped !== p.weight) setWeight(id, stepped)
+  }
+
   const onMove = (e: PointerEvent<SVGSVGElement>) => {
-    const { angle, dist } = at(e)
-    showTip(e, angle, dist, (e.target as Element).closest('g.pin') !== null)
+    const { angle, dist, x, y } = at(e)
+    if (drag?.weight) {
+      turnDial(drag.id, x, y)
+      const p = useApp.getState().pins.find((q) => q.id === drag.id)
+      if (p) setTip({ ...tipAt(e), text: `Weight ${Math.round(p.weight * 100)} %` })
+      return
+    }
+    const target = e.target as Element
+    showTip(e, angle, dist, target.closest('g.pin') !== null, target.classList.contains('pin-dial'))
     if (!drag) return
     const removing = dist > REMOVE_AT
     if (removing !== drag.removing) setDrag({ ...drag, removing })
@@ -99,12 +125,16 @@ export function Wheel() {
 
   /** The label at the pointer: what a click or a drag here would do. */
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null)
-  const showTip = (e: PointerEvent<SVGSVGElement>, angle: number, dist: number, onPin: boolean) => {
+  const tipAt = (e: PointerEvent<SVGSVGElement>) => {
     const box = svg.current!.getBoundingClientRect()
-    const place = (text: string) => setTip({ x: e.clientX - box.left, y: e.clientY - box.top, text })
+    return { x: e.clientX - box.left, y: e.clientY - box.top }
+  }
+  const showTip = (e: PointerEvent<SVGSVGElement>, angle: number, dist: number, onPin: boolean, onDial: boolean) => {
+    const place = (text: string) => setTip({ ...tipAt(e), text })
     const where = () => `${mixOf([{ angle: snapped(angle, e.shiftKey), radius: 1, weight: 1 }]).map((m) => TONALITY_LABELS[m.tonality]).join(' / ')}, ${intensityWord(toIntensity(dist))}`
     if (drag) return place(drag.removing || dist > REMOVE_AT ? 'Release to remove' : where())
-    if (onPin) return place('Drag to move, off the wheel to remove; scroll for weight')
+    if (onDial) return place('Turn the ring for weight')
+    if (onPin) return place('Drag to move, off the wheel to remove; turn the ring for weight')
     if (dist < CENTRE) return place('New voice')
     if (dist > 1.02) return setTip(null)
     if (useApp.getState().pins.length >= MAX_PINS) return place('Three pins at most: drag one off to make room')
@@ -117,7 +147,8 @@ export function Wheel() {
     frame.current = 0
     const p = pending.current
     pending.current = null
-    if (drag.removing) removePin(drag.id)
+    if (drag.weight) regenerate(true)
+    else if (drag.removing) removePin(drag.id)
     else {
       if (p) movePin(p.id, p.angle, p.radius)
       regenerate(true)
@@ -222,7 +253,7 @@ export function Wheel() {
           const share = p.weight / maxWeight
           const r = 0.05 + 0.04 * share
           const ring = r + 0.028
-          const part = totalWeight ? p.weight / totalWeight : 1
+          const knob = polar(p.weight * 360, ring)
           const removing = drag?.id === p.id && drag.removing
           return (
             <g
@@ -231,7 +262,7 @@ export function Wheel() {
               transform={`translate(${x} ${y})`}
               tabIndex={0}
               role="slider"
-              aria-label={`${pinLabel(p)} pin, weight ${Math.round(part * 100)} %`}
+              aria-label={`${pinLabel(p)} pin, weight ${Math.round(p.weight * 100)} %`}
               aria-valuenow={Math.round(p.radius * 100)}
               onPointerDown={(e) => onPinDown(e, p.id)}
               data-id={p.id}
@@ -241,8 +272,11 @@ export function Wheel() {
               onDoubleClick={() => removePin(p.id)}
             >
               <circle className="pin-ring" r={ring} />
-              <circle className="pin-share" r={ring} pathLength={100} strokeDasharray={`${part * 100} 100`} transform="rotate(-90)" />
+              <circle className="pin-share" r={ring} pathLength={100} strokeDasharray={`${p.weight * 100} 100`} transform="rotate(-90)" />
               <circle className="pin-dot" r={r} style={{ fill: `hsl(${hueOfAngle(p.angle)} 85% 64%)` }} />
+              <circle className="pin-knob" cx={knob.x} cy={knob.y} r={0.022} />
+              {/* the dial's grip: the ring and a little either side of it */}
+              <circle className="pin-dial" r={ring} onPointerDown={(e) => onDialDown(e, p.id)} />
             </g>
           )
         })}
