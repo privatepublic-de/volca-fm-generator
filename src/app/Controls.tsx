@@ -2,7 +2,7 @@
 // the actions.
 import type { ReactNode } from 'react'
 import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, type Register, type Shape } from '../generator/choices'
-import { SHAPE_SPECS, type Eg } from '../generator/shapes'
+import type { Eg } from '../generator/shapes'
 import { hueOfAngle, pinHint, pinLabel } from './Wheel'
 import { audition, MAX_PINS, useApp, type Controls as ControlValues } from './store'
 
@@ -28,26 +28,61 @@ function Slider({ label, value, min, max, step = 0.05, onChange, left, right, bi
   )
 }
 
-/** An envelope as a line: attack, decay to the sustain, a held stretch, release. Rates → widths by the measured
- *  timings (about ×3 per 10). */
+/** An envelope's loudness as a line: the DX7's level steps are 0.75 dB, so a level is drawn as its amplitude and a
+ *  segment as a straight line in dB (a curve here), as it sounds. Times from the rates, as measured (docs/SOUND.md:
+ *  about ×3 per 10), capped so a slow stage doesn't squash the rest. */
 function EgCurve({ eg, className }: { eg: Eg; className?: string }) {
-  const time = (rate: number, from: number, to: number) => (rate >= 99 || from === to ? 0.02 : Math.min(1.4, 0.05 * 3 ** ((70 - rate) / 10)))
+  const amp = (l: number) => (l <= 0 ? 0 : 10 ** (-(99 - l) * 0.0375))
+  const time = (rate: number, from: number, to: number) => (from === to ? 0.03 : rate >= 99 ? 0.02 : Math.min(1.2, 0.05 * 3 ** ((70 - rate) / 10)))
   const [r1, r2, r3, r4] = eg.rates
   const [l1, l2, l3] = eg.levels
-  const pts: [number, number][] = [[0, 0]]
-  let t = 0
-  const push = (dt: number, l: number) => { t += dt; pts.push([t, l / 99]) }
-  push(time(r1, 0, l1), l1)
-  push(time(r2, l1, l2), l2)
-  push(time(r3, l2, l3), l3)
-  push(0.5, l3)
-  push(time(r4, l3, 0), 0)
+  const stages: [number, number, number][] = [[time(r1, 0, l1), 0, l1], [time(r2, l1, l2), l1, l2], [time(r3, l2, l3), l2, l3], [0.4, l3, l3], [time(r4, l3, 0), l3, 0]]
+  const total = stages.reduce((s, [t]) => s + t, 0)
   const W = 60
   const H = 22
-  const d = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${((x / t) * W).toFixed(1)} ${(H - 2 - y * (H - 4)).toFixed(1)}`).join(' ')
-  return <svg className={className} viewBox={`0 0 ${W} ${H}`} aria-hidden="true"><path d={d} /></svg>
+  const pts: string[] = [`M0 ${H - 2}`]
+  let t = 0
+  for (const [dt, a, b] of stages) {
+    // the attack rises steeply (as the DX7's does); the other stages in dB
+    for (let k = 1; k <= 8; k++) {
+      const f = k / 8
+      const level = a < b ? b : a + (b - a) * f
+      const y = a < b ? amp(b) * (1 - (1 - f) ** 3) + amp(a) * (1 - f) ** 3 : amp(level)
+      pts.push(`L${(((t + dt * f) / total) * W).toFixed(1)} ${(H - 2 - y * (H - 4)).toFixed(1)}`)
+    }
+    t += dt
+  }
+  return <svg className={className} viewBox={`0 0 ${W} ${H}`} aria-hidden="true"><path d={pts.join(' ')} /></svg>
 }
 export { EgCurve }
+
+/** The envelope shapes as icons, drawn to be told apart at a glance (loudness against time; the dashed line is where
+ *  the key is let go). */
+const SHAPE_ICONS: Record<Shape, string> = {
+  // instant, a steep curved fall to nothing
+  pluck: 'M3 21 L3 3 C6 15, 10 20, 20 20.6 L57 21',
+  // instant, a short drop, a long fade
+  struck: 'M3 21 L3 3 C4 7, 6 8.5, 9 8.5 C20 9.5, 34 15, 44 18.5 C48 20, 51 20.8, 57 21',
+  // a soft rise, held, let go
+  bowed: 'M3 21 C6 9, 9 5, 14 5 L44 5 C47 11, 50 18, 54 21 L57 21',
+  // a slow rise in and a slow fall out
+  pad: 'M3 21 C15 20.5, 19 5, 28 5 L40 5 C46 5.5, 51 17, 57 21',
+  // in at half, growing all the while it is held
+  swell: 'M3 21 C4 13, 6 12, 10 12 C22 11.5, 34 6, 44 4 C47 10, 50 18, 54 21 L57 21',
+  // on, held, off
+  gate: 'M3 21 L5 21 L5 4 L44 4 L44 21 L57 21',
+  // a rise, then cut off
+  reverse: 'M3 21 C20 20.5, 32 13, 40 3 L40.5 21 L57 21',
+}
+
+function ShapeIcon({ shape }: { shape: Shape }) {
+  return (
+    <svg viewBox="0 0 60 24" aria-hidden="true">
+      <line className="shape-release" x1={44} y1={1} x2={44} y2={23} />
+      <path d={SHAPE_ICONS[shape]} />
+    </svg>
+  )
+}
 
 function ShapePicker() {
   const shape = useApp((s) => s.controls.shape)
@@ -61,7 +96,7 @@ function ShapePicker() {
       </button>
       {SHAPES.map((s) => (
         <button key={s} role="radio" aria-checked={shape === s} className={shape === s ? 'on' : ''} onClick={() => pick(s)} title={SHAPE_HINTS[s]}>
-          <EgCurve eg={SHAPE_SPECS[s].carrier} />
+          <ShapeIcon shape={s} />
           <span>{SHAPE_LABELS[s]}</span>
         </button>
       ))}
