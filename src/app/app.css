@@ -559,6 +559,8 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .help p, .help dd { color: #d3cee3; line-height: 1.6; max-width: 64ch; }
 .help p + p { margin-top: 10px; }
 .help strong { color: var(--text); font-weight: 600; }
+.help a { color: hsl(var(--h) 70% 75%); }
+.help-small { font-size: 13px; color: var(--muted); }
 .help code { font-size: 14px; }
 .help-defs { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 8px 18px; margin: 0 0 12px; }
 .help-defs dt { font: 500 16px/1.6 var(--condensed); color: var(--text); }

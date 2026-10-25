@@ -8,6 +8,7 @@ import { FIELD } from './Wheel'
 const SECTIONS = [
   ['wheel', 'The wheel'], ['start', 'Starting points'], ['ways', 'Three ways on'], ['voice', 'Your voice'],
   ['shaping', 'Shaping'], ['listening', 'Listening'], ['volca', 'Your volca'], ['files', 'Files'], ['keys', 'Keys'],
+  ['privacy', 'Privacy'], ['credits', 'Credits'],
 ] as const
 
 export function Help({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -178,6 +179,34 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
               <tr><td><kbd>⌘Z</kbd> <kbd>⇧⌘Z</kbd></td><td>Undo, redo</td><td><kbd>?</kbd></td><td>This help</td></tr>
             </tbody>
           </table>
+        </section>
+
+        <section id="help-privacy">
+          <h3>Privacy</h3>
+          <p>
+            Everything happens in your browser: the sound, the voices, the files. There are no accounts, no cookies, no
+            analytics or tracking, and nothing is loaded from other sites. The generator only sends MIDI to the volca you
+            choose; it reads nothing back. What it remembers (your pins and controls, your kept voices, the sound
+            settings) stays in this browser’s storage, and clearing the site’s data deletes it. The page is hosted on
+            GitHub Pages, which logs your IP address when you open it. The full statement:{' '}
+            <a href="privacy.html" target="_blank" rel="noreferrer">Privacy</a>.
+          </p>
+        </section>
+
+        <section id="help-credits">
+          <h3>Credits</h3>
+          <dl className="help-defs">
+            <dt>Sound engine</dt><dd>The DX7’s tables, envelopes and algorithm routing follow <a href="https://github.com/google/music-synthesizer-for-android" target="_blank" rel="noreferrer">MSFA</a> (music-synthesizer-for-android, © Google, Apache License 2.0), the engine <a href="https://asb2m10.github.io/dexed/" target="_blank" rel="noreferrer">Dexed</a> is built on.</dd>
+            <dt>Instruments</dt><dd>The Start from instruments are classic DX7 voices, parameter for parameter: Yamaha’s own (the DX7 ROM and VRC cartridges, TX7, TX816 and DX7II sets) and two pianos from the cartridge collection that comes with Dexed, their authors unknown.</dd>
+            <dt>The volcas</dt><dd>What the volcas take over MIDI comes from Korg’s MIDI implementation documents and from tests on a volca fm2 and a volca fm.</dd>
+            <dt>Type</dt><dd><a href="https://github.com/jpt/barlow" target="_blank" rel="noreferrer">Barlow</a> by Jeremy Tribby (SIL Open Font License), served from this site.</dd>
+            <dt>Code</dt><dd>React, Zustand, Vite and TypeScript. Made with <a href="https://claude.com/claude-code" target="_blank" rel="noreferrer">Claude</a> by Anthropic: Peter Witzel designed it and tested it on the volcas, Claude wrote the code.</dd>
+          </dl>
+          <p className="help-small">
+            Korg and volca are trademarks of Korg Inc.; Yamaha and DX7 are trademarks of Yamaha Corporation. This
+            generator is not affiliated with or endorsed by either. MIT License;{' '}
+            <a href="https://github.com/privatepublic-de/volca-fm-generator" target="_blank" rel="noreferrer">source on GitHub</a>.
+          </p>
         </section>
       </div>
     </dialog>
