@@ -1,6 +1,5 @@
 // The generator (PLAN §6): the wheel and its pins on the left, where to start and the controls on the right, the
-// voice it made below with what to do with it,
-// then the session's voices, the kept ones and the keyboard.
+// voice it made below with what to do with it, then the session's voices, the kept ones and the keyboard.
 import { useEffect, useState, type CSSProperties } from 'react'
 import { TONALITY_HUES } from '../generator/choices'
 import { Controls, PinList, StartActions } from './Controls'
