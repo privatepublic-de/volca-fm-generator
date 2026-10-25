@@ -1,7 +1,7 @@
 // Phase 0 probe: answers Q1–Q8 of PLAN.md §3 on a volca fm and a volca fm2, by ear. The volcas send nothing back,
 // so every test sends, plays a note pattern, and asks what was heard; the answers are kept per model in this
 // browser and come out as a Markdown report for docs/FINDINGS.md. Nothing is stored to the volca's memory.
-import { checksum, parameterChange, readSyx, vcedMessage, type SyxVoice, type VcedOptions, type VcedTail } from './dx7/sysex'
+import { checksum, parameterChange, readSyx, vcedMessage, vmemMessage, type SyxVoice, type VcedOptions, type VcedTail } from './dx7/sysex'
 import { initVoice, OP, opBase, setOp, setVc, setVoiceName, VC, voiceName, type Voice } from './dx7/voice'
 import { findOutput, outputNames, requestWebMidi, send, webMidiUnavailable } from './midi/transport'
 import { bright, octaves, paramTests, pure, type NotePattern } from './probe/testVoices'
@@ -277,10 +277,10 @@ const masks: { id: string; name: string; mask: number }[] = [
 ]
 const PITCHES = ['1 lowest', '2', '3', '4', '5', '6 highest', 'all six', 'silent', 'something else']
 
+/** A 32-voice cartridge, the form Dexed loads: the three main voices, PROBE CC, then the Q5 pairs as far as they fit. */
 function downloadSyx() {
-  const voices = [pure(), bright(), octaves(), ...paramTests().flatMap((t) => [t.a, t.b])]
-  const bytes = voices.flatMap((v) => Array.from(vcedMessage(v, { tail: 'checksum' })))
-  download('volca-probe-voices.syx', new Blob([Uint8Array.from(bytes)], { type: 'application/octet-stream' }))
+  const voices = [pure(), bright(), octaves(), ccVoice(), ...paramTests().flatMap((t) => [t.a, t.b])].slice(0, 32)
+  download('volca-probe-voices.syx', new Blob([vmemMessage(voices).buffer as ArrayBuffer], { type: 'application/octet-stream' }))
 }
 
 section('Operator on/off bits and loudness', 'Q7',
@@ -289,8 +289,8 @@ section('Operator on/off bits and loudness', 'Q7',
     [runButton('Run', `Q7: operator bits ${m.name}`, async () => {
       sendVoice(octaves(), { tail: 'opBits', opMask: m.mask }); await sleep(400); await playNote(60, 1800)
     })], PITCHES)),
-  el('p', { class: 'hint' }, 'Loudness: load the probe’s voices in Dexed (DX7 form, with checksums) and compare PROBE PURE and PROBE BRT there and on the volca, at similar volume settings. How do loudness and brightness compare?'),
-  el('div', { class: 'row' }, el('button', { click: downloadSyx }, 'Download the probe voices (.syx, DX7 form)')),
+  el('p', { class: 'hint' }, 'Loudness: load the probe’s cartridge in Dexed (32 voices: PURE, BRT, OCT, CC, then the Q5 pairs) and compare PROBE PURE and PROBE BRT there and on the volca, at similar volume settings. How do loudness and brightness compare?'),
+  el('div', { class: 'row' }, el('button', { click: downloadSyx }, 'Download the probe voices (.syx cartridge for Dexed)')),
   textAnswer('Q7.loudness', 'loudness and brightness vs Dexed'))
 
 // ---------- 4. Timing (Q4) ----------
