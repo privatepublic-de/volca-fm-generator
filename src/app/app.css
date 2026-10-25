@@ -203,14 +203,14 @@ kbd {
 
 .stage-wheel { align-self: start; }
 /* titled like the groups on the right and level with Envelope; Start from and New voice at its right */
-.stage-head { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.stage-head { position: relative; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 /* the menu and the hint take the header's left edge, not the buttons' */
 .stage-head .start-actions { position: static; container-type: normal; }
-.stage-title { margin-top: 4px; font: 500 13px var(--sans); color: var(--muted); }
+.stage-title { font: 500 13px var(--sans); color: var(--muted); }
 /* the wheel's own margin is room for the names on the rim: it may reach up under the header */
 .stage-wheel .wheel { margin-top: -6px; }
 /* as tall as the wheel's column: the spare height goes between the groups, the actions sit by the voice below */
-.stage-controls { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.stage-controls { display: flex; flex-direction: column; gap: 14px; padding-top: 10.5px; }
 .stage-controls .controls { align-content: start; }
 /* the voice under the controls that made it; its foot level with the wheel column's when there's room */
 .stage-controls .voice { margin-top: auto; }
@@ -385,7 +385,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .voice .ops { grid-column: 1 / -1; }
 @media (max-width: 960px) { .voice { grid-template-columns: minmax(0, 1fr); } }
 .voice-head { container-type: inline-size; }
-.voice-bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; }
+.voice-bar { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 16px; }
 .voice-bar h3 { font: 500 13px var(--sans); color: var(--muted); white-space: nowrap; }
 /* the actions take the rest of the bar (they measure it to fit), aligned right */
 .voice-bar .voice-actions { flex: 1; min-width: 0; }
@@ -462,6 +462,8 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 .fav-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .fav-head h3 { margin: 0; }
+/* level with Kept beside it, whose heading sits on its buttons' baseline */
+.history h3 { padding-top: 6.5px; }
 .fav-actions { display: flex; gap: 6px; }
 .fav-actions button { font-size: 13px; padding: 4px 10px; }
 .fav-message, .fav-empty { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
