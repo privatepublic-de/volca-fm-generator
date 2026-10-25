@@ -72,7 +72,8 @@ kbd {
 .topbar-group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .topbar .channel { display: flex; align-items: center; gap: 6px; color: var(--muted); }
 .topbar .channel input { width: 3.6em; background: var(--raised); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; }
-.topbar-hint { color: var(--accent); font-size: 13px; }
+.topbar-hint { color: var(--text); font-size: 13px; }
+.topbar-help { background: none; }
 .topbar-problem { color: #ff9a8c; font-size: 13px; max-width: 28em; }
 .volume { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
 .volume input { width: 96px; }
@@ -360,6 +361,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .voice-name { font: 600 34px/1 var(--condensed); color: hsl(var(--h) 80% 78%); letter-spacing: 0.01em; }
 .voice-mix { margin-top: 6px; font-size: 14px; }
 .voice-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.voice-export { margin-left: 12px; padding: 1px 8px; font-size: 12px; color: var(--muted); background: none; }
 
 .algorithm { height: 118px; max-width: 220px; }
 .alg-link, .alg-out line { stroke: var(--dim); stroke-width: 1.5; }
@@ -463,7 +465,90 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .keyboard-dock.folded { padding: 3px 24px; }
 }
 
-.footer { display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: center; color: var(--dim); font-size: 13px; margin-top: 18px; }
+.footer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; justify-content: center; color: var(--dim); font-size: 13px; margin-top: 18px; }
+.footer-help { padding: 0; border: none; background: none; color: var(--dim); font-size: 13px; }
+.footer-help:hover:not(:disabled) { color: var(--text); }
+/* shortcuts mean nothing on a touch screen */
+@media (hover: none) { .footer span { display: none; } }
+
+/* ---------- help ---------- */
+
+/* a sheet from the right, over the app; its text in a reading measure */
+.help {
+  margin: 0 0 0 auto;
+  width: min(760px, 100vw);
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  overflow-y: auto;
+  background: var(--panel);
+  color: var(--text);
+  border: none;
+  border-left: 1px solid var(--line);
+}
+.help::backdrop { background: rgb(10 9 16 / 0.6); }
+.help[open] { animation: help-in 0.22s ease-out; }
+@keyframes help-in { from { transform: translateX(28px); opacity: 0; } }
+.help-sheet { padding: 0 44px 72px; }
+.help-head { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: center; padding: 22px 0 12px; background: var(--panel); }
+.help-head h2 { font: 600 34px/1.1 var(--condensed); }
+.help-close { width: 34px; height: 34px; padding: 0; font-size: 20px; line-height: 1; background: none; }
+.help-lead { font-size: 17px; line-height: 1.55; max-width: 60ch; }
+.help-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 8px; }
+.help-nav button { padding: 3px 10px; font-size: 13px; background: none; color: var(--muted); border-radius: 999px; }
+.help-nav button:hover:not(:disabled) { color: var(--text); }
+.help section { scroll-margin-top: 72px; }
+.help h3 { font: 600 23px/1.2 var(--condensed); margin: 38px 0 10px; }
+.help p, .help dd { color: #d3cee3; line-height: 1.6; max-width: 64ch; }
+.help p + p { margin-top: 10px; }
+.help strong { color: var(--text); font-weight: 600; }
+.help code { font-size: 14px; }
+.help-defs { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 8px 18px; margin: 0 0 12px; }
+.help-defs dt { font: 500 16px/1.6 var(--condensed); color: var(--text); }
+.help-defs dt kbd { margin-left: 6px; }
+.help-defs dd { margin: 0; }
+/* the one thing to know before trusting your ears */
+.help-note { border-left: 2px solid hsl(var(--h) 70% 62%); padding-left: 14px; }
+.help-table, .help-keys { border-collapse: collapse; font-size: 14px; margin: 4px 0 14px; }
+.help-table th, .help-table td { text-align: left; padding: 7px 18px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.help-table thead th { font: 600 15px var(--condensed); color: var(--text); }
+.help-table tbody th { font-weight: 400; color: var(--muted); }
+.help-table td { color: #d3cee3; }
+.help-keys td { padding: 5px 14px 5px 0; color: #d3cee3; }
+.help-keys td:nth-child(3) { padding-left: 24px; }
+
+/* the wheel, drawn small with what each part does */
+.help-wheel { position: relative; aspect-ratio: 640 / 280; margin: 6px 0 16px; }
+.help-wheel-field { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgb(21 19 31 / 0.96) 0%, rgb(21 19 31 / 0.85) 22%, rgb(21 19 31 / 0.45) 50%, rgb(21 19 31 / 0.1) 85%), var(--field); }
+.help-wheel svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.help-guide { fill: none; stroke: rgb(255 255 255 / 0.75); stroke-width: 1.5; color: rgb(255 255 255 / 0.75); }
+.help-guide.dashed { stroke-dasharray: 4 4; }
+.help-centre { fill: var(--ink); stroke: rgb(255 255 255 / 0.4); stroke-width: 1.2; }
+.help-centre-text { fill: var(--text); font: 600 12px var(--condensed); text-anchor: middle; }
+.help-ring { fill: rgb(21 19 31 / 0.35); stroke: rgb(255 255 255 / 0.2); stroke-width: 1.5; }
+.help-ring-arc { fill: none; stroke: rgb(255 255 255 / 0.85); stroke-width: 2; stroke-linecap: round; }
+.help-knob { fill: #fff; }
+.help-pin, .help-diamond { stroke: var(--ink); stroke-width: 1.5; }
+.help-diamond-ring { fill: rgb(21 19 31 / 0.45); stroke: rgb(255 255 255 / 0.55); stroke-width: 1.2; }
+.help-callout polyline { fill: none; stroke: var(--dim); stroke-width: 1; }
+.help-callout circle { fill: var(--muted); }
+.help-callout-title { fill: var(--text); font: 600 16px var(--condensed); }
+.help-callout-text { fill: var(--muted); font: 400 13px var(--sans); }
+/* on a wide sheet the drawing carries the labels; on a phone they'd be too small, so the list does */
+.help-wheel-list { display: none; }
+@media (max-width: 640px) {
+  .help-sheet { padding: 0 16px 48px; }
+  .help-head h2 { font-size: 28px; }
+  .help-wheel { margin: 0 -40px 8px; }
+  .help-callout { display: none; }
+  .help-wheel-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0 0 12px; }
+  .help-wheel-list dt { font: 500 16px var(--condensed); margin-top: 8px; }
+  .help-wheel-list dd { margin: 0; }
+  .help-defs { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .help-defs dt { margin-top: 8px; }
+  .help-keys td:nth-child(3) { padding-left: 10px; }
+}
 
 /* ---------- dialog ---------- */
 
@@ -485,6 +570,12 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 @media (max-width: 640px) {
   .app { padding: 0 16px 24px; }
+  /* the top bar in three rows, not one control per row */
+  .topbar-hint { flex-basis: 100%; }
+  .volume input { width: 80px; }
+  /* the keyboard across the whole width, its octave and fold above it */
+  .keyboard-dock-inner { flex-wrap: wrap; justify-content: space-between; }
+  .keyboard { flex-basis: 100%; order: 3; height: 120px; }
   .pins li { grid-template-columns: 12px minmax(4em, 1fr) minmax(70px, 1.2fr) 3em 28px; gap: 8px; }
   .pin-extreme { display: none; }
   .voice { padding: 16px; }
@@ -495,4 +586,5 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
+  .help[open] { animation: none; }
 }

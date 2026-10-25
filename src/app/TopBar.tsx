@@ -4,7 +4,7 @@ import type { Model } from '../engine/models'
 import { playback, useApp } from './store'
 import type { Target } from '../ui/playback'
 
-export function TopBar({ onStore, audioOn }: { onStore: () => void; audioOn: boolean }) {
+export function TopBar({ onStore, onHelp, audioOn }: { onStore: () => void; onHelp: () => void; audioOn: boolean }) {
   const model = useApp((s) => s.model)
   const setModel = useApp((s) => s.setModel)
   const [, refresh] = useState(0)
@@ -67,6 +67,7 @@ export function TopBar({ onStore, audioOn }: { onStore: () => void; audioOn: boo
             onChange={(e) => set({ volume: Number(e.target.value) })} />
         </label>
         <button onClick={onStore} title="How to keep this voice in the volca's memory">Store on the volca…</button>
+        <button className="topbar-help" onClick={onHelp} title="How it works (?)">Help</button>
       </div>
     </header>
   )

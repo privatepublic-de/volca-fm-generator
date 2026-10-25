@@ -4,6 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import { TONALITY_HUES } from '../generator/choices'
 import { Actions, Controls, PinList } from './Controls'
 import { Keyboard } from './Keyboard'
+import { Help } from './Help'
 import { Favourites, History } from './Library'
 import { StoreDialog } from './StoreDialog'
 import { audition, playback, useApp } from './store'
@@ -13,6 +14,8 @@ import { Wheel } from './Wheel'
 
 export function App() {
   const [storing, setStoring] = useState(false)
+  // #help in the address opens the help, so it can be linked to
+  const [helping, setHelping] = useState(() => location.hash === '#help')
   const [audioOn, setAudioOn] = useState(playback.started)
   const hue = useApp((s) => (s.generated ? TONALITY_HUES[s.generated.roles[0].tonality] : s.history.find((h) => h.id === s.currentId)?.hue ?? 260))
 
@@ -46,11 +49,15 @@ export function App() {
         m: () => { s.mutateCurrent(); audition() },
         q: () => s.keep(),
       }
+      if (e.key === '?') { e.preventDefault(); setHelping(true); return }
       const a = act[e.key]
       if (a) { e.preventDefault(); a() }
     }
     window.addEventListener('keydown', shortcuts)
+    const onHash = () => { if (location.hash === '#help') setHelping(true) }
+    window.addEventListener('hashchange', onHash)
     return () => {
+      window.removeEventListener('hashchange', onHash)
       window.removeEventListener('pointerdown', start)
       window.removeEventListener('keydown', start)
       window.removeEventListener('keydown', shortcuts)
@@ -59,7 +66,7 @@ export function App() {
 
   return (
     <div className="app" style={{ '--h': hue } as CSSProperties}>
-      <TopBar onStore={() => setStoring(true)} audioOn={audioOn} />
+      <TopBar onStore={() => setStoring(true)} onHelp={() => setHelping(true)} audioOn={audioOn} />
       <main className="stage">
         <div className="stage-wheel">
           <Wheel />
@@ -77,14 +84,15 @@ export function App() {
       </div>
       <Keyboard />
       <footer className="footer">
-        <span><kbd>⌘Z</kbd> <kbd>⇧⌘Z</kbd> back, forward</span>
-        <span><kbd>I</kbd> init voice</span>
-        <span><kbd>Enter</kbd> new voice</span>
         <span><kbd>V</kbd> variation</span>
         <span><kbd>M</kbd> mutate</span>
+        <span><kbd>Enter</kbd> new voice</span>
         <span><kbd>Q</kbd> keep</span>
+        <span><kbd>⌘Z</kbd> <kbd>⇧⌘Z</kbd> undo, redo</span>
+        <button className="footer-help" onClick={() => setHelping(true)}><kbd>?</kbd> how it works</button>
       </footer>
       <StoreDialog open={storing} onClose={() => setStoring(false)} />
+      <Help open={helping} onClose={() => { setHelping(false); if (location.hash === '#help') history.replaceState(null, '', location.pathname + location.search) }} />
     </div>
   )
 }

@@ -36,7 +36,7 @@ export const pinLabel = (p: AppPin) => mixOf([{ ...p, weight: 1 }]).map((m) => T
 export const pinHint = (p: AppPin) => mixOf([{ ...p, weight: 1 }]).map((m) => `${TONALITY_LABELS[m.tonality]}: ${TONALITY_HINTS[m.tonality]}`).join('\n')
 
 /** The field: each tonality's hue at its angle, pale and dim at the centre (mild), full at the rim (extreme). */
-const FIELD = `conic-gradient(${[...TONALITIES, TONALITIES[0]].map((t, i) => `hsl(${TONALITY_HUES[t]} 72% 56%) ${i * SECTOR}deg`).join(', ')})`
+export const FIELD = `conic-gradient(${[...TONALITIES, TONALITIES[0]].map((t, i) => `hsl(${TONALITY_HUES[t]} 72% 56%) ${i * SECTOR}deg`).join(', ')})`
 
 export function Wheel() {
   const pins = useApp((s) => s.pins)

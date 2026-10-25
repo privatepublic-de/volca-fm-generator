@@ -177,7 +177,7 @@ export function PinList() {
             onChange={(e) => setWeight(p.id, Number(e.target.value))}
             onPointerUp={() => { regenerate(true); audition() }}
           />
-          <span className="pin-share">{Math.round((p.weight / total) * 100)} %</span>
+          <span className="pin-share" title="Its share of the mix (the slider and the ring set its weight)">{Math.round((p.weight / total) * 100)} %</span>
           <button className="pin-remove" aria-label={`Remove ${pinLabel(p)}`} onClick={(e) => { e.stopPropagation(); removePin(p.id); audition() }}>×</button>
         </li>
       ))}

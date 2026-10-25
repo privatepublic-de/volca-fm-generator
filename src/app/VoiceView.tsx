@@ -7,6 +7,7 @@ import { TONALITY_HUES, TONALITY_LABELS, type Tonality } from '../generator/choi
 import type { Eg } from '../generator/shapes'
 import { EgCurve } from './Controls'
 import { instrumentName, INSTRUMENTS } from '../generator/instruments'
+import { exportVoice } from './Library'
 import { useApp } from './store'
 
 interface Node { op: number; x: number; depth: number }
@@ -128,7 +129,10 @@ export function VoiceView() {
       <div className="voice-head">
         <h2 className="voice-name">{voiceName(voice)}</h2>
         <p className="voice-mix">{mix ?? (made ? 'Made under the other volca model: its pins are back, the details may differ' : 'From a file: the wheel didn\'t make it, so it has no pins')}</p>
-        <p className="voice-meta">Algorithm {alg.number}, feedback {voice[VC.feedback]}</p>
+        <p className="voice-meta">
+          Algorithm {alg.number}, feedback {voice[VC.feedback]}
+          <button className="voice-export" onClick={() => exportVoice(voice, voiceName(voice))} title="Save the voice you hear as a DX7 single-voice SysEx file">Export .syx</button>
+        </p>
       </div>
       <AlgorithmDiagram voice={voice} opTonality={opTonality} />
       <ol className="ops">

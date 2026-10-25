@@ -1,11 +1,14 @@
 // Three octaves to play the voice: soft at the top of a key, hard at the front. On a desktop screen it is docked to
 // the bottom of the window, so it stays at hand while the controls are changed; it folds away into a thin bar. The
-// computer keys play too: A W S E D F T G Y H U J K O L P ; from the octave shown, Z and X (or − +) move it.
+// computer keys play too: A W S E D F T G Y H U J K O L P ; from the octave shown, Z and X (or − +) move it. On a
+// phone, two octaves: three would make the keys too narrow to hit.
 import { useEffect, useRef, useState } from 'react'
 import { playback } from './store'
 
 const FIRST = 48
 const KEYS = 37
+const KEYS_PHONE = 25
+const PHONE = '(max-width: 640px)'
 const BLACK = [1, 3, 6, 8, 10]
 const MAP = 'awsedftgyhujkolp;'
 const FOLD_KEY = 'volca:keyboard-folded'
@@ -15,6 +18,14 @@ const noteName = (n: number) => `C${n / 12 - 1}`
 export function Keyboard() {
   const [held, setHeld] = useState<ReadonlySet<number>>(new Set())
   const [octave, setOctave] = useState(0)
+  const [phone, setPhone] = useState(() => matchMedia(PHONE).matches)
+  useEffect(() => {
+    const m = matchMedia(PHONE)
+    const on = () => setPhone(m.matches)
+    m.addEventListener('change', on)
+    return () => m.removeEventListener('change', on)
+  }, [])
+  const count = phone ? KEYS_PHONE : KEYS
   const octaveRef = useRef(0)
   const [folded, setFolded] = useState(() => { try { return localStorage.getItem(FOLD_KEY) === '1' } catch { return false } })
   const shift = (by: number) => {
@@ -51,10 +62,10 @@ export function Keyboard() {
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur) }
   }, [])
 
-  const whites = Array.from({ length: KEYS }, (_, i) => FIRST + i).filter((n) => !BLACK.includes(n % 12))
+  const whites = Array.from({ length: count }, (_, i) => FIRST + i).filter((n) => !BLACK.includes(n % 12))
   const w = 100 / whites.length
   let wi = 0
-  const keys = Array.from({ length: KEYS }, (_, i) => {
+  const keys = Array.from({ length: count }, (_, i) => {
     const n = FIRST + i
     const black = BLACK.includes(n % 12)
     const left = black ? wi * w - w * 0.3 : wi * w
