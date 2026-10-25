@@ -41,24 +41,67 @@ export interface Instrument {
   accent?: 'above' | 'below'
   /** the controls it starts with */
   controls?: Partial<Omit<GeneratorChoices, 'pins' | 'instrument'>>
+  /** per operator, over the above: what a classic patch sets operator by operator */
+  ops?: Partial<Record<1 | 2 | 3 | 4 | 5 | 6, OpDetail>>
+}
+
+export interface OpDetail {
+  /** its own envelope (a shape chosen in the controls replaces it) */
+  eg?: Eg
+  /** 0–7 */
+  rateScaling?: number
+  /** keyboard level scaling: break point (39 = C3), depths 0–99, curves 0 −lin, 1 −exp, 2 +exp, 3 +lin */
+  scaling?: readonly [breakPoint: number, leftDepth: number, rightDepth: number, leftCurve: number, rightCurve: number]
 }
 
 const eg = (rates: Eg['rates'], levels: Eg['levels']): Eg => ({ rates, levels })
 
 const RECIPES = {
   // ---------- keys ----------
+  // the grand after the most copied DX7 piano (1ST-PIANO, REAL PIANO and the TX816 A.PNO 17 family share it): two
+  // three-operator stacks at 1:1, a 5:1 hammer that fades up the keys, a modulator that dips and comes back (the
+  // thump), a slow two-stage fall
   piano: {
-    label: 'Piano', group: 'keys', family: 'tine', hint: 'The DX7 piano: a hammer at the start, darker and shorter up the keys, brighter played hard',
+    label: 'Grand', name: 'Grand piano', group: 'keys', family: 'tine', hint: 'After the classic DX7 grands: two detuned string stacks, a hammer that softens up the keys, a long two-stage fade',
     skeleton: {
-      algorithms: [5], shape: 'struck', feedback: [2, 4],
+      algorithms: [4], shape: 'struck', feedback: [4, 5],
       ops: {
-        1: { ratio: [1], level: 99, velocity: [2, 3] }, 2: { ratio: [1], level: [72, 78], velocity: [5, 6] },
-        3: { ratio: [1], level: [90, 95], detune: [2, 3], velocity: 2 }, 4: { ratio: [7, 9], level: [55, 62], velocity: 6, fast: true },
-        5: { ratio: [2], level: [70, 78], detune: [-2, -1], velocity: 2 }, 6: { ratio: [1], level: [55, 62] },
+        1: { ratio: [1], level: 99, velocity: 4 }, 2: { ratio: [1], level: [86, 89], detune: 2, velocity: 1 },
+        3: { ratio: [5], level: [77, 80], detune: 2, velocity: 3 }, 4: { ratio: [1], level: [97, 98], detune: [-1, 0], velocity: 4 },
+        5: { ratio: [1], level: [67, 70], detune: 3, velocity: 3 }, 6: { ratio: [1], level: [57, 60] },
       },
     },
-    eg: { carrier: eg([99, 48, 33, 55], [99, 92, 0, 0]), modulator: eg([99, 46, 36, 55], [99, 86, 0, 0]) },
-    rateScaling: 3, treble: -0.4, controls: { velocity: 0.6 },
+    ops: {
+      1: { eg: eg([88, 28, 27, 50], [99, 90, 0, 0]), rateScaling: 2 },
+      2: { eg: eg([88, 92, 71, 63], [99, 67, 91, 90]), rateScaling: 2, scaling: [39, 0, 13, 0, 0] },
+      3: { eg: eg([95, 28, 27, 47], [99, 90, 0, 0]), rateScaling: 2, scaling: [5, 0, 99, 0, 1] },
+      4: { eg: eg([88, 28, 27, 50], [99, 90, 0, 0]), rateScaling: 3 },
+      5: { eg: eg([83, 0, 27, 50], [99, 90, 0, 0]), rateScaling: 2 },
+      6: { eg: eg([95, 28, 27, 47], [99, 90, 0, 0]), rateScaling: 2, scaling: [5, 0, 0, 0, 1] },
+    },
+    controls: { velocity: 0.6 },
+  },
+  // the upright after the TX7 UPRIGHT: shorter and honkier, carriers further apart, a buzzing third harmonic on
+  // feedback, a hammer at 4:1, one string that rings on
+  upright: {
+    label: 'Upright', name: 'Upright piano', group: 'keys', family: 'tine', hint: 'After the classic DX7 upright: honky detuned strings, a buzzing hammer, shorter up the keys',
+    skeleton: {
+      algorithms: [3], shape: 'struck', feedback: [6, 7],
+      ops: {
+        1: { ratio: [1], level: 99, detune: -2, velocity: 1 }, 2: { ratio: [1], level: [88, 90], detune: 2, velocity: 2 },
+        3: { ratio: [4], level: [80, 82], detune: -2, velocity: [1, 2] }, 4: { ratio: [1], level: 99, detune: [-4, -3], velocity: 1 },
+        5: { ratio: [2], level: [70, 72], detune: -3, velocity: 2 }, 6: { ratio: [3], level: [52, 55] },
+      },
+    },
+    ops: {
+      1: { eg: eg([70, 25, 20, 48], [99, 82, 0, 0]), rateScaling: 5 },
+      2: { eg: eg([99, 0, 65, 0], [99, 75, 0, 0]), rateScaling: 5, scaling: [50, 0, 21, 0, 0] },
+      3: { eg: eg([99, 72, 25, 39], [24, 85, 0, 0]), rateScaling: 5, scaling: [46, 32, 25, 3, 0] },
+      4: { eg: eg([82, 42, 22, 45], [99, 99, 52, 0]), rateScaling: 4 },
+      5: { eg: eg([99, 60, 31, 39], [99, 96, 71, 0]), rateScaling: 2, scaling: [48, 0, 15, 0, 0] },
+      6: { eg: eg([77, 20, 0, 85], [99, 47, 89, 0]), rateScaling: 2, scaling: [65, 0, 38, 0, 1] },
+    },
+    controls: { velocity: 0.5 },
   },
   epiano: {
     label: 'E.Piano', name: 'Electric piano', group: 'keys', family: 'tine', hint: 'The DX7 e-piano: a bell-like tine over a soft body, both on velocity',

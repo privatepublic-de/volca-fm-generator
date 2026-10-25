@@ -63,7 +63,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, k
   for (const op of noiseOps(skeleton.ops)) makeNoise(v, op, carrierRelease(v))
   // a tonality's own pitch fall comes now and then, more often the wilder (the Pitch accent switch: always)
   if (skeleton.pitchBlip && rng.chance(0.25 + 0.5 * Math.max(0, Math.min(1, wild)))) applyPitchBlip(v, skeleton.pitchBlip)
-  if (inst) applyInstrument(v, inst)
+  if (inst) applyInstrument(v, inst, !c.shape)
 
   // 2. the other tonalities: a free branch while there is one, else a transform. Each tonality's own operators are
   // noted (the skeleton's, a branch's two, the ones a transform changed), so pure can keep a pair of each
@@ -163,7 +163,7 @@ function applyEgs(v: Voice, egs: NonNullable<Instrument['eg']>, rng: Rng, spread
 
 /** What an instrument needs beyond its skeleton: register, keyboard scaling, tremolo, a drum's pitch drop, an
  *  accent. In place. */
-function applyInstrument(v: Voice, inst: Instrument) {
+function applyInstrument(v: Voice, inst: Instrument, ownEgs: boolean) {
   if (inst.transpose) setVc(v, 'transpose', 24 + inst.transpose)
   const { carriers, modulators } = rolesOf(v)
   if (inst.rateScaling) for (let op = 1; op <= 6; op++) setOp(v, op, 'rateScaling', inst.rateScaling)
@@ -186,6 +186,15 @@ function applyInstrument(v: Voice, inst: Instrument) {
     v.set([99, rate, 99, 99, level, 50, 50, 50], VC.pitchRate1)
   }
   if (inst.accent) applyPitchBlip(v, inst.accent)
+  for (const [key, d] of Object.entries(inst.ops ?? {})) {
+    const op = Number(key)
+    if (d.eg && ownEgs) setEg(v, op, d.eg)
+    if (d.rateScaling !== undefined) setOp(v, op, 'rateScaling', d.rateScaling)
+    if (d.scaling) {
+      const [breakPoint, leftDepth, rightDepth, leftCurve, rightCurve] = d.scaling
+      Object.entries({ breakPoint, leftDepth, rightDepth, leftCurve, rightCurve }).forEach(([k, x]) => setOp(v, op, k as 'breakPoint', x))
+    }
+  }
 }
 
 /** A secondary tonality as a second voice in the dominant's free operators, as loud as its share (−6 dB at half). */

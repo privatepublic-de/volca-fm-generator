@@ -113,7 +113,7 @@ name and a number don't fit). Naming costs about 30 ms, so it is skipped while a
 
 ## Instruments (2026-10-25)
 
-"Start from…" offers the sounds FM was first sold on, as bases for the wheel: 35 recipes in
+"Start from…" offers the sounds FM was first sold on, as bases for the wheel: 36 recipes in
 `src/generator/instruments.ts`, in eight groups (keys, plucked, mallets, bass, winds, strings, percussion, voices),
 plus the plain-sine Init voice. A recipe is a skeleton like a tonality's (algorithms, ratios, levels, feedback) with
 its own envelopes and a few touches: transpose, keyboard rate scaling, treble (level scaling), tremolo, a pitch drop
@@ -129,3 +129,12 @@ periodicity, pitch early → body, loudness. All within 2 dB of the target; stru
 0.1–2.5 s, winds, strings and voices hold. (The early pitch reads wrong on the basses: 35 ms is too short for 65 Hz.)
 To tune by ear: piano and e-piano hammer brightness, the harpsichord's buzz, the basses' attack click, snare and
 hi-hat noise against the tone, the choir's vowel.
+
+The grand and upright pianos follow classic patches from the Dexed cartridge library (`tools/find-voices.ts`
+searches it by name, `tools/dump-voices.ts` prints a voice's parameters and traits). The grand is modelled on the
+most copied DX7 piano (1ST-PIANO, REAL PIANO, the TX816 A.PNO 17 family: one patch, 48 copies): algorithm 4, two
+stacks at 1:1, a 5:1 hammer with right depth 99 so it softens up the keys, the body modulator dipping to 67 and back
+to 91 (the thump), carriers R 88 28 27 50 / L 99 90 0 0, rate scaling 2–3. The upright follows the TX7 UPRIGHT:
+algorithm 3, carriers 2–4 steps apart, a 4:1 hammer, a 3:1 feedback-7 modulator for the buzz, rate scaling 4–5, one
+carrier holding at 52 while the key is down. What they share, and our first piano lacked: per-operator envelopes
+(the role envelopes were too uniform), a slow first fall (R2 about 28, not 48) and level scaling per modulator.
