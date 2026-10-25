@@ -6,7 +6,9 @@
     "probe": "vite --port 5186 --strictPort --open /probe.html",
     "build": "tsc && vite build",
     "test": "vitest run",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "calibrate": "vite-node tools/calibrate.ts",
+    "survey": "vite-node tools/survey.ts"
   },
   "author": "Peter Witzel",
   "license": "MIT",

@@ -53,6 +53,23 @@ export function pitch({ samples, sampleRate }: Segment): number {
   return sampleRate / (best + shift)
 }
 
+/** How periodic: the strongest normalized autocorrelation for a period between 50 Hz and 2 kHz, 1 for a steady
+ *  harmonic tone, lower for inharmonic sounds (bells, metal), near 0 for noise. */
+export function periodicity({ samples, sampleRate }: Segment): number {
+  const n = Math.min(samples.length, 8192)
+  const x = samples.subarray(0, n)
+  const norm = (lag: number) => {
+    let s = 0
+    let a = 0
+    let b = 0
+    for (let i = 0; i + lag < n; i++) { s += x[i] * x[i + lag]; a += x[i] * x[i]; b += x[i + lag] * x[i + lag] }
+    return a && b ? s / Math.sqrt(a * b) : 0
+  }
+  let best = 0
+  for (let lag = Math.floor(sampleRate / 2000); lag <= Math.ceil(sampleRate / 50) && lag < n / 2; lag++) best = Math.max(best, norm(lag))
+  return best
+}
+
 /** Magnitude spectrum of a Hann window over the first 2^k samples (k ≤ 14). */
 export function spectrum({ samples, sampleRate }: Segment): { magnitudes: Float64Array; binHz: number } {
   let size = 1

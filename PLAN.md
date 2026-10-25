@@ -258,7 +258,7 @@ docs/          FINDINGS.md (probe results), SOUND.md (tuning and measures)
 | **0 Probe** | `probe.html`: pick a port, send test voices (operator bits vs checksum, count variants), notes, back-to-back sends; FINDINGS.md | Q1 answered on the fm2 (done); the rest as it comes up, the volca fm later |
 | **1 Voice and MIDI** | `dx7/` codec with tests, transport, debounced send, keyboard, a hand-made set of test voices sent to the volca, `.syx` import/export | A voice from Dexed round-trips and plays the same on the volca |
 | **2 Engine** | AudioWorklet engine, the 32 algorithms, model profiles, offline rendering and `measure.ts` | The test voices sound close to the volca and Dexed, by ear; the measures run in tests |
-| **3 Generator** | Twelve tonalities (single pin first), the controls, the pipeline, ensure audible, names; then secondary pins and branches; SOUND.md | Each tonality recognisable on its own by ear, on both volcas; measure tests pass; 1000 random choices: none silent, none clipping |
+| **3 Generator** | Twelve tonalities (single pin first), the controls, the pipeline, ensure audible, names; then secondary pins and branches; SOUND.md | Each tonality recognisable on its own by ear, on both volcas; measure tests pass; random choices (120 in the tests, about 12 ms a voice): none silent, none clipping. Built 2026-10-25 (`src/generator/`, lab page `/generator.html`, docs/SOUND.md); the by-ear check is open |
 | **4 App** | The wheel with pins, the controls, voice view, history and favourites, Store dialog, the look | Generating is pleasant on a laptop with a volca attached |
 | **5 Ship** | Launchers, GitHub Pages, privacy page, About, README | It runs from a double-click and from the Pages URL |
 

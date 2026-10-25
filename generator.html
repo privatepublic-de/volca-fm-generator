@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>volca FM Generator Lab</title>
+    <link rel="stylesheet" href="/src/ui/dev.css" />
+    <style>
+      .layout { grid-template-columns: 340px minmax(0, 1fr); }
+      #ring { position: relative; width: 300px; height: 300px; margin: 4px auto 10px; }
+      #ring button { position: absolute; width: 74px; margin-left: -37px; margin-top: -14px; font-size: 12px; padding: 4px 2px; border-width: 2px; }
+      #ring button.pinned { color: #16141c; font-weight: 600; }
+      #ring .centre { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: 12px; text-align: center; width: 110px; }
+      .pin { display: grid; grid-template-columns: 70px 1fr 1fr 24px; gap: 6px; align-items: center; margin-bottom: 4px; font-size: 12px; }
+      .pin b { font-size: 13px; }
+      .pin label { display: flex; flex-direction: column; color: var(--muted); }
+      .pin button { padding: 2px 6px; }
+      .controls { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px 16px; }
+      .controls label { display: flex; flex-direction: column; color: var(--muted); font-size: 12px; gap: 2px; }
+      .controls label span { display: flex; justify-content: space-between; }
+      .controls label span b { color: var(--text); font-weight: 500; }
+      .big { font-size: 15px; padding: 6px 16px; }
+      #history { display: flex; flex-wrap: wrap; gap: 4px; }
+      #history button { font: 12px ui-monospace, Menlo, monospace; padding: 3px 6px; border-left-width: 4px; }
+      #history button.sel { border-color: var(--accent); color: var(--accent); }
+    </style>
+  </head>
+  <body>
+    <h1><span>volca fm / fm2</span> generator lab · Phase 3</h1>
+    <p class="intro">
+      The generator before its real interface: pick tonalities on the ring (click again to remove), weigh them, set the
+      controls, Generate. Every change makes the voice again with the same seed; Generate rolls a new one. It plays in
+      the browser and, with Play on volca or both, on the volca.
+    </p>
+    <div class="layout">
+      <div>
+        <section>
+          <h2>Tonalities</h2>
+          <div id="ring"><div class="centre">click to pin,<br />again to remove</div></div>
+          <div id="pins"></div>
+        </section>
+        <section>
+          <h2>History</h2>
+          <div id="history"></div>
+          <div class="row" style="margin-top: 8px">
+            <button id="exportVoice">Export voice (.syx)</button>
+            <button id="exportBank">Export history as cartridge</button>
+          </div>
+          <p class="hint">The cartridge (the last 32) loads in Dexed.</p>
+        </section>
+      </div>
+      <div>
+        <section>
+          <h2>Controls</h2>
+          <div class="controls" id="controls"></div>
+          <div class="row" style="margin-top: 12px">
+            <button id="generate" class="big">Generate</button>
+            <button id="variation">Variation</button>
+            <button id="mutate">Mutate</button>
+            <label class="hint"><input id="auto" type="checkbox" checked /> play on change</label>
+          </div>
+          <div id="info"></div>
+        </section>
+        <section>
+          <h2>Engine and volca</h2>
+          <div class="row">
+            <button id="start">Start audio</button>
+            <label>Model <select id="model"><option value="fm2">volca fm2</option><option value="fm">volca fm</option></select></label>
+            <label>Volume <input id="volume" type="range" min="0" max="8" step="0.1" value="2" /></label>
+            <label>Velocity <input id="velocity" type="range" min="1" max="127" value="100" /></label>
+            <span id="status" class="hint"></span>
+          </div>
+          <div class="row">
+            <button id="connect">Connect MIDI</button>
+            <label>Out <select id="output"></select></label>
+            <label>MIDI ch <input id="channel" type="number" min="1" max="16" value="1" /></label>
+            Play on
+            <button data-target="browser" class="on">browser</button>
+            <button data-target="volca">volca</button>
+            <button data-target="both">both</button>
+          </div>
+        </section>
+        <section><canvas id="scope" width="1200" height="120"></canvas></section>
+        <section><div id="keys"></div></section>
+      </div>
+    </div>
+    <script type="module" src="/src/generatorPage.ts"></script>
+  </body>
+</html>
