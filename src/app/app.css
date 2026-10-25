@@ -162,6 +162,8 @@ kbd {
 
 .slider { display: grid; grid-template-columns: 7em 1fr; grid-template-areas: 'label input' '. ends'; align-items: center; column-gap: 12px; }
 .slider-label { grid-area: label; }
+.field { display: grid; grid-template-columns: 7em 1fr; grid-template-areas: 'label input'; align-items: center; column-gap: 12px; }
+.field > .segmented { grid-area: input; }
 .slider input { grid-area: input; }
 .slider-ends { grid-area: ends; display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); margin-top: -2px; }
 .slider.disabled { opacity: 0.45; }

@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, type Register, type Shape } from '../generator/choices'
 import { SHAPE_SPECS, type Eg } from '../generator/shapes'
-import { hueOfAngle, pinLabel } from './Wheel'
+import { hueOfAngle, pinHint, pinLabel } from './Wheel'
 import { audition, MAX_PINS, useApp, type Controls as ControlValues } from './store'
 
 /** A slider that makes the voice again while it moves and plays it when let go. */
@@ -69,17 +69,25 @@ function ShapePicker() {
   )
 }
 
-function Segmented<T extends string>({ label, options, labels, value, onPick }: {
-  label: string; options: readonly T[]; labels: Record<T, string>; value: T | null; onPick: (v: T | null) => void
+function Segmented<T extends string>({ label, options, labels, hints, value, onPick }: {
+  label: string; options: readonly T[]; labels: Record<T, string>; hints?: Record<T, string>; value: T | null; onPick: (v: T | null) => void
 }) {
   return (
-    <div className="segmented" role="radiogroup" aria-label={label}>
-      <button role="radio" aria-checked={value === null} className={value === null ? 'on' : ''} onClick={() => onPick(null)}>Own</button>
-      {options.map((o) => (
-        <button key={o} role="radio" aria-checked={value === o} className={value === o ? 'on' : ''} onClick={() => onPick(o)}>{labels[o]}</button>
-      ))}
+    <div className="field">
+      <span className="slider-label" id={`label-${label}`}>{label}</span>
+      <div className="segmented" role="radiogroup" aria-labelledby={`label-${label}`}>
+        <button role="radio" aria-checked={value === null} className={value === null ? 'on' : ''} onClick={() => onPick(null)} title="Where the tonality plays">Own</button>
+        {options.map((o) => (
+          <button key={o} role="radio" aria-checked={value === o} className={value === o ? 'on' : ''} onClick={() => onPick(o)} title={hints?.[o]}>{labels[o]}</button>
+        ))}
+      </div>
     </div>
   )
+}
+
+const REGISTER_HINTS: Record<Register, string> = {
+  sub: 'Two octaves down, kept pure', bass: 'An octave down, a little brighter', mid: 'As played',
+  lead: 'An octave up', high: 'Two octaves up, tamer at the top',
 }
 
 export function PinList() {
@@ -91,7 +99,7 @@ export function PinList() {
   return (
     <ul className="pins">
       {pins.map((p) => (
-        <li key={p.id} className={selected === p.id ? 'selected' : ''} onClick={() => selectPin(p.id)}>
+        <li key={p.id} className={selected === p.id ? 'selected' : ''} onClick={() => selectPin(p.id)} title={pinHint(p)}>
           <span className="pin-swatch" style={{ background: `hsl(${hueOfAngle(p.angle)} 85% 64%)` }} />
           <span className="pin-name">{pinLabel(p)}</span>
           <span className="pin-extreme" title="Towards the rim: more extreme">{p.radius < 0.34 ? 'mild' : p.radius > 0.67 ? 'extreme' : 'typical'}</span>
@@ -135,7 +143,7 @@ export function Controls() {
           hint="Vibrato, shimmer between the carriers, and brightness that drifts while a note is held" />
       </Group>
       <Group title="Playing">
-        <Segmented<Register> label="Register" options={REGISTERS} labels={REGISTER_LABELS} value={c.register} onPick={step('register')} />
+        <Segmented<Register> label="Register" options={REGISTERS} labels={REGISTER_LABELS} hints={REGISTER_HINTS} value={c.register} onPick={step('register')} />
         <Slider label="Velocity" left="none" right="strong" min={0} max={1} value={c.velocity} onChange={set('velocity')}
           disabled={model === 'fm'} hint={model === 'fm' ? 'The volca fm plays every note at the same velocity' : 'How much brighter and louder a harder note plays'} />
         <label className="toggle">
