@@ -198,12 +198,11 @@ kbd {
 .stage-wheel { align-self: start; }
 /* as tall as the wheel's column: the spare height goes between the groups, the actions sit by the voice below */
 .stage-controls { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
-.stage-controls .controls { flex: 1; grid-template-rows: auto 1fr; align-items: stretch; }
-.stage-controls .controls-col { display: flex; flex-direction: column; justify-content: space-evenly; }
+.stage-controls .controls { flex: 1; align-content: start; }
 /* the envelope across, then two columns: tone and new voices, playing and effects */
-.controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 32px; align-items: start; }
+/* groups in rows across two columns: the ones side by side start level, every row the same space apart */
+.controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px 32px; align-items: start; }
 .controls-wide { grid-column: 1 / -1; }
-.controls-col { display: grid; gap: 14px; }
 .controls-half { width: calc(50% - 16px); }
 @media (max-width: 1100px) {
   .controls { grid-template-columns: minmax(0, 1fr); }
@@ -301,7 +300,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .actions .apart { margin-left: 12px; }
 .actions .kept { border-color: transparent; color: var(--accent); background: none; }
 .actions .kept::before { content: '✓ '; }
-.actions-block { position: relative; }
+.actions-block { position: relative; container-type: inline-size; }
 /* the instruments to start from: above the action row, over the controls */
 .start-from {
   position: absolute;
@@ -341,8 +340,16 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   font-size: 13px;
   pointer-events: none;
 }
-.actions-history { display: inline-flex; gap: 4px; margin-left: 12px; }
-.actions .toggle { margin-left: auto; }
+.actions-history { display: inline-flex; gap: 4px; margin-left: auto; }
+.actions-history button { display: inline-flex; gap: 6px; align-items: center; }
+/* a tight row keeps Undo and Redo on it as arrows rather than wrapping them */
+@container (max-width: 600px) {
+  .actions { gap: 6px; }
+  .actions button { padding: 6px 10px; }
+  .actions .apart { margin-left: 8px; }
+  .actions-history .label { display: none; }
+}
+@container (max-width: 530px) { .actions button { padding: 5px 8px; font-size: 14px; } }
 
 /* ---------- the voice ---------- */
 
@@ -442,6 +449,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .keyboard-octave { display: flex; align-items: center; gap: 4px; font: 500 14px var(--condensed); color: var(--muted); }
 .keyboard-octave span { min-width: 2em; text-align: center; }
 .keyboard-octave button { width: 26px; height: 26px; padding: 0; background: none; font-size: 16px; line-height: 1; }
+.keyboard-autoplay { align-self: center; white-space: nowrap; }
 .keyboard-fold { align-self: center; font-size: 12px; padding: 3px 8px; background: none; color: var(--muted); }
 .keyboard-dock.folded .keyboard-dock-inner { justify-content: flex-end; }
 
@@ -580,7 +588,6 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   .pin-extreme { display: none; }
   .voice { padding: 16px; }
   .voice-name { font-size: 34px; }
-  .actions .toggle { margin-left: 0; }
   .field { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'label' 'input'; row-gap: 6px; }
 }
 

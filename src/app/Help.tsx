@@ -100,7 +100,7 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
           <p>
             <strong>Browser</strong>, <strong>Volca</strong> or <strong>Both</strong> in the top bar choose where a note
             sounds. Play the keyboard at the bottom (softer at the top of a key, harder at the front), or the computer keys
-            A to ; with Z and X for the octave. With Play on change, every change plays the last note you played.
+            A to ; with Z and X for the octave. With Play on change (beside the keyboard), every change plays the last note you played.
           </p>
           <p className="help-note">
             The browser's sound is an emulation, not the volca. It runs the DX7 engine of the open-source MSFA project, the

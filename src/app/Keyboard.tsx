@@ -3,7 +3,7 @@
 // computer keys play too: A W S E D F T G Y H U J K O L P ; from the octave shown, Z and X (or − +) move it. On a
 // phone, two octaves: three would make the keys too narrow to hit.
 import { useEffect, useRef, useState } from 'react'
-import { playback } from './store'
+import { playback, useApp } from './store'
 
 const FIRST = 48
 const KEYS = 37
@@ -18,6 +18,8 @@ const noteName = (n: number) => `C${n / 12 - 1}`
 export function Keyboard() {
   const [held, setHeld] = useState<ReadonlySet<number>>(new Set())
   const [octave, setOctave] = useState(0)
+  const autoplay = useApp((s) => s.autoplay)
+  const setAutoplay = useApp((s) => s.setAutoplay)
   const [phone, setPhone] = useState(() => matchMedia(PHONE).matches)
   useEffect(() => {
     const m = matchMedia(PHONE)
@@ -104,6 +106,10 @@ export function Keyboard() {
             ))}
           </div>
         )}
+        <label className="toggle small keyboard-autoplay">
+          <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
+          <span title="Plays the note you played last (C4 until you play one) after every change">Play on change</span>
+        </label>
         <button className="keyboard-fold" onClick={() => fold(!folded)} aria-expanded={!folded}
           title={folded ? 'Show the keyboard' : 'Fold the keyboard away (the computer keys still play)'}>
           {folded ? 'Keyboard' : 'Hide'}

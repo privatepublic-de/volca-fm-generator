@@ -245,32 +245,29 @@ export function Controls() {
           <Slider label="Length" left="short" right="long" bipolar min={-1} max={1} value={c.length} onChange={set('length')} />
         </div>
       </Group>
-      <div className="controls-col">
-        <Group title="Tone">
-          <Slider label="Brightness" left="mellow" right="bright" bipolar min={-1} max={1} value={c.brightness} onChange={set('brightness')} />
-          <Slider label="Complexity" left="pure" right="dense" min={0} max={1} reset={0.5} value={c.complexity} onChange={set('complexity')}
-            hint="How many of the six operators sound and how deep: two when pure, six and intense when dense" />
-          <Slider label="Motion" left="still" right="alive" min={0} max={1} value={c.motion} onChange={set('motion')}
-            hint="Vibrato, shimmer and drifting brightness; past the middle, wobbles, random steps and pitch drift" />
-        </Group>
-        <Group title="Character">
-          <Slider label="Wild" left="typical" right="wild" min={0} max={1} value={wild} onChange={setWild}
-            hint="How far the voice may stray from its tonalities' usual sound: odd ratios, other feedback, near the top another algorithm" />
-        </Group>
-      </div>
-      <div className="controls-col">
-        <Group title="Playing">
-          <Segmented<Register> label="Register" options={REGISTERS} labels={REGISTER_LABELS} hints={REGISTER_HINTS} value={c.register} onPick={step('register')} />
-          <Slider label="Velocity" left="none" right="strong" min={0} max={1} value={c.velocity ?? touch} onChange={set('velocity')}
-            own={{ is: c.velocity === null, back: () => setControl('velocity', null) }}
-            disabled={model === 'fm'} hint={model === 'fm' ? 'The volca fm plays every note at the same velocity' : 'How much brighter and louder a harder note plays; until moved, as the voice has it'} />
-          <label className="toggle" title="A short pitch fall into every note">
-            <input type="checkbox" checked={c.pitchAccent} onChange={(e) => step('pitchAccent')(e.target.checked)} />
-            <span>Pitch accent</span>
-          </label>
-        </Group>
-        <EffectControls />
-      </div>
+      {/* in rows across the two columns, so the groups side by side start level */}
+      <Group title="Tone">
+        <Slider label="Brightness" left="mellow" right="bright" bipolar min={-1} max={1} value={c.brightness} onChange={set('brightness')} />
+        <Slider label="Complexity" left="pure" right="dense" min={0} max={1} reset={0.5} value={c.complexity} onChange={set('complexity')}
+          hint="How many of the six operators sound and how deep: two when pure, six and intense when dense" />
+        <Slider label="Motion" left="still" right="alive" min={0} max={1} value={c.motion} onChange={set('motion')}
+          hint="Vibrato, shimmer and drifting brightness; past the middle, wobbles, random steps and pitch drift" />
+      </Group>
+      <Group title="Playing">
+        <Segmented<Register> label="Register" options={REGISTERS} labels={REGISTER_LABELS} hints={REGISTER_HINTS} value={c.register} onPick={step('register')} />
+        <Slider label="Velocity" left="none" right="strong" min={0} max={1} value={c.velocity ?? touch} onChange={set('velocity')}
+          own={{ is: c.velocity === null, back: () => setControl('velocity', null) }}
+          disabled={model === 'fm'} hint={model === 'fm' ? 'The volca fm plays every note at the same velocity' : 'How much brighter and louder a harder note plays; until moved, as the voice has it'} />
+        <label className="toggle" title="A short pitch fall into every note">
+          <input type="checkbox" checked={c.pitchAccent} onChange={(e) => step('pitchAccent')(e.target.checked)} />
+          <span>Pitch accent</span>
+        </label>
+      </Group>
+      <Group title="Character">
+        <Slider label="Wild" left="typical" right="wild" min={0} max={1} value={wild} onChange={setWild}
+          hint="How far the voice may stray from its tonalities' usual sound: odd ratios, other feedback, near the top another algorithm" />
+      </Group>
+      <EffectControls />
     </div>
   )
 }
@@ -295,13 +292,11 @@ export function Actions() {
   const canUndo = at < 0 ? length > 0 : at > 0
   const canRedo = at >= 0 && at < length - 1
   const kept = useApp((s) => s.favourites.find((f) => sameSound(f.voice, s.voice)))
-  const autoplay = useApp((s) => s.autoplay)
-  const setAutoplay = useApp((s) => s.setAutoplay)
   const [hint, setHint] = useState<ActionKey | null>(null)
   const choosing = useApp((s) => s.startMenu)
   const setChoosing = useApp((s) => s.setStartMenu)
-  const button = (key: ActionKey, label: string, shortcut: string, run: () => void, className = '', disabled = false) => (
-    <button className={className} onClick={run} title={shortcut} disabled={disabled}
+  const button = (key: ActionKey, label: ReactNode, shortcut: string, run: () => void, className = '', disabled = false, name?: string) => (
+    <button className={className} onClick={run} title={shortcut} disabled={disabled} aria-label={name}
       onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>
       {label}
     </button>
@@ -316,17 +311,13 @@ export function Actions() {
         {/* set apart: the steps from here, then starting over */}
         {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, 'apart')}
         {kept
-          ? <button className="kept" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out"
+          ? <button className="kept apart" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out"
               onPointerEnter={() => setHint('kept')} onFocus={() => setHint('kept')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Kept</button>
-          : button('keep', 'Keep', 'Q', keep)}
+          : button('keep', 'Keep', 'Q', keep, 'apart')}
         <span className="actions-history">
-          {button('undo', 'Undo', '⌘Z', () => { back(); audition() }, '', !canUndo)}
-          {button('redo', 'Redo', '⇧⌘Z', () => { forward(); audition() }, '', !canRedo)}
+          {button('undo', <><span aria-hidden="true">↶</span><span className="label">Undo</span></>, '⌘Z', () => { back(); audition() }, '', !canUndo, 'Undo')}
+          {button('redo', <><span className="label">Redo</span><span aria-hidden="true">↷</span></>, '⇧⌘Z', () => { forward(); audition() }, '', !canRedo, 'Redo')}
         </span>
-        <label className="toggle small">
-          <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
-          <span title="Plays the note you played last (C4 until you play one) after every change">Play on change</span>
-        </label>
       </div>
       {hint && !choosing && <p className="action-hint" role="status">{ACTION_HINTS[hint]}</p>}
       {choosing && <StartFromMenu onClose={() => setChoosing(false)} />}
