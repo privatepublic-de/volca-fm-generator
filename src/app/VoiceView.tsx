@@ -125,7 +125,12 @@ export function VoiceView() {
   const opTonality = generated?.opTonality ?? {}
   const mix = generated && describeMix(generated.roles, generated.instrument ? instrumentName(INSTRUMENTS[generated.instrument]) : undefined)
   return (
-    <section className="voice">
+    <section className="voice" aria-labelledby="voice-title">
+      {/* what to do with it first, as the controls' groups are titled */}
+      <div className="voice-bar">
+        <h3 id="voice-title">Your voice</h3>
+        <VoiceActions />
+      </div>
       <div className="voice-head">
         <h2 className="voice-name">{voiceName(voice)}</h2>
         <p className="voice-mix">{mix ?? (made ? 'Made under the other volca model: its pins are back, the details may differ' : 'From a file: the wheel didn\'t make it, so it has no pins')}</p>
@@ -133,7 +138,6 @@ export function VoiceView() {
           Algorithm {alg.number}, feedback {voice[VC.feedback]}
           <button className="voice-export" onClick={() => exportVoice(voice, voiceName(voice))} title="Save the voice you hear as a DX7 single-voice SysEx file">Export .syx</button>
         </p>
-        <VoiceActions />
       </div>
       <AlgorithmDiagram voice={voice} opTonality={opTonality} />
       <ol className="ops">
