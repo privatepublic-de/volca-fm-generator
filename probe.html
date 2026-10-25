@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>volca FM Probe</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #16141c;
+        --panel: #201d28;
+        --line: #36304a;
+        --text: #e6e2ee;
+        --muted: #8f88a3;
+        --accent: #f0a050;
+        --ok: #5cc98a;
+        --bad: #ff7a6e;
+        --warn: #e6b450;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.4 system-ui, sans-serif;
+      }
+      h1 { font-size: 18px; margin: 0 0 4px; }
+      h1 span { color: var(--accent); }
+      .intro { color: var(--muted); margin: 0 0 12px; max-width: 70em; }
+      .layout { display: grid; grid-template-columns: minmax(0, 760px) minmax(0, 1fr); gap: 16px; }
+      @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+      section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+      }
+      section h2 { font-size: 13px; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+      section h2 b { color: var(--accent); font-weight: 600; }
+      .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+      .test { border-top: 1px solid var(--line); padding: 6px 0 2px; }
+      .test .name { min-width: 13em; font-weight: 600; }
+      .test .expect { color: var(--muted); font-size: 12px; margin: 0 0 4px; }
+      .test input.note { flex: 1; min-width: 10em; }
+      .test.answered .name::after { content: ' ✓'; color: var(--ok); }
+      .hint { color: var(--muted); font-size: 12px; margin: 0 0 6px; }
+      button, select, input, textarea {
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 4px 9px;
+        font: inherit;
+      }
+      textarea { width: 100%; box-sizing: border-box; min-height: 4em; }
+      input[type='number'] { width: 4.5em; }
+      button:hover:not(:disabled) { border-color: var(--accent); }
+      button:disabled { opacity: 0.4; }
+      button.stop { border-color: #6b2b26; }
+      #status { color: var(--muted); }
+      #log {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 10px;
+        height: calc(100vh - 110px);
+        overflow: auto;
+        font: 12px/1.45 ui-monospace, Menlo, monospace;
+        white-space: pre-wrap;
+        word-break: break-all;
+        position: sticky;
+        top: 16px;
+      }
+      .ok { color: var(--ok); }
+      .bad { color: var(--bad); }
+      .warn { color: var(--warn); }
+      .dim { color: var(--muted); }
+      .head { color: var(--accent); margin-top: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1><span>volca fm / fm2</span> Web MIDI probe · Phase 0</h1>
+    <p class="intro">
+      The volcas send nothing back, so every test here is by ear: run it, listen, pick what you heard (and add a note).
+      Answers are kept in this browser per model; <b>Report</b> at the bottom gives them all as Markdown for docs/FINDINGS.md.
+      Nothing here stores to the volca's memory: voices go to the program being played, as from an editor.
+    </p>
+    <div class="layout">
+      <div id="tests"></div>
+      <div id="log"></div>
+    </div>
+    <script type="module" src="/src/probe.ts"></script>
+  </body>
+</html>
