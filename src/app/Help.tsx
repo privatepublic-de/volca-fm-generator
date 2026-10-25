@@ -6,8 +6,8 @@ import { angleOf, TONALITY_HUES } from '../generator/choices'
 import { FIELD } from './Wheel'
 
 const SECTIONS = [
-  ['wheel', 'The wheel'], ['start', 'Starting points'], ['ways', 'Three ways on'], ['shaping', 'Shaping'],
-  ['listening', 'Listening'], ['volca', 'Your volca'], ['files', 'Files'], ['keys', 'Keys'],
+  ['wheel', 'The wheel'], ['start', 'Starting points'], ['ways', 'Three ways on'], ['voice', 'Your voice'],
+  ['shaping', 'Shaping'], ['listening', 'Listening'], ['volca', 'Your volca'], ['files', 'Files'], ['keys', 'Keys'],
 ] as const
 
 export function Help({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -53,6 +53,10 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             move it, off the wheel (or × in its row) to remove it. A selected pin moves with the arrow keys; + and − set its
             weight.
           </p>
+          <p>
+            Rest the pointer anywhere on the wheel and a label says what a click there would do; on a tonality's name, what
+            it sounds like.
+          </p>
         </section>
 
         <section id="help-start">
@@ -74,10 +78,27 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             <dt>Mutate <kbd>M</kbd></dt><dd>A medium step. The pins wander around the wheel and in or out, the controls get a push, a pin may come or go. An instrument without pins gets its first one.</dd>
             <dt>New voice <kbd>Enter</kbd></dt><dd>A fresh start: new pins anywhere, the controls back to their defaults, no instrument. Register, Wild and the effects stay as you set them. The wheel's centre does the same.</dd>
           </dl>
+        </section>
+
+        <section id="help-voice">
+          <h3>Your voice</h3>
+          <p>The panel under the controls shows the voice you hear and what you can do with it.</p>
+          <dl className="help-defs">
+            <dt>Its name</dt><dd>Given by how it sounds ("Airy Pad", "Clang Keys") or by the instrument you started from. Click it to give the voice a name of your own, up to 10 characters as on the DX7; empty it for the automatic one again. Your name stays through your changes until a new start, and goes with the voice to the volca and into files.</dd>
+            <dt>The line below</dt><dd>What it's made of: its base and the tonalities colouring it.</dd>
+            <dt>The algorithm</dt><dd>How its six operators are wired, as the DX7 draws it: the bottom row is heard, the ones above shape the sound of the one below.</dd>
+            <dt>The operators</dt><dd>Each one's frequency ratio, level and envelope; heard or shapes says which kind it is. Coloured by the tonality each belongs to.</dd>
+            <dt>Export .syx</dt><dd>Saves the voice you hear as a DX7 file.</dd>
+          </dl>
           <p>
-            Every step is listed under Recent changes; Undo and Redo, at the top of Your voice (<kbd>⌘Z</kbd>,
-            <kbd>⇧⌘Z</kbd>) go back and forth. <strong>Keep</strong> (<kbd>Q</kbd>), there too, puts the voice, with its
-            pins and controls, in your kept voices.
+            At the top of the panel, beside Variation and Mutate: <strong>Keep</strong> (<kbd>Q</kbd>) puts the voice, with
+            its pins and controls, in your kept voices (Kept, click to take it out again), and <strong>Undo</strong> and
+            <strong> Redo</strong> (<kbd>⌘Z</kbd>, <kbd>⇧⌘Z</kbd>) go back and forth through this session.
+          </p>
+          <p>
+            Below it, <strong>Recent changes</strong> lists the last steps by what they changed; click one to go back to
+            it. <strong>Kept</strong> lists the voices you kept: click one to bring it back with its pins and controls,
+            double-click its name to rename it, .syx to export it, × to remove it.
           </p>
         </section>
 
@@ -126,7 +147,7 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
           <p>
             Choose the model in the top bar. To connect, use Chrome or Edge (Safari has no Web MIDI) and a MIDI interface
             into the volca's MIDI IN; press Connect the volca, allow MIDI access when the browser asks, then pick the MIDI
-            out and the volca's channel.
+            out and the volca's channel. The dot beside them turns green while notes go to the volca (Volca or Both).
           </p>
           <p>
             A voice sent to the volca replaces the sound of the program it's on until you pick another program. To keep it
@@ -140,10 +161,8 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
           <p>
             Kept voices stay in this browser. Each one exports as a single-voice <code>.syx</code> (its .syx button), and
             <strong> Export as cartridge</strong> writes the first 32 as one DX7 bank. Both are standard DX7 SysEx: Dexed,
-            a DX7, a TX802 and other DX7-compatible synths load them. <strong>Export .syx</strong> beside the voice's name
-            saves the voice you hear. Click the name to give the voice one of your own (10 characters, as on the DX7):
-            it stays through your changes until a new start, and goes with the voice to the volca and into files. <strong>Import .syx</strong> reads single voices and 32-voice banks into your kept
-            voices.
+            a DX7, a TX802 and other DX7-compatible synths load them. <strong>Export .syx</strong> beside the voice's name saves the voice you hear, under its name.
+            <strong> Import .syx</strong> reads single voices and 32-voice banks into your kept voices.
           </p>
         </section>
 
