@@ -10,7 +10,7 @@ import { normalizeLoudness, SILENT_DB } from './loudness'
 import { nameVoice, nameWithNoun } from './naming'
 import { rng as makeRng, type Rng } from './random'
 import { applyLength, applyPitchBlip, applyShape, clamp99, makeTransient, rolesOf, setEg, type Eg } from './shapes'
-import { INSTRUMENTS, type Instrument, type InstrumentId } from './instruments'
+import { INSTRUMENTS, variantOf, type Instrument, type InstrumentId } from './instruments'
 import { applyOpSpec, choose, fastOps, hasNoiseSource, makeNoise, noiseDb, noiseHostOp, noiseOps, noiseSource as noiseSourceOp, TONALITY_DEFS, useNoiseHost, within, type Skeleton } from './tonalities'
 
 export interface GenerateOptions {
@@ -45,7 +45,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, k
   const rng = makeRng(seed)
   const spread = spreadOf(wild)
   const mix = mixOf(c.pins)
-  const inst = c.instrument ? INSTRUMENTS[c.instrument] : null
+  const inst = c.instrument ? variantOf(INSTRUMENTS[c.instrument], rng) : null
   // the base: an instrument (then every pin is a colour on it), else the heaviest pin, else a tonality picked by the
   // seed
   if (!inst && !mix.length) mix.push({ tonality: rng.pick(Object.keys(TONALITY_DEFS) as Tonality[]), weight: 1, intensity: 0.5 })

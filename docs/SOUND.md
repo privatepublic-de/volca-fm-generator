@@ -168,3 +168,9 @@ Learned on the way:
 - The classic harmonica fades a little while held (to −13 dB over 2.6 s); the hold test allows it.
 - Kick, snare, tom, hi-hat, cymbal, cowbell, choir, ooh and whistle stay ours: they measure close to the classics
   (the classic whistles are plain sines, ours has air).
+
+The pianos are your picks from the old comparison cartridge, by ear on the fm2 (2026-10-25): the grand is the TX7
+STEINWAY or Bosendorfr, the upright the TX7 UPRIGHT, the TX816 AC.PNO 1.1, GOOD PIANO or PianoBo 7\ (the last two
+from the library's piano folders, not Yamaha's). An instrument can hold several originals (`variants`): each new
+voice picks one by its seed, so New voice moves between them. `tools/recipe-from-voice.ts` writes them with
+`id=NAME@place+NAME@place`.

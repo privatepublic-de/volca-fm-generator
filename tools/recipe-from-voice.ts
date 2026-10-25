@@ -2,7 +2,9 @@
 // envelopes, keyboard scaling, LFO and pitch envelope as the original has them, the levels exact (one step can tip
 // a feedback-7 operator into another sound). Each recipe keeps its label, group, family and hint; the rest is
 // replaced, with a comment naming the source.
-// npx vite-node tools/recipe-from-voice.ts [--write] id=NAME@place-in-path …
+// Several originals for one instrument (id=NAME@place+NAME@place): the first is the recipe, the others its variants,
+// one picked per seed.
+// npx vite-node tools/recipe-from-voice.ts [--write] id=NAME@place-in-path[+NAME@place…] …
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, relative } from 'node:path'
@@ -15,19 +17,25 @@ const FILE = 'src/generator/instruments.ts'
 const write = process.argv.includes('--write')
 const specs = process.argv.slice(2).filter((a) => a.includes('=')).map((a) => {
   const [id, rest] = a.split('=')
-  const [name, place] = rest.split('@')
-  return { id, name, place: place ?? '' }
+  return {
+    id,
+    sources: rest.split('+').map((part) => {
+      const [name, place] = part.split('@')
+      return { name, place: place ?? '' }
+    }),
+  }
 })
 
 const files: string[] = []
 const walk = (d: string) => { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else if (/\.syx$/i.test(f)) files.push(p) } }
 walk(ROOT)
-const found = new Map<string, { voice: Voice; where: string }>()
+const wanted = specs.flatMap((s) => s.sources)
+const found = new Map<(typeof wanted)[number], { voice: Voice; where: string }>()
 for (const f of files) {
   let c; try { c = readSyx(readFileSync(f)) } catch { continue }
   for (const { voice, source } of c.voices) {
     const where = `${relative(ROOT, f)} ${source}`
-    for (const s of specs) if (!found.has(s.id) && voiceName(voice).trim() === s.name.trim() && where.includes(s.place)) found.set(s.id, { voice, where })
+    for (const w of wanted) if (!found.has(w) && voiceName(voice).trim() === w.name.trim() && where.includes(w.place)) found.set(w, { voice, where })
   }
 }
 
@@ -79,9 +87,10 @@ function recipe(v: Voice, shape: string): string {
 }
 
 let text = readFileSync(FILE, 'utf8')
+const sourceOf = (where: string) => where.replace(/^Dexed_cart_1\.0\//, '').replace(/\.syx bank 1 \/ /i, ' #')
 for (const s of specs) {
-  const f = found.get(s.id)
-  if (!f) { console.log(`${s.id}: ${s.name} not found`); continue }
+  const missing = s.sources.filter((w) => !found.has(w))
+  if (missing.length) { console.log(`${s.id}: ${missing.map((w) => w.name).join(', ')} not found`); continue }
   const start = text.indexOf(`\n  ${s.id}: {\n`)
   if (start < 0) { console.log(`${s.id}: no such recipe`); continue }
   const end = text.indexOf('\n  },\n', start) + 5
@@ -91,10 +100,18 @@ for (const s of specs) {
   const shape = /shape: '(\w+)'/.exec(block)?.[1] ?? 'struck'
   // the comment above the recipe names its source
   const before = text.slice(0, start + 1).replace(/(\n  \/\/ after [^\n]*)+\n$/, '\n')
-  const source = f.where.replace(/^Dexed_cart_1\.0\//, '').replace(/\.syx bank 1 \/ /i, ' #')
-  const body = `  // after ${s.name.trim()} (${source})\n${head.join('\n')}\n${recipe(f.voice, shape)}\n  },`
+  const [first, ...others] = s.sources.map((w) => ({ ...found.get(w)!, name: w.name.trim() }))
+  const variants = others.length
+    ? ['    variants: [', ...others.flatMap((o) => [
+        `      // after ${o.name} (${sourceOf(o.where)})`,
+        '      {',
+        recipe(o.voice, shape).split('\n').map((l) => `    ${l}`).join('\n'),
+        '      },',
+      ]), '    ],']
+    : []
+  const body = [`  // after ${first.name} (${sourceOf(first.where)})`, ...head, recipe(first.voice, shape), ...variants, '  },'].join('\n')
   text = before + body + text.slice(end)
-  console.log(`${s.id} ← ${s.name.trim()} (${source})`)
+  console.log(`${s.id} ← ${s.sources.map((w) => w.name.trim()).join(', ')}`)
 }
 if (write) writeFileSync(FILE, text)
 else console.log('(dry run: --write to change the recipes)')

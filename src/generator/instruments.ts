@@ -8,6 +8,7 @@
 // 40 ≈ 2 s, 50 ≈ 0.6 s, 60 ≈ 0.2 s, 70 ≈ 0.08 s. Fixed frequencies in Hz; levels 0–99.
 import type { GeneratorChoices, Tonality } from './choices'
 import type { Eg } from './shapes'
+import type { Rng } from './random'
 import type { Skeleton } from './tonalities'
 
 export const INSTRUMENT_GROUPS = ['keys', 'plucked', 'mallets', 'bass', 'winds', 'brass', 'strings', 'percussion', 'voices'] as const
@@ -49,8 +50,23 @@ export interface Instrument {
   accent?: 'above' | 'below'
   /** the controls it starts with */
   controls?: Partial<Omit<GeneratorChoices, 'pins' | 'instrument'>>
+  /** other originals of the same instrument, one picked per seed (the recipe itself is one of them) */
+  variants?: readonly InstrumentVariant[]
   /** per operator, over the above: what a classic patch sets operator by operator */
   ops?: Partial<Record<1 | 2 | 3 | 4 | 5 | 6, OpDetail>>
+}
+
+/** A variant replaces the sound of the recipe; its name, group and colour stay. */
+export type InstrumentVariant = Omit<Instrument, 'label' | 'name' | 'group' | 'hint' | 'family' | 'variants'>
+
+/** The recipe or one of its variants, by the seed's first draw (an instrument without variants draws nothing). */
+export function variantOf(inst: Instrument, rng: Rng): Instrument {
+  if (!inst.variants?.length) return inst
+  const i = rng.int(0, inst.variants.length)
+  if (i === 0) return inst
+  // a variant's sound in full: none of the recipe's own settings carry over
+  const { label, name, group, hint, family } = inst
+  return { label, name, group, hint, family, ...inst.variants[i - 1] }
 }
 
 export interface OpDetail {
@@ -68,33 +84,58 @@ const eg = (rates: Eg['rates'], levels: Eg['levels']): Eg => ({ rates, levels })
 
 const RECIPES = {
   // ---------- keys ----------
-  // after PIANO   2 (Original Yamaha/DX7 ROM3/ROM3B #1)
+  // after STEINWAY (Original Yamaha/TX7/TX18 #18)
   piano: {
-    label: 'Grand', name: 'Grand piano', group: 'keys', family: 'tine', hint: 'After the classic DX7 grands: two detuned string stacks, a hammer that softens up the keys, a long two-stage fade',
+    label: 'Grand', name: 'Grand piano', group: 'keys', family: 'tine', hint: 'The classic DX7 grands: a Steinway or a Bösendorfer, a new one each time',
     skeleton: {
-      algorithms: [4], shape: 'struck', feedback: 5,
+      algorithms: [13], shape: 'struck',
       ops: {
-        1: { ratio: [1], level: 99, velocity: 4 },
-        2: { ratio: [1], level: 88, detune: 2, velocity: 1 },
-        3: { ratio: [5], level: 79, detune: 2, velocity: 3 },
-        4: { ratio: [1], level: 98, velocity: 4 },
-        5: { ratio: [1], level: 68, detune: 3, velocity: 3 },
-        6: { ratio: [1], level: 59 },
+        1: { ratio: [1], level: 99, velocity: 6 },
+        2: { ratio: [1], level: 82, detune: -1, velocity: 1 },
+        3: { ratio: [1], level: 99, detune: -2, velocity: 3 },
+        4: { ratio: [5], level: 71, detune: -3, velocity: 2 },
+        5: { ratio: [1], level: 79, detune: 1 },
+        6: { ratio: [11], level: 82, velocity: 6 },
       },
     },
     ops: {
-      1: { eg: eg([88,28,27,50], [99,90,0,0]), rateScaling: 2 },
-      2: { eg: eg([88,92,71,63], [99,67,91,90]), rateScaling: 2, scaling: [39,0,13,0,0] },
-      3: { eg: eg([95,28,27,47], [99,90,0,0]), rateScaling: 2, scaling: [5,0,99,0,1] },
-      4: { eg: eg([88,28,27,50], [99,90,0,0]), rateScaling: 3 },
-      5: { eg: eg([83,0,27,50], [99,90,0,0]), rateScaling: 2 },
-      6: { eg: eg([95,28,27,47], [99,90,0,0]), rateScaling: 2 },
+      1: { eg: eg([75,21,29,82], [99,99,0,0]), rateScaling: 2, scaling: [63,0,75,0,2] },
+      2: { eg: eg([99,49,7,64], [99,98,0,0]), scaling: [15,0,5,0,3] },
+      3: { eg: eg([85,99,29,60], [99,99,0,0]), rateScaling: 1 },
+      4: { eg: eg([89,89,28,0], [99,99,0,0]), rateScaling: 3, scaling: [42,14,8,3,0] },
+      5: { eg: eg([99,29,27,7], [99,40,0,0]), scaling: [42,1,0,3,0] },
+      6: { eg: eg([84,45,28,10], [99,94,0,0]), rateScaling: 6, scaling: [41,12,99,3,0] },
     },
     transpose: -12,
+    variants: [
+      // after Bosendorfr (Original Yamaha/TX7/TX11 #10)
+      {
+        skeleton: {
+          algorithms: [4], shape: 'struck', feedback: 1,
+          ops: {
+            1: { ratio: [1], level: 99, velocity: 4 },
+            2: { ratio: [1], level: 88, detune: 1, velocity: 2 },
+            3: { ratio: [8], level: 74, detune: 2, velocity: 3 },
+            4: { ratio: [1], level: 99, velocity: 3 },
+            5: { ratio: [1], level: 84, velocity: 1 },
+            6: { ratio: [2], level: 88, detune: 1, velocity: 2 },
+          },
+        },
+        ops: {
+          1: { eg: eg([85,32,29,49], [99,95,0,0]), rateScaling: 5, scaling: [32,25,31,3,0] },
+          2: { eg: eg([90,29,21,25], [99,85,80,0]), rateScaling: 4, scaling: [0,0,19,0,1] },
+          3: { eg: eg([90,17,20,25], [99,95,80,0]), rateScaling: 4, scaling: [38,98,41,2,1] },
+          4: { eg: eg([95,30,28,48], [99,99,0,0]), rateScaling: 5 },
+          5: { eg: eg([99,10,18,0], [99,81,80,0]), rateScaling: 5, scaling: [63,0,5,0,3] },
+          6: { eg: eg([93,5,20,0], [76,51,70,0]), rateScaling: 5, scaling: [10,32,10,0,0] },
+        },
+        transpose: -12, keySync: false,
+      },
+    ],
   },
   // after UPRIGHT (Original Yamaha/TX7/TX18 #21)
   upright: {
-    label: 'Upright', name: 'Upright piano', group: 'keys', family: 'tine', hint: 'After the classic DX7 upright: honky detuned strings, a buzzing hammer, shorter up the keys',
+    label: 'Upright', name: 'Upright piano', group: 'keys', family: 'tine', hint: 'Four classic DX7 uprights, honky and short, a new one each time',
     skeleton: {
       algorithms: [3], shape: 'struck', feedback: 7,
       ops: {
@@ -114,6 +155,77 @@ const RECIPES = {
       5: { eg: eg([99,60,31,39], [99,96,71,0]), rateScaling: 2, scaling: [48,0,15,0,0] },
       6: { eg: eg([77,20,0,85], [99,47,89,0]), rateScaling: 2, scaling: [65,0,38,1,0] },
     },
+    variants: [
+      // after AC.PNO 1.1 (Original Yamaha/TX816/Tfi1 #1)
+      {
+        skeleton: {
+          algorithms: [16], shape: 'struck', feedback: 7,
+          ops: {
+            1: { ratio: [1], level: 99, velocity: 3 },
+            2: { fixed: [74.1, 74.1], level: 80, velocity: 2 },
+            3: { ratio: [1], level: 77, detune: -1, velocity: 1 },
+            4: { ratio: [4], level: 77, detune: 1, velocity: 1 },
+            5: { ratio: [20], level: 72, detune: 2, velocity: 3 },
+            6: { ratio: [8], level: 58, detune: 7, velocity: 1 },
+          },
+        },
+        ops: {
+          1: { eg: eg([70,23,17,46], [99,79,0,0]), rateScaling: 6 },
+          2: { eg: eg([66,61,64,55], [99,82,0,0]), rateScaling: 1, scaling: [96,20,0,0,0] },
+          3: { eg: eg([65,15,13,43], [99,88,0,0]), rateScaling: 3, scaling: [51,0,95,0,0] },
+          4: { eg: eg([64,14,11,43], [99,88,0,0]), rateScaling: 6, scaling: [3,0,87,3,1] },
+          5: { eg: eg([72,16,0,42], [99,92,0,0]), rateScaling: 4, scaling: [11,20,84,0,0] },
+          6: { eg: eg([94,19,0,42], [99,92,0,0]), scaling: [26,8,0,3,0] },
+        },
+        pitchEg: eg([99,99,99,99], [49,50, 50, 50]),
+      },
+      // after GOOD PIANO (!Instruments/Keyboard/Piano/PIANO_13 #10)
+      {
+        skeleton: {
+          algorithms: [4], shape: 'struck',
+          ops: {
+            1: { ratio: [1], level: 99, detune: -4, velocity: 2 },
+            2: { ratio: [1], level: 80, detune: 1, velocity: 1 },
+            3: { ratio: [6], level: 85, detune: -4, velocity: 2 },
+            4: { ratio: [1], level: 99, detune: 1, velocity: 3 },
+            5: { ratio: [1], level: 54, detune: 4, velocity: 5 },
+            6: { ratio: [4], level: 93, detune: 4, velocity: 4 },
+          },
+        },
+        ops: {
+          1: { eg: eg([71,32,20,48], [99,96,0,0]), rateScaling: 4 },
+          2: { eg: eg([85,34,17,35], [99,95,0,0]), rateScaling: 2, scaling: [53,0,59,3,0] },
+          3: { eg: eg([80,24,19,4], [99,93,0,0]), rateScaling: 5, scaling: [22,3,32,3,0] },
+          4: { eg: eg([71,32,20,48], [99,96,0,0]), rateScaling: 3 },
+          5: { eg: eg([78,42,19,35], [99,94,0,0]), rateScaling: 4, scaling: [0,8,0,0,3] },
+          6: { eg: eg([87,29,22,4], [99,95,0,0]), rateScaling: 4, scaling: [22,2,17,3,0] },
+        },
+        pitchEg: eg([99,99,99,99], [51,50, 50, 50]),
+        transpose: -12, keySync: false,
+      },
+      // after PianoBo 7\ (!Instruments/Keyboard/Piano/PIANO_08 #30)
+      {
+        skeleton: {
+          algorithms: [9], shape: 'struck', feedback: 7,
+          ops: {
+            1: { ratio: [1], level: 99, detune: -4, velocity: 3 },
+            2: { ratio: [1.01], level: 72, detune: -7, velocity: 1 },
+            3: { ratio: [1], level: 99, detune: 1, velocity: 3 },
+            4: { fixed: [123, 123], level: 87, detune: -1, velocity: 2 },
+            5: { ratio: [1], level: 89, detune: 4, velocity: 4 },
+            6: { ratio: [5], level: 63 },
+          },
+        },
+        ops: {
+          1: { eg: eg([62,21,7,44], [99,79,0,0]), rateScaling: 7 },
+          2: { eg: eg([66,8,0,39], [98,79,0,0]), rateScaling: 3, scaling: [39,6,6,3,0] },
+          3: { eg: eg([62,21,7,44], [99,79,0,0]), rateScaling: 7 },
+          4: { eg: eg([78,73,51,55], [99,58,0,0]), rateScaling: 1, scaling: [51,12,19,3,3] },
+          5: { eg: eg([69,22,13,42], [99,88,0,0]), rateScaling: 1, scaling: [34,12,18,3,0] },
+          6: { eg: eg([67,11,0,42], [99,94,0,0]), rateScaling: 6, scaling: [2,0,45,3,1] },
+        },
+      },
+    ],
   },
   // after E.PIANO 1 (Original Yamaha/DX7 ROM1/ROM1A #11)
   epiano: {
