@@ -82,8 +82,8 @@ export function App() {
       </main>
       {voiceBelow && <VoiceView />}
       <div className="library">
-        <History />
         <Favourites />
+        <History />
       </div>
       <Keyboard />
       <footer className="footer">

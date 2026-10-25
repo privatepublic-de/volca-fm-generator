@@ -415,7 +415,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 /* ---------- history and favourites ---------- */
 
-.library { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px; margin-top: 24px; }
+.library { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 28px; margin-top: 24px; }
 @media (max-width: 960px) { .library { grid-template-columns: minmax(0, 1fr); } }
 .library h3 { font: 500 13px var(--sans); color: var(--muted); margin-bottom: 10px; }
 .changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
