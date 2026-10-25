@@ -278,9 +278,9 @@ export function Controls() {
 /** What each action does, shown below them while one is pointed at or focused. */
 const ACTION_HINTS = {
   start: 'Start from: an instrument as the base (piano, guitar, vibes, bass, drums, choir…), or Init voice, a plain sine (I).',
-  generate: 'New voice: your pins and controls rolled again: other ratios and levels, and another algorithm where the tonality has a choice.',
-  variation: 'Variation: your pins and controls rolled much freer, at least three quarters wild: further from the usual sound.',
-  mutate: 'Mutate: the pins wander around the wheel and in or out, the controls get a push, sometimes a pin comes or goes; then a new voice.',
+  variation: 'Variation, a small step: the same pins, controls and instrument; the details move (envelopes, levels, tuning). A sibling.',
+  mutate: 'Mutate, a medium step: the pins wander around the wheel and in or out, the controls get a push, a pin may come or go.',
+  generate: 'New voice, a fresh start: new pins anywhere on the wheel, the controls back to their defaults, no instrument.',
   keep: 'Keep: puts this voice, with its pins and controls, in your kept voices, in this browser.',
   kept: 'Kept: this voice is in your kept voices. Click to take it out again.',
   undo: 'Undo: back to the voice before, with its pins and controls (⌘Z).',
@@ -311,9 +311,9 @@ export function Actions() {
       <div className="actions">
         <button data-start-toggle aria-expanded={choosing} onClick={() => setChoosing(!choosing)}
           onPointerEnter={() => setHint('start')} onFocus={() => setHint('start')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Start from…</button>
-        {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, true)}
         {button('variation', 'Variation', 'V', () => { variation(); audition() })}
         {button('mutate', 'Mutate', 'M', () => { mutateCurrent(); audition() })}
+        {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, true)}
         {kept
           ? <button className="kept" onClick={() => unkeep(kept.id)} title="Q keeps; click to take it out"
               onPointerEnter={() => setHint('kept')} onFocus={() => setHint('kept')} onPointerLeave={() => setHint(null)} onBlur={() => setHint(null)}>Kept</button>

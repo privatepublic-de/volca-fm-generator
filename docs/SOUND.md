@@ -203,3 +203,25 @@ hollowness, against each tonality's own voice; `local/families.ts` in the sessio
 slap bass (Tine) and choir (Breath) to String, the upright bass (Warm) to Wooden, the steel drum (Bell) to Tine. The
 measure alone is too crude to follow (a little noise pulls it to Breath, a bright piano to Metallic), so the
 pianos stay at Tine, the harpsichord and clavinet at Reed.
+
+## Variation, Mutate, New voice (2026-10-25)
+
+They were one action at three strengths (the same pins and controls rolled again), and with the instruments now
+exact, New voice often changed nothing: the violin came back identical 12 times out of 12. Now three step sizes
+(`src/generator/explore.ts`), measured as the change in a sound's traits (brightness, length, attack, noise,
+inharmonicity) over 12 presses:
+
+| From | Variation (small) | Mutate (medium) | New voice (fresh) |
+|---|---|---|---|
+| 1 pin, Brass | 0.32 | 1.34 | 2.48 |
+| 2 pins, Bell + Warm | 0.50 | 2.79 | 3.03 |
+| Grand piano | 1.24 | 2.21 | 3.25 |
+| Violin | 0.71 | 3.32 | 2.68 |
+
+- Variation keeps the pins, controls and instrument and moves the details (`varyVoice`): envelope rates ±5 and
+  inner levels ±4, modulator levels ±6, carrier detune ±2, most times a modulator's fine tuning, now and then a
+  feedback step; never a noise source or a feedback-6/7 loop, where a step tips the sound. It stays through control
+  changes until the next step. The pianos also switch between their originals, hence the larger number.
+- Mutate moves the pins and pushes the controls as before; an instrument without pins always gets a first one.
+- New voice rolls the wheel afresh: one to three pins anywhere, the controls at their defaults (the register stays),
+  no instrument. The wheel's centre does the same.

@@ -340,6 +340,21 @@ describe('starting from an instrument', () => {
   })
 })
 
+describe('variation', () => {
+  it('a sibling: the details move, the build stays', () => {
+    for (const c of [{ ...DEFAULT_CHOICES, instrument: 'violin' as const }, only('brass')]) {
+      const own = generate(c, { seed: 4 }).voice
+      const sib = generate(c, { seed: 4, vary: 1 }).voice
+      expect(sib.subarray(0, 145)).not.toEqual(own.subarray(0, 145))
+      expect(sib[VC.algorithm]).toBe(own[VC.algorithm])
+      for (let op = 1; op <= 6; op++) {
+        expect(getOp(sib, op, 'coarse')).toBe(getOp(own, op, 'coarse'))
+        expect(Math.abs(getOp(sib, op, 'outputLevel') - getOp(own, op, 'outputLevel'))).toBeLessThanOrEqual(12)
+      }
+    }
+  })
+})
+
 describe('anything goes', () => {
   it('random choices: valid, audible, not too loud, quick', () => {
     const r = rng(2026)

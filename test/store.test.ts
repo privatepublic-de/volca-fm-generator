@@ -26,7 +26,7 @@ describe('the app store', () => {
     const s = useApp.getState()
     s.setControl('velocity', 1)
     s.setModel('fm2')
-    s.generateNew()
+    s.variation()
     const made = useApp.getState().history.at(-1)!
     useApp.getState().setModel('fm')
     useApp.getState().recall(made)
@@ -34,7 +34,7 @@ describe('the app store', () => {
     expect(useApp.getState().generated).toBeNull()
   })
 
-  it('mutate moves the pins and comes back exactly; a variation too, with the wildness it was rolled at', () => {
+  it('mutate moves the pins and comes back exactly; a variation too, with its details moved', () => {
     const s = useApp.getState()
     s.setModel('fm2')
     useApp.setState({ pins: [{ id: 901, angle: 60, radius: 0.5, weight: 0.6 }, { id: 902, angle: 210, radius: 0.5, weight: 0.4 }], wild: 0 })
@@ -46,7 +46,8 @@ describe('the app store', () => {
     expect(mutated.made).toBeDefined()
     useApp.getState().variation()
     const varied = useApp.getState().history.at(-1)!
-    expect(varied.made!.wild).toBeGreaterThanOrEqual(0.75)
+    expect(varied.made!.vary).toBe(1)
+    expect(varied.made!.pins.map((p) => p.angle)).toEqual(after.map((p) => p.angle))
     for (const e of [mutated, varied]) {
       useApp.getState().recall(e)
       expect(useApp.getState().generated, e.name).not.toBeNull()
@@ -84,12 +85,30 @@ describe('the app store', () => {
     expect(useApp.getState().favourites).toHaveLength(0)
   })
 
+  it('new voice: a fresh roll of the wheel, no instrument, the register kept', () => {
+    const s = useApp.getState()
+    s.startFrom('violin')
+    s.setControl('register', 'bass')
+    s.setControl('brightness', 0.7)
+    for (let i = 0; i < 6; i++) {
+      const before = useApp.getState().pins.map((p) => p.angle)
+      useApp.getState().generateNew()
+      const now = useApp.getState()
+      expect(now.pins.length).toBeGreaterThanOrEqual(1)
+      expect(now.pins.map((p) => p.angle)).not.toEqual(before)
+      expect(now.controls.instrument).toBeNull()
+      expect(now.controls.brightness).toBe(0)
+      expect(now.controls.register).toBe('bass')
+      expect(now.vary).toBe(0)
+    }
+  })
+
   it('a kept voice brings its pins and controls back, renamed or not', () => {
     const s = useApp.getState()
     s.setModel('fm2')
     useApp.setState({ pins: [{ id: 801, angle: 60, radius: 0.5, weight: 0.6 }, { id: 802, angle: 210, radius: 0.5, weight: 0.4 }] })
     useApp.getState().setControl('brightness', 0.4)
-    useApp.getState().generateNew()
+    useApp.getState().variation()
     const made = useApp.getState().voice
     useApp.getState().keep()
     const kept = useApp.getState().favourites.at(-1)!

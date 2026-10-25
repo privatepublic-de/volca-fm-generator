@@ -5,7 +5,7 @@ import { readSyx } from '../dx7/sysex'
 import { setVoiceName, VC, voiceName, type Voice } from '../dx7/voice'
 import type { Model } from '../engine/models'
 import { angleOf, DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, type Pin, type Tonality } from '../generator/choices'
-import { mutateChoices } from '../generator/explore'
+import { freshChoices, mutateChoices } from '../generator/explore'
 import { generate, type Generated } from '../generator/generate'
 import { distinctName } from '../generator/naming'
 import { instrumentName, INSTRUMENTS, type InstrumentId } from '../generator/instruments'
@@ -29,7 +29,7 @@ export interface Entry {
   /** the dominant tonality's hue, for the tiles */
   hue: number
   /** what made it, when the generator did: to take its pins and controls back */
-  made?: { pins: AppPin[]; controls: Controls; seed: number; wild: number }
+  made?: { pins: AppPin[]; controls: Controls; seed: number; wild: number; vary?: number }
   /** what this step changed ("Mutate", "Brightness ↑"); session steps only */
   change?: string
 }
@@ -45,6 +45,8 @@ interface Saved {
   controls: Controls
   wild: number
   seed: number
+  /** 1 after Variation: the voice's details moved (it stays through control changes, until the next step) */
+  vary?: number
   /** play a note after every change */
   autoplay: boolean
 }
@@ -148,8 +150,8 @@ export const useApp = create<State>((set, get) => {
   const saved = load()
 
   const persist = () => {
-    const { pins, controls, wild, seed, autoplay } = get()
-    try { localStorage.setItem(STATE_KEY, JSON.stringify({ pins, controls, wild, seed, autoplay })) } catch { /* private window */ }
+    const { pins, controls, wild, seed, vary, autoplay } = get()
+    try { localStorage.setItem(STATE_KEY, JSON.stringify({ pins, controls, wild, seed, vary, autoplay })) } catch { /* private window */ }
   }
 
   /** A new voice on stage: to the player, and to the history when it's a step. */
@@ -159,7 +161,7 @@ export const useApp = create<State>((set, get) => {
     let history = get().history
     if (record) {
       const s = get()
-      const made = generated ? { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: wildUsed } : undefined
+      const made = generated ? { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: wildUsed, vary: s.vary } : undefined
       // the step it was made from: the one on stage, else the newest
       const from = (history.find((h) => h.id === s.currentId) ?? history.at(-1))?.made
       const entry: Entry = {
@@ -172,16 +174,16 @@ export const useApp = create<State>((set, get) => {
     set({ voice, generated, currentId, history })
   }
 
-  /** The voice of the current pins and controls; `wild` for this roll only (Variation rolls wilder). */
-  const make = (record: boolean, wild = get().wild, change?: string) => {
+  /** The voice of the current pins and controls. */
+  const make = (record: boolean, change?: string) => {
     const s = get()
     // naming takes a render of its own: while a control is being dragged the voice keeps its name until let go
-    const g = generate(choicesOf(s), { seed: s.seed, model: s.model, wild, keepName: record ? undefined : voiceName(s.voice) })
+    const g = generate(choicesOf(s), { seed: s.seed, model: s.model, wild: s.wild, vary: s.vary, keepName: record ? undefined : voiceName(s.voice) })
     persist()
-    show(g.voice, g, record, wild, change)
+    show(g.voice, g, record, s.wild, change)
   }
 
-  const first = generate(choicesOf(saved), { seed: saved.seed, model: playback.settings.model, wild: saved.wild })
+  const first = generate(choicesOf(saved), { seed: saved.seed, model: playback.settings.model, wild: saved.wild, vary: saved.vary })
   playback.setVoice(first.voice)
 
   return {
@@ -246,9 +248,10 @@ export const useApp = create<State>((set, get) => {
         controls: { ...INIT_CONTROLS },
         wild: 0,
         seed: newSeed(),
+        vary: 0,
         selectedPin: null,
       })
-      make(true, undefined, 'Init voice')
+      make(true, 'Init voice')
     },
     startFrom(id) {
       set({
@@ -256,38 +259,42 @@ export const useApp = create<State>((set, get) => {
         controls: { ...DEFAULT_CONTROLS, ...INSTRUMENTS[id].controls, instrument: id },
         wild: 0,
         seed: newSeed(),
+        vary: 0,
         selectedPin: null,
       })
-      make(true, undefined, `Start: ${instrumentName(INSTRUMENTS[id])}`)
+      make(true, `Start: ${instrumentName(INSTRUMENTS[id])}`)
     },
     clearInstrument() {
       set({ controls: { ...get().controls, instrument: null } })
-      make(true, undefined, 'Instrument off')
+      make(true, 'Instrument off')
     },
     generateNew() {
-      set({ seed: newSeed() })
-      make(true, undefined, 'New voice')
+      // a fresh roll of the wheel: new pins, the controls at their defaults (the register stays), no instrument
+      const s = get()
+      const { pins, ...controls } = freshChoices(choicesOf(s), makeRng(newSeed()))
+      set({ pins: pins.map((p) => ({ ...p, id: nextId++ })), controls, seed: newSeed(), vary: 0, selectedPin: null })
+      make(true, 'New voice')
     },
     variation() {
-      // the same pins and controls, another roll, and a free one: at least three quarters of the way to Wild
-      set({ seed: newSeed() })
-      make(true, Math.min(1, Math.max(get().wild, 0.5) + 0.25), 'Variation')
+      // the same pins, controls and instrument; the voice's details move (a sibling)
+      set({ seed: newSeed(), vary: 1 })
+      make(true, 'Variation')
     },
     mutateCurrent() {
       // the pins move and the controls get a push; then a new voice from there
       const s = get()
       const m = mutateChoices(choicesOf(s), makeRng(newSeed()), 0.6, MAX_PINS)
       const { pins, ...controls } = m
-      set({ pins: pins.map((p, i) => ({ ...p, id: s.pins[i]?.id ?? nextId++ })), controls, seed: newSeed(), selectedPin: null })
-      make(true, undefined, 'Mutate')
+      set({ pins: pins.map((p, i) => ({ ...p, id: s.pins[i]?.id ?? nextId++ })), controls, seed: newSeed(), vary: 0, selectedPin: null })
+      make(true, 'Mutate')
     },
     recall(entry) {
       if (entry.made) {
-        set({ pins: entry.made.pins.map((p) => ({ ...p })), controls: { ...entry.made.controls }, seed: entry.made.seed, wild: entry.made.wild })
+        set({ pins: entry.made.pins.map((p) => ({ ...p })), controls: { ...entry.made.controls }, seed: entry.made.seed, wild: entry.made.wild, vary: entry.made.vary ?? 0 })
         persist()
       }
       // the entry's own bytes (a mutation can't be made again from pins), with the generator's view when it has one
-      const g = entry.made ? generate(choicesOf(get()), { seed: get().seed, model: get().model, wild: get().wild }) : null
+      const g = entry.made ? generate(choicesOf(get()), { seed: get().seed, model: get().model, wild: get().wild, vary: get().vary }) : null
       playback.setVoice(entry.voice)
       // the generator's view only if it makes exactly these bytes (another model, or a mutation, doesn't)
       const same = g !== null && sameSound(g.voice, entry.voice)
@@ -312,7 +319,7 @@ export const useApp = create<State>((set, get) => {
       if (s.favourites.some((f) => sameSound(f.voice, s.voice))) return
       // with what made it, so it brings its pins and controls back: the history entry's, or (when the voice on stage
       // isn't one, after a change that adds no step) the current pins and controls, if they make exactly this voice
-      const fromNow = { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: s.wild }
+      const fromNow = { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: s.wild, vary: s.vary }
       const made = current && sameSound(current.voice, s.voice) && current.made ? current.made
         : s.generated && sameSound(s.generated.voice, s.voice) ? fromNow
         : undefined

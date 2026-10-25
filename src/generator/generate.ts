@@ -5,6 +5,7 @@ import { getOp, initVoice, OP, opBase, setOp, setVc, setVoiceName, VC, type Voic
 import { setRatio } from '../dx7/frequency'
 import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
+import { varyVoice } from './explore'
 import { applyBrightness, applyComplexity, applyIntensity, applyMotion, applyRegister, applyVelocity } from './controls'
 import { normalizeLoudness, SILENT_DB } from './loudness'
 import { nameVoice, nameWithNoun } from './naming'
@@ -18,6 +19,8 @@ export interface GenerateOptions {
   model?: Model
   /** 0 typical (near the templates' middle) … 1 wild (anywhere in their ranges) */
   wild?: number
+  /** Variation, 0 … 1: the voice's details moved a little (explore.ts) */
+  vary?: number
   /** the voice's name when not naming it (naming renders the voice once more: skipped while a control is dragged) */
   keepName?: string
 }
@@ -41,7 +44,7 @@ const spreadOf = (wild: number) => 0.3 + 0.7 * Math.max(0, Math.min(1, wild))
 /** A secondary needs this share of the dominant's weight to get a branch of its own. */
 const BRANCH_SHARE = 0.25
 
-export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, keepName }: GenerateOptions): Generated {
+export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, vary = 0, keepName }: GenerateOptions): Generated {
   const rng = makeRng(seed)
   const spread = spreadOf(wild)
   const mix = mixOf(c.pins)
@@ -102,6 +105,8 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, k
   applyRegister(v, c.register)
   if (MODELS[model].fixedVelocity === null) applyVelocity(v, c.velocity)
   if (c.pitchAccent) applyPitchBlip(v)
+  // a sibling of the voice: its details moved (Variation)
+  varyVoice(v, rng, vary)
 
   // 4. audible, and as loud as the others
   ensureAudible(v)
