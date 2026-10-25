@@ -29,8 +29,9 @@ export function applyBrightness(v: Voice, b: number) {
 /** How many operators sound for complexity 0 … 1 (½ keeps the tonality's own). */
 export const targetOperators = (complexity: number) => Math.round(2 + 4 * complexity)
 
-/** Pure (0) … dense (1). Below ½ the quietest operators fall silent (never the last carrier); above, silent
- *  operators come in as gentle extra modulators at whole ratios, and the stacks get a little deeper. */
+/** Pure (0) … dense (1). Below ½ operators fall silent, the least important first (pure keeps one carrier and its
+ *  modulator); above, silent operators come in as extra carriers and gentle modulators at whole ratios, and the
+ *  stacks get a little deeper. */
 export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
   if (complexity === 0.5) return
   const { carriers, algorithm } = rolesOf(v)
@@ -42,14 +43,17 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
   const kept = noise === null ? [] : [noise, ...carriers.filter((c) => algorithm.modulators[c].includes(noise))]
   const own = () => sounding().filter((op) => !kept.includes(op))
   if (complexity < 0.5) {
-    // silence the weakest modulators first (then what they feed loses nothing audible), then extra carriers; at
-    // least one of the tonality's own carriers stays
-    const order = own().sort((x, y) => (carriers.includes(x) ? 1 : 0) - (carriers.includes(y) ? 1 : 0) || level(v, x) - level(v, y))
-    while (own().length > target && order.length) {
-      const op = order.shift()!
-      if (carriers.includes(op) && own().filter((o) => carriers.includes(o)).length <= 1) continue
-      setLevel(v, op, 0)
+    // keep by importance: the loudest carrier, then what modulates it (deepest first, down its stack), then the next
+    // carrier and its stack. So pure is one FM pair, a carrier and the modulator that gives it its timbre, never two
+    // bare sines (brightness works through the modulators)
+    const order: number[] = []
+    const visit = (op: number) => {
+      if (order.includes(op) || kept.includes(op) || level(v, op) === 0) return
+      order.push(op)
+      for (const m of [...algorithm.modulators[op]].sort((x, y) => level(v, y) - level(v, x))) visit(m)
     }
+    for (const c of [...carriers].sort((x, y) => level(v, y) - level(v, x))) visit(c)
+    for (const op of order.slice(Math.max(1, target))) setLevel(v, op, 0)
     return
   }
   const depth = (complexity - 0.5) * 2

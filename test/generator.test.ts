@@ -5,6 +5,8 @@ import { renderNote } from '../src/engine/render'
 import { angleOf, DEFAULT_CHOICES, mixOf, REGISTERS, SHAPES, TONALITIES, type GeneratorChoices, type Tonality } from '../src/generator/choices'
 import { generate, mutate } from '../src/generator/generate'
 import { loudness, TARGET_DB } from '../src/generator/loudness'
+import { algorithmOf } from '../src/dx7/algorithms'
+const rolesOfVoice = (v: Voice) => algorithmOf(v[VC.algorithm])
 import { rng } from '../src/generator/random'
 
 const SR = 24000
@@ -156,6 +158,21 @@ describe('controls', () => {
       expect(sounding(generate(only(t, { complexity: 0 }), { seed: 1 }).voice), t).toBeLessThanOrEqual(3)
       expect(sounding(generate(only(t, { complexity: 1 }), { seed: 1 }).voice), t).toBe(6)
     }
+  })
+
+  it('pure is still FM: one carrier with its modulator, so brightness works', () => {
+    for (const t of ['tine', 'warm', 'string', 'bell', 'organ'] as const) {
+      const v = generate(only(t, { complexity: 0 }), { seed: 1 }).voice
+      const alg = rolesOfVoice(v)
+      const sounding = [1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0)
+      if (t !== 'organ') expect(sounding.some((op) => !alg.carriers.includes(op)), t).toBe(true)
+      // early in the note: a struck sound's brightness is in its attack
+      const b = (brightness: number) => avg(only(t, { complexity: 0, brightness }), (s) => centroid(slice(s, 0.05, 0.35)))
+      if (t !== 'organ') expect(b(1), t).toBeGreaterThan(b(-1) * 1.3)
+    }
+    // the case that showed it: tine, string, glass and bell, pad, bright, pure
+    const c = { ...DEFAULT_CHOICES, shape: 'pad' as const, brightness: 1, complexity: 0, pins: [pin('tine', 0.45, 1), pin('string', 0.41, 1), { angle: angleOf('glass') - 10, radius: 1, weight: 0.14 }] }
+    expect(avg(c, (s) => centroid(slice(s, 1, 1.5)))).toBeGreaterThan(261.6 * 1.5)
   })
 
   it('shape and length', () => {
