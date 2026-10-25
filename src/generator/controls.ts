@@ -36,16 +36,18 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
   const { carriers, algorithm } = rolesOf(v)
   const sounding = () => [1, 2, 3, 4, 5, 6].filter((op) => level(v, op) > 0)
   const target = targetOperators(complexity)
+  // a noise source and the carrier it feeds are the noise, not the tonality: they stay, and the count is of the rest
+  // (otherwise a voice with a little noise, made pure, was nothing but noise)
+  const noise = noiseSource(v)
+  const kept = noise === null ? [] : [noise, ...carriers.filter((c) => algorithm.modulators[c].includes(noise))]
+  const own = () => sounding().filter((op) => !kept.includes(op))
   if (complexity < 0.5) {
-    // silence the weakest modulators first (then what they feed loses nothing audible), then extra carriers; a
-    // noise source and the carrier it feeds stay (without them noise is a sine)
-    const noise = noiseSource(v)
-    const kept = noise === null ? [] : [noise, ...carriers.filter((c) => algorithm.modulators[c].includes(noise))]
-    const order = sounding().filter((op) => !kept.includes(op))
-      .sort((x, y) => (carriers.includes(x) ? 1 : 0) - (carriers.includes(y) ? 1 : 0) || level(v, x) - level(v, y))
-    while (sounding().length > target && order.length) {
+    // silence the weakest modulators first (then what they feed loses nothing audible), then extra carriers; at
+    // least one of the tonality's own carriers stays
+    const order = own().sort((x, y) => (carriers.includes(x) ? 1 : 0) - (carriers.includes(y) ? 1 : 0) || level(v, x) - level(v, y))
+    while (own().length > target && order.length) {
       const op = order.shift()!
-      if (carriers.includes(op) && sounding().filter((o) => carriers.includes(o)).length <= 1) continue
+      if (carriers.includes(op) && own().filter((o) => carriers.includes(o)).length <= 1) continue
       setLevel(v, op, 0)
     }
     return
@@ -54,9 +56,9 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
   for (const op of sounding()) if (!carriers.includes(op)) setLevel(v, op, level(v, op) + 5 * depth)
   // silent carriers first (an octave or a unison against the main one, quieter), then silent modulators where
   // what they modulate sounds
-  const main = carriers.find((op) => level(v, op) > 0)!
+  const main = carriers.find((op) => level(v, op) > 0 && !kept.includes(op)) ?? carriers.find((op) => level(v, op) > 0)!
   for (const op of carriers) {
-    if (sounding().length >= target) break
+    if (own().length >= target) break
     if (level(v, op) > 0) continue
     setRatio(v, op, (opRatio(v, main) ?? 1) * rng.pick([1, 2, 0.5]))
     setOp(v, op, 'detune', 7 + rng.pick([-3, 3]))
@@ -65,7 +67,7 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng) {
   }
   const feeds = (m: number) => [1, 2, 3, 4, 5, 6].some((c) => algorithm.modulators[c].includes(m) && level(v, c) > 0)
   for (const op of [1, 2, 3, 4, 5, 6]) {
-    if (sounding().length >= target) break
+    if (own().length >= target) break
     if (level(v, op) > 0 || carriers.includes(op) || !feeds(op)) continue
     setRatio(v, op, rng.pick([1, 2, 3, 4]))
     setLevel(v, op, 45 + 20 * depth)

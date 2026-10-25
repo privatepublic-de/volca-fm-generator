@@ -120,6 +120,22 @@ describe('mixing', () => {
     }
   })
 
+  it('a little noise on a pure voice stays a little: the tonality keeps its own operators', () => {
+    for (const base of ['string', 'warm', 'bell', 'brass'] as const) {
+      for (const shape of [null, 'pad'] as const) {
+        const c = { ...DEFAULT_CHOICES, complexity: 0, shape, pins: [pin(base, 1), pin('noise', 0.15)] }
+        for (const seed of [1, 2, 3]) {
+          const v = generate(c, { seed }).voice
+          const what = `${base} ${shape} ${seed}`
+          // a sounding carrier that isn't fed by the noise source
+          const own = [1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0 && !(op === 5 && getOp(v, 6, 'outputLevel') >= 97))
+          expect(own.length, what).toBeGreaterThanOrEqual(2)
+          expect(flatness(slice(play(v), 0.4, 1.2)), what).toBeLessThan(0.05)
+        }
+      }
+    }
+  })
+
   it('a noise pin uses a pair that can make noise, or comes in as a colour', () => {
     const g = generate({ ...DEFAULT_CHOICES, pins: [pin('breath', 0.6), pin('noise', 0.4)] }, { seed: 1 })
     expect(g.roles[1].as).toBe('transform')
