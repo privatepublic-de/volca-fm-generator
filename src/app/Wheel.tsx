@@ -159,40 +159,55 @@ export function Wheel() {
       if (p) setTip({ ...tipAt(e), text: `Weight ${Math.round(p.weight * 100)} %` })
       return
     }
+    if (drag) {
+      const removing = dist > REMOVE_AT
+      if (removing !== drag.removing) setDrag({ ...drag, removing })
+      // while a pin is dragged, only the one thing a release would do that isn't plain to see
+      setTip(removing ? { ...tipAt(e), text: 'Release to remove' } : null)
+      if (!removing) schedule(drag.id, snapped(angle, e.shiftKey), toIntensity(dist))
+      return
+    }
     const target = e.target as Element
-    if (target.closest('g.base-marker') && base) return setTip({ ...tipAt(e), text: `${instrumentName(base)}, the base (${TONALITY_LABELS[base.family]}): click for another, drag off to remove` })
-    showTip(e, angle, dist, target.closest('g.pin') !== null, target.classList.contains('pin-dial'))
-    if (!drag) return
-    const removing = dist > REMOVE_AT
-    if (removing !== drag.removing) setDrag({ ...drag, removing })
-    if (!removing) schedule(drag.id, snapped(angle, e.shiftKey), toIntensity(dist))
+    restTip(e, target.closest('g.base-marker') && base
+      ? `${instrumentName(base)}, the base (${TONALITY_LABELS[base.family]}): click for another, drag off to remove`
+      : tipText(e, angle, dist, target.closest('g.pin') !== null, target.classList.contains('pin-dial')))
   }
 
-  /** The label at the pointer: what a click or a drag here would do. */
+  /** A label for what a click or a drag here would do. Like a classic tooltip: it appears where the pointer rests,
+   *  stays put, and goes as soon as the pointer moves on; working on the wheel, you don't see it. While dragging,
+   *  only what the drag itself needs (a weight, a removal) shows, at once. */
   const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null)
+  const resting = useRef(0)
   const tipAt = (e: PointerEvent<SVGSVGElement>) => {
     const box = svg.current!.getBoundingClientRect()
     return { x: e.clientX - box.left, y: e.clientY - box.top }
   }
-  const showTip = (e: PointerEvent<SVGSVGElement>, angle: number, dist: number, onPin: boolean, onDial: boolean) => {
-    const place = (text: string) => setTip({ ...tipAt(e), text })
+  const restTip = (e: PointerEvent<SVGSVGElement>, text: string | null) => {
+    const p = tipAt(e)
+    if (tip && Math.hypot(p.x - tip.x, p.y - tip.y) > 4) setTip(null)
+    clearTimeout(resting.current)
+    if (text) resting.current = window.setTimeout(() => setTip({ ...p, text }), 700)
+  }
+  const hideTip = () => { clearTimeout(resting.current); setTip(null) }
+  useEffect(() => () => clearTimeout(resting.current), [])
+  const tipText = (e: PointerEvent<SVGSVGElement>, angle: number, dist: number, onPin: boolean, onDial: boolean): string | null => {
     const where = () => `${mixOf([{ angle: snapped(angle, e.shiftKey), radius: 1, weight: 1 }]).map((m) => TONALITY_LABELS[m.tonality]).join(' / ')}, ${intensityWord(toIntensity(dist))}`
-    if (drag) return place(drag.removing || dist > REMOVE_AT ? 'Release to remove' : where())
-    if (onDial) return place('Turn the ring for weight')
-    if (onPin) return place('Drag to move, off the wheel to remove; turn the ring for weight')
-    if (dist < CENTRE) return place('New voice')
+    if (onDial) return 'Turn the ring for weight'
+    if (onPin) return 'Drag to move, off the wheel to remove; turn the ring for weight'
+    if (dist < CENTRE) return 'New voice'
     // by the names on the rim: what that tonality sounds like (the names themselves don't take clicks)
     if (dist > 1.02 && dist < 1.3) {
       const t = TONALITIES[Math.round(angle / SECTOR) % TONALITIES.length]
-      return place(`${TONALITY_LABELS[t]}: ${TONALITY_HINTS[t]}`)
+      return `${TONALITY_LABELS[t]}: ${TONALITY_HINTS[t]}`
     }
-    if (dist > 1.02) return setTip(null)
-    if (useApp.getState().pins.length >= MAX_PINS) return place('Three pins at most: drag one off to make room')
-    place(`Pin ${where()}`)
+    if (dist > 1.02) return null
+    if (useApp.getState().pins.length >= MAX_PINS) return 'Three pins at most: drag one off to make room'
+    return `Pin ${where()}`
   }
 
   const onUp = () => {
     if (!drag) return
+    setTip(null)
     if (drag.base) {
       const { clearInstrument, setStartMenu, startMenu } = useApp.getState()
       if (drag.removing) { clearInstrument(); audition() }
@@ -279,7 +294,8 @@ export function Wheel() {
         className={`wheel-svg${drag ? ' dragging' : ''}${drag?.weight ? ' turning' : ''}`}
         viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`}
         onPointerMove={onMove}
-        onPointerLeave={() => { if (!drag) setTip(null) }}
+        onPointerLeave={() => { if (!drag) hideTip() }}
+        onPointerDownCapture={hideTip}
         onPointerUp={onUp}
         onPointerCancel={onUp}
         role="group"
