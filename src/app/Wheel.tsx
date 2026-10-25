@@ -13,8 +13,10 @@ const CENTRE = 0.22
 const REMOVE_AT = 1.16
 const VIEW = 1.3
 
-const toRadius = (intensity: number) => CENTRE + 0.04 + intensity * (1 - CENTRE - 0.04)
-const toIntensity = (r: number) => Math.max(0, Math.min(1, (r - CENTRE - 0.04) / (1 - CENTRE - 0.04)))
+/** The innermost a pin sits (mild), clear of the centre button. */
+const INNER = CENTRE + 0.11
+const toRadius = (intensity: number) => INNER + intensity * (1 - INNER)
+const toIntensity = (r: number) => Math.max(0, Math.min(1, (r - INNER) / (1 - INNER)))
 const polar = (angle: number, r: number) => {
   const a = (angle * Math.PI) / 180
   return { x: r * Math.sin(a), y: -r * Math.cos(a) }

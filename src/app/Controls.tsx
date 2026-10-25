@@ -153,8 +153,8 @@ export function PinList() {
   )
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
-  return <section className="group"><h3>{title}</h3>{children}</section>
+function Group({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+  return <section className={`group${className ? ` ${className}` : ''}`}><h3>{title}</h3>{children}</section>
 }
 
 /** The volca's effects: not part of the voice, a setting like the volume. The fm2's depths go to it as CCs (91, 93);
@@ -170,7 +170,7 @@ function EffectControls() {
         <label className="toggle">
           <input type="checkbox" checked={s.fmChorus} onChange={(e) => { set({ fmChorus: e.target.checked }); audition() }} />
           <span>Chorus</span>
-          <span className="toggle-hint">the volca fm's chorus is its own button; this only matches the browser's sound to it</span>
+          <span className="toggle-hint">browser only: match the volca's button</span>
         </label>
       </Group>
     )
@@ -191,7 +191,7 @@ function EffectControls() {
     <Group title="Effects">
       {dial('Chorus', 'chorus', 'The fm2\'s chorus depth (CC 93)')}
       {dial('Reverb', 'reverb', 'The fm2\'s reverb depth (CC 91)')}
-      <p className="group-note">On the volca, switch chorus and reverb on; these set how deep. Not saved with the voice.</p>
+      <p className="group-note" title="Chorus and reverb are switched on and off at the volca; these dials set their depth. They belong to the volca, not to the voice: they aren't saved with it.">Switch them on at the volca; these set the depth.</p>
     </Group>
   )
 }
@@ -205,32 +205,37 @@ export function Controls() {
   const step = <K extends keyof ControlValues>(k: K) => (v: ControlValues[K]) => { setControl(k, v); regenerate(true); audition() }
   return (
     <div className="controls">
-      <Group title="Envelope">
+      <Group title="Envelope" className="controls-wide">
         <ShapePicker />
-        <Slider label="Length" left="short" right="long" bipolar min={-1} max={1} value={c.length} onChange={set('length')} />
+        <div className="controls-half">
+          <Slider label="Length" left="short" right="long" bipolar min={-1} max={1} value={c.length} onChange={set('length')} />
+        </div>
       </Group>
-      <Group title="Tone">
-        <Slider label="Brightness" left="mellow" right="bright" bipolar min={-1} max={1} value={c.brightness} onChange={set('brightness')} />
-        <Slider label="Complexity" left="pure" right="dense" min={0} max={1} value={c.complexity} onChange={set('complexity')}
-          hint="How many of the six operators sound: two when pure, all six when dense" />
-        <Slider label="Motion" left="still" right="alive" min={0} max={1} value={c.motion} onChange={set('motion')}
-          hint="Vibrato, shimmer between the carriers, and brightness that drifts while a note is held" />
-      </Group>
-      <Group title="Playing">
-        <Segmented<Register> label="Register" options={REGISTERS} labels={REGISTER_LABELS} hints={REGISTER_HINTS} value={c.register} onPick={step('register')} />
-        <Slider label="Velocity" left="none" right="strong" min={0} max={1} value={c.velocity} onChange={set('velocity')}
-          disabled={model === 'fm'} hint={model === 'fm' ? 'The volca fm plays every note at the same velocity' : 'How much brighter and louder a harder note plays'} />
-        <label className="toggle">
-          <input type="checkbox" checked={c.pitchAccent} onChange={(e) => step('pitchAccent')(e.target.checked)} />
-          <span>Pitch accent</span>
-          <span className="toggle-hint">a short pitch fall into every note</span>
-        </label>
-      </Group>
-      <EffectControls />
-      <Group title="New voices">
-        <Slider label="Wild" left="typical" right="wild" min={0} max={1} value={wild} onChange={setWild}
-          hint="How far a new voice may stray from its tonalities' usual sound" />
-      </Group>
+      <div className="controls-col">
+        <Group title="Tone">
+          <Slider label="Brightness" left="mellow" right="bright" bipolar min={-1} max={1} value={c.brightness} onChange={set('brightness')} />
+          <Slider label="Complexity" left="pure" right="dense" min={0} max={1} value={c.complexity} onChange={set('complexity')}
+            hint="How many of the six operators sound and how deep: two when pure, six and intense when dense" />
+          <Slider label="Motion" left="still" right="alive" min={0} max={1} value={c.motion} onChange={set('motion')}
+            hint="Vibrato, shimmer and drifting brightness; past the middle, wobbles, random steps and pitch drift" />
+        </Group>
+        <Group title="New voices">
+          <Slider label="Wild" left="typical" right="wild" min={0} max={1} value={wild} onChange={setWild}
+            hint="How far a new voice may stray from its tonalities' usual sound" />
+        </Group>
+      </div>
+      <div className="controls-col">
+        <Group title="Playing">
+          <Segmented<Register> label="Register" options={REGISTERS} labels={REGISTER_LABELS} hints={REGISTER_HINTS} value={c.register} onPick={step('register')} />
+          <Slider label="Velocity" left="none" right="strong" min={0} max={1} value={c.velocity} onChange={set('velocity')}
+            disabled={model === 'fm'} hint={model === 'fm' ? 'The volca fm plays every note at the same velocity' : 'How much brighter and louder a harder note plays'} />
+          <label className="toggle" title="A short pitch fall into every note">
+            <input type="checkbox" checked={c.pitchAccent} onChange={(e) => step('pitchAccent')(e.target.checked)} />
+            <span>Pitch accent</span>
+          </label>
+        </Group>
+        <EffectControls />
+      </div>
     </div>
   )
 }
