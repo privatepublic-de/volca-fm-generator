@@ -80,14 +80,15 @@ export interface GeneratorChoices {
   motion: number
   /** null: as the tonality plays it */
   register: Register | null
-  /** 0 none … 1 strong: velocity on brightness and loudness (only where the model uses it) */
-  velocity: number
+  /** 0 none … 1 strong: velocity on brightness and loudness (only where the model uses it); null: the voice's own,
+   *  as its tonality or instrument has it */
+  velocity: number | null
   /** a short pitch blip into each note */
   pitchAccent: boolean
 }
 
 export const DEFAULT_CHOICES: GeneratorChoices = {
-  pins: [], instrument: null, shape: null, length: 0, brightness: 0, complexity: 0.5, motion: 0, register: null, velocity: 0, pitchAccent: false,
+  pins: [], instrument: null, shape: null, length: 0, brightness: 0, complexity: 0.5, motion: 0, register: null, velocity: null, pitchAccent: false,
 }
 
 /** A tonality in the mix, after the pins are read. */

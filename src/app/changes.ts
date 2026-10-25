@@ -36,6 +36,8 @@ export function describeChange(before: Made | undefined, after: Made): string {
   if (a.instrument !== b.instrument) parts.push(a.instrument ? `Start: ${instrumentName(INSTRUMENTS[a.instrument])}` : 'Instrument off')
   if (a.shape !== b.shape) parts.push(`Envelope: ${a.shape ? SHAPE_LABELS[a.shape] : 'own'}`)
   for (const [key, label] of SLIDERS) {
+    // velocity can be the voice's own (null)
+    if (a[key] === null || b[key] === null) { if (a[key] !== b[key]) parts.push(a[key] === null ? `${label}: own` : `${label} set`); continue }
     const x = a[key] as number
     const y = b[key] as number
     if (Math.abs(x - y) > 0.001) parts.push(`${label} ${updown(y, x)}`)

@@ -176,10 +176,23 @@ export function applyRegister(v: Voice, r: Register | null) {
   if (r === 'sub') for (const op of mods) { const ratio = opRatio(v, op); if (ratio !== null && ratio > 8) setLevel(v, op, level(v, op) - 15) }
 }
 
-/** Velocity: on the modulators (brightness, the FM touch) and less on the carriers (loudness). */
-export function applyVelocity(v: Voice, x: number) {
-  if (!x) return
-  const { carriers, modulators } = rolesOf(v)
-  for (const op of modulators) setOp(v, op, 'velocitySens', Math.max(getOp(v, op, 'velocitySens'), Math.round(2 + 5 * x)))
-  for (const op of carriers) setOp(v, op, 'velocitySens', Math.max(getOp(v, op, 'velocitySens'), Math.round(1 + 2 * x)))
+/** How much a voice answers to velocity, 0 … 1: its sounding operators' sensitivity (0–7) on average. */
+export function touchOf(v: Voice): number {
+  const sounding = [1, 2, 3, 4, 5, 6].filter((op) => level(v, op) > 0)
+  return sounding.length ? sounding.reduce((s, op) => s + getOp(v, op, 'velocitySens'), 0) / sounding.length / 7 : 0
+}
+
+/** Velocity to `x` (null: as the voice is): every sounding operator's sensitivity moves by the same step, the
+ *  carriers (loudness) half as far as the modulators (brightness, the FM touch), so a piano's balance between its
+ *  hammer and its body stays. The step is the one that brings the touch nearest `x`. In place. */
+export function applyVelocity(v: Voice, x: number | null) {
+  if (x === null) return
+  const { carriers } = rolesOf(v)
+  const sounding = [1, 2, 3, 4, 5, 6].filter((op) => level(v, op) > 0)
+  const own = sounding.map((op) => getOp(v, op, 'velocitySens'))
+  const moved = (d: number) => sounding.map((op, i) => Math.max(0, Math.min(7, Math.round(own[i] + (carriers.includes(op) ? d / 2 : d)))))
+  const touch = (sens: number[]) => sens.reduce((s, x) => s + x, 0) / Math.max(1, sens.length) / 7
+  let best = moved(0)
+  for (let d = -14; d <= 14; d += 0.5) if (Math.abs(touch(moved(d)) - x) < Math.abs(touch(best) - x)) best = moved(d)
+  sounding.forEach((op, i) => setOp(v, op, 'velocitySens', best[i]))
 }

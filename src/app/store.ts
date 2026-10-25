@@ -105,7 +105,10 @@ function load(): Saved {
     const s = JSON.parse(localStorage.getItem(STATE_KEY) ?? 'null') as Saved | null
     if (!s) return fallback
     s.pins.forEach((p) => (p.id = nextId++))
-    return { ...fallback, ...s, controls: { ...DEFAULT_CHOICES, ...s.controls } }
+    // velocity 0 used to mean "as the voice has it" (now null)
+    const controls = { ...DEFAULT_CHOICES, ...s.controls }
+    if (controls.velocity === 0) controls.velocity = null
+    return { ...fallback, ...s, controls }
   } catch {
     return fallback
   }

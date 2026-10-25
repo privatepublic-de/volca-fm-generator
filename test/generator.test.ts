@@ -9,6 +9,7 @@ import { algorithmOf } from '../src/dx7/algorithms'
 const rolesOfVoice = (v: Voice) => algorithmOf(v[VC.algorithm])
 import { rng } from '../src/generator/random'
 import { mutateChoices } from '../src/generator/explore'
+import { touchOf } from '../src/generator/controls'
 import { INSTRUMENT_IDS, INSTRUMENTS } from '../src/generator/instruments'
 
 const SR = 24000
@@ -233,6 +234,20 @@ describe('controls', () => {
     expect(vel('fm2')).toBe(7)
     expect(vel('fm')).toBe(0)
   })
+
+  it("velocity starts as the voice's own and moves around it", () => {
+    const piano = (velocity: number | null) => generate({ ...DEFAULT_CHOICES, instrument: 'piano', velocity }, { seed: 1 }).voice
+    const own = piano(null)
+    // the classic pianos answer to velocity; the slider shows it
+    expect(touchOf(own)).toBeGreaterThan(0.25)
+    for (const x of [0, 0.3, 0.7, 1]) expect(Math.abs(touchOf(piano(x)) - x), String(x)).toBeLessThan(0.12)
+    // more velocity keeps the order of the operators' sensitivities (the hammer stays more sensitive than the body)
+    const ops = [1, 2, 3, 4, 5, 6].filter((op) => getOp(own, op, 'outputLevel') > 0)
+    const more = piano(Math.min(1, touchOf(own) + 0.2))
+    for (const a of ops) for (const b of ops) {
+      if (getOp(own, a, 'velocitySens') > getOp(own, b, 'velocitySens')) expect(getOp(more, a, 'velocitySens')).toBeGreaterThanOrEqual(getOp(more, b, 'velocitySens') - 1)
+    }
+  })
 })
 
 describe('pitch', () => {
@@ -334,7 +349,7 @@ describe('anything goes', () => {
         pins: Array.from({ length: r.int(0, 3) }, () => ({ angle: r.range(0, 360), radius: r.next(), weight: r.range(0.1, 1) })),
         shape: r.chance(0.5) ? r.pick(SHAPES) : null,
         length: r.range(-1, 1), brightness: r.range(-1, 1), complexity: r.next(), motion: r.next(),
-        register: r.chance(0.5) ? r.pick(REGISTERS) : null, velocity: r.next(), pitchAccent: r.chance(0.3),
+        register: r.chance(0.5) ? r.pick(REGISTERS) : null, velocity: r.chance(0.3) ? null : r.next(), pitchAccent: r.chance(0.3),
         instrument: r.chance(0.3) ? r.pick(INSTRUMENT_IDS) : null,
       }
       const g = generate(c, { seed: i, wild: r.next() })

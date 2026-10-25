@@ -184,3 +184,12 @@ past a quarter, and on an organ (carriers only) the drawbars above the lowest. B
 middle → rim: metallic 1.5 → 7.1 → 15.8, bell 1.1 → 1.5 → 2.5, reed 1.1 → 1.3 → 2.2, brass 1.1 → 1.3 → 2.3 (before:
 the first two always equal). For breath and noise the radius sets the amount of air, as before. Secondary pins
 already used it (a transform's amount, a branch's modulator).
+
+## Velocity (2026-10-25)
+
+The Velocity slider starts at the voice's own response (`touchOf`: the sounding operators' sensitivity on average,
+0–7 as 0–1), marked "own": a classic piano sits at about 35 %, a pin's voice where its tonality puts it. Moving it
+shifts every sounding operator's sensitivity by the same step, the carriers half as far as the modulators, so the
+original's balance stays (the piano's hammer stays more sensitive than its body); the step is the one nearest the
+slider. Double-click goes back to own. Before, 0 meant own and the slider could only raise sensitivities, so an
+instrument showed 0 however much it answered to touch. Saved states with 0 load as own.

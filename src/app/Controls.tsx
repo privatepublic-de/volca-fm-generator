@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react'
 import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, TONALITY_HUES, type Register, type Shape } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
+import { touchOf } from '../generator/controls'
 import { hueOfAngle, intensityWord, pinHint, pinLabel } from './Wheel'
 import { StartFromMenu } from './StartFrom'
 import { instrumentName, INSTRUMENTS } from '../generator/instruments'
@@ -10,24 +11,27 @@ import { audition, playback, sameSound, useApp, type Controls as ControlValues }
 
 /** A slider that makes the voice again while it moves and plays it when let go. A double-click puts it back to
  *  `reset` (its neutral value: the middle for bipolar ones), which `mark` shows on the track when it isn't an end. */
-function Slider({ label, value, min, max, step = 0.05, onChange, left, right, bipolar, disabled, hint, reset }: {
+function Slider({ label, value, min, max, step = 0.05, onChange, left, right, bipolar, disabled, hint, reset, own }: {
   label: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void
   left?: string; right?: string; bipolar?: boolean; disabled?: boolean; hint?: string; reset?: number
+  /** a control that is the voice's own until moved: whether it is now, and how to go back to it */
+  own?: { is: boolean; back: () => void }
 }) {
   const regenerate = useApp((s) => s.regenerate)
   const neutral = reset ?? (bipolar ? 0 : min)
   const mark = neutral > min && neutral < max && !bipolar ? ((neutral - min) / (max - min)) * 100 : null
+  const back = own ? 'the voice\'s own' : neutral === 0.5 && !bipolar ? 'the tonality\'s own' : 'neutral'
   return (
     <label className={`slider${bipolar ? ' bipolar' : ''}${mark !== null ? ' marked' : ''}${disabled ? ' disabled' : ''}`}
-      title={`${hint ? `${hint}. ` : ''}Double-click: back to ${neutral === 0.5 && !bipolar ? 'the tonality\'s own' : 'neutral'}`}>
-      <span className="slider-label">{label}</span>
+      title={`${hint ? `${hint}. ` : ''}Double-click: back to ${back}`}>
+      <span className="slider-label">{label}{own?.is && !disabled && <span className="slider-own">own</span>}</span>
       <input
         type="range" min={min} max={max} step={step} value={value} disabled={disabled}
         style={{ '--fill': `${((value - min) / (max - min)) * 100}%`, ...(mark !== null ? { '--mark': `${mark}%` } : {}) } as React.CSSProperties}
         onChange={(e) => onChange(Number(e.target.value))}
         onPointerUp={() => { regenerate(true); audition() }}
         onKeyUp={(e) => { if (e.key.startsWith('Arrow')) { regenerate(true); audition() } }}
-        onDoubleClick={() => { onChange(neutral); regenerate(true); audition() }}
+        onDoubleClick={() => { if (own) own.back(); else onChange(neutral); regenerate(true); audition() }}
       />
       {(left || right) && <span className="slider-ends"><span>{left}</span><span>{right}</span></span>}
     </label>
@@ -228,6 +232,8 @@ export function Controls() {
   const c = useApp((s) => s.controls)
   const wild = useApp((s) => s.wild)
   const model = useApp((s) => s.model)
+  // the voice's own velocity response, where the slider sits until it is moved
+  const touch = useApp((s) => touchOf(s.voice))
   const { setControl, setWild, regenerate } = useApp.getState()
   const set = <K extends keyof ControlValues>(k: K) => (v: ControlValues[K]) => setControl(k, v)
   const step = <K extends keyof ControlValues>(k: K) => (v: ControlValues[K]) => { setControl(k, v); regenerate(true); audition() }
@@ -255,8 +261,9 @@ export function Controls() {
       <div className="controls-col">
         <Group title="Playing">
           <Segmented<Register> label="Register" options={REGISTERS} labels={REGISTER_LABELS} hints={REGISTER_HINTS} value={c.register} onPick={step('register')} />
-          <Slider label="Velocity" left="none" right="strong" min={0} max={1} value={c.velocity} onChange={set('velocity')}
-            disabled={model === 'fm'} hint={model === 'fm' ? 'The volca fm plays every note at the same velocity' : 'How much brighter and louder a harder note plays'} />
+          <Slider label="Velocity" left="none" right="strong" min={0} max={1} value={c.velocity ?? touch} onChange={set('velocity')}
+            own={{ is: c.velocity === null, back: () => setControl('velocity', null) }}
+            disabled={model === 'fm'} hint={model === 'fm' ? 'The volca fm plays every note at the same velocity' : 'How much brighter and louder a harder note plays; until moved, as the voice has it'} />
           <label className="toggle" title="A short pitch fall into every note">
             <input type="checkbox" checked={c.pitchAccent} onChange={(e) => step('pitchAccent')(e.target.checked)} />
             <span>Pitch accent</span>

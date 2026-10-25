@@ -115,7 +115,7 @@ function drawControls() {
   field('Complexity: pure … dense', slider(0, 1, 0.05, c.complexity, (v) => { c.complexity = v; changed(false) }), () => pct(c.complexity))
   field('Motion: still … alive', slider(0, 1, 0.05, c.motion, (v) => { c.motion = v; changed(false) }), () => pct(c.motion))
   field('Register', select<Register>(REGISTERS, REGISTER_LABELS, c.register, 'the tonality’s own', (v) => (c.register = v)))
-  field('Velocity response', slider(0, 1, 0.05, c.velocity, (v) => { c.velocity = v; changed(false) }), () => pct(c.velocity))
+  field('Velocity response', slider(0, 1, 0.05, c.velocity ?? 0, (v) => { c.velocity = v; changed(false) }), () => (c.velocity === null ? 'own' : pct(c.velocity)))
   field('Wild: typical … wild', slider(0, 1, 0.05, state.wild, (v) => { state.wild = v; changed(false) }), () => pct(state.wild))
   const accent = document.createElement('input')
   accent.type = 'checkbox'
