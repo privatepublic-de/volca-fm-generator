@@ -1,10 +1,10 @@
 // The controls next to the wheel (PLAN §4.3): the pins as a list, the envelope as small drawings, the sliders, and
 // the actions.
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { REGISTER_LABELS, REGISTERS, SHAPE_HINTS, SHAPE_LABELS, SHAPES, type Register, type Shape } from '../generator/choices'
 import type { Eg } from '../generator/shapes'
 import { hueOfAngle, pinHint, pinLabel } from './Wheel'
-import { audition, MAX_PINS, useApp, type Controls as ControlValues } from './store'
+import { audition, MAX_PINS, playback, useApp, type Controls as ControlValues } from './store'
 
 /** A slider that makes the voice again while it moves and plays it when let go. */
 function Slider({ label, value, min, max, step = 0.05, onChange, left, right, bipolar, disabled, hint }: {
@@ -157,6 +157,45 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   return <section className="group"><h3>{title}</h3>{children}</section>
 }
 
+/** The volca's effects: not part of the voice, a setting like the volume. The fm2's depths go to it as CCs (91, 93);
+ *  the fm's chorus is a button on the volca, so here it only sets the browser's sound to match. */
+function EffectControls() {
+  const model = useApp((s) => s.model)
+  const [, refresh] = useState(0)
+  const s = playback.settings
+  const set = (patch: Parameters<typeof playback.set>[0]) => { playback.set(patch); refresh((n) => n + 1) }
+  if (model === 'fm') {
+    return (
+      <Group title="Effects">
+        <label className="toggle">
+          <input type="checkbox" checked={s.fmChorus} onChange={(e) => { set({ fmChorus: e.target.checked }); audition() }} />
+          <span>Chorus</span>
+          <span className="toggle-hint">the volca fm's chorus is its own button; this only matches the browser's sound to it</span>
+        </label>
+      </Group>
+    )
+  }
+  const dial = (label: string, key: 'chorus' | 'reverb', hint: string) => (
+    <label className="slider" title={hint}>
+      <span className="slider-label">{label}</span>
+      <input type="range" min={0} max={127} step={1} value={s[key]}
+        style={{ '--fill': `${(s[key] / 127) * 100}%` } as React.CSSProperties}
+        onChange={(e) => set({ [key]: Number(e.target.value) })}
+        onPointerUp={() => audition()}
+        onKeyUp={(e) => { if (e.key.startsWith('Arrow')) audition() }}
+        onDoubleClick={() => set({ [key]: 0 })} />
+      <span className="slider-ends"><span>off</span><span>deep</span></span>
+    </label>
+  )
+  return (
+    <Group title="Effects">
+      {dial('Chorus', 'chorus', 'The fm2\'s chorus depth (CC 93)')}
+      {dial('Reverb', 'reverb', 'The fm2\'s reverb depth (CC 91)')}
+      <p className="group-note">On the volca, switch chorus and reverb on; these set how deep. Not saved with the voice.</p>
+    </Group>
+  )
+}
+
 export function Controls() {
   const c = useApp((s) => s.controls)
   const wild = useApp((s) => s.wild)
@@ -187,6 +226,7 @@ export function Controls() {
           <span className="toggle-hint">a short pitch fall into every note</span>
         </label>
       </Group>
+      <EffectControls />
       <Group title="New voices">
         <Slider label="Wild" left="typical" right="wild" min={0} max={1} value={wild} onChange={setWild}
           hint="How far a new voice may stray from its tonalities' usual sound" />

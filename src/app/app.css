@@ -150,6 +150,7 @@ kbd {
 .controls { display: grid; gap: 22px; }
 .group { display: grid; gap: 12px; }
 .group h3 { font: 500 13px var(--sans); color: var(--muted); }
+.group-note { color: var(--dim); font-size: 13px; }
 
 .shapes { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
 @media (max-width: 640px) { .shapes { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

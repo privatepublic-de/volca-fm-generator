@@ -15,19 +15,28 @@ export interface PlaybackSettings {
   port: string
   channel: number
   target: Target
+  /** the volca fm2's chorus and reverb depth, 0–127 (CC 93 and 91; switched on at the volca) */
+  chorus: number
+  reverb: number
+  /** the volca fm's chorus button, for the browser's sound only: MIDI can't switch it */
+  fmChorus: boolean
 }
+
+/** The fm2's effect depths (MIDI implementation rev. 1.00, 2022-11-17; with MIDI Short Message on). */
+export const CC_REVERB = 91
+export const CC_CHORUS = 93
 
 const SETTINGS_KEY = 'volca:player'
 const SEND_DELAY = 120
 
 export class Playback {
-  readonly settings: PlaybackSettings = { model: 'fm2', volume: 2, port: '', channel: 1, target: 'browser' }
+  readonly settings: PlaybackSettings = { model: 'fm2', volume: 2, port: '', channel: 1, target: 'browser', chorus: 0, reverb: 0, fmChorus: false }
   engine: BrowserEngine | null = null
   private access: MIDIAccess | null = null
   private output: MIDIOutput | null = null
   private voice: Voice | null = null
   private volcaHasVoice = false
-  private sendTimer = 0
+  private sendTimer: ReturnType<typeof setTimeout> | undefined
   private readonly held = new Set<number>()
   /** a note started or stopped (for drawing the keys) */
   onNotes: (held: ReadonlySet<number>) => void = () => {}
@@ -36,6 +45,8 @@ export class Playback {
 
   constructor() {
     try { Object.assign(this.settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}')) } catch { /* defaults */ }
+    // to look inside from the console while developing
+    if (import.meta.env?.DEV && typeof window !== 'undefined') (window as unknown as { playback: Playback }).playback = this
   }
 
   set(patch: Partial<PlaybackSettings>) {
@@ -44,7 +55,10 @@ export class Playback {
     if (patch.model) this.engine?.setModel(patch.model)
     if (patch.volume !== undefined) this.engine?.setGain(patch.volume)
     if (patch.port !== undefined && this.access) { this.output = findOutput(this.access, patch.port); this.volcaHasVoice = false; this.onPorts() }
-    if (patch.target && this.toVolca()) this.sendToVolca()
+    if (patch.target && this.toVolca()) { this.sendToVolca(); this.sendEffects() }
+    if (patch.model || patch.chorus !== undefined || patch.reverb !== undefined || patch.fmChorus !== undefined) this.applyEffects()
+    if (patch.chorus !== undefined && this.fm2ToVolca()) send(this.output, [0xb0 | this.ch(), CC_CHORUS, patch.chorus & 0x7f])
+    if (patch.reverb !== undefined && this.fm2ToVolca()) send(this.output, [0xb0 | this.ch(), CC_REVERB, patch.reverb & 0x7f])
   }
 
   get outputs(): string[] {
@@ -65,8 +79,23 @@ export class Playback {
     this.volcaHasVoice = false
     if (this.toVolca()) {
       clearTimeout(this.sendTimer)
-      this.sendTimer = window.setTimeout(() => this.sendToVolca(), SEND_DELAY)
+      this.sendTimer = setTimeout(() => this.sendToVolca(), SEND_DELAY)
     }
+  }
+
+  private fm2ToVolca = () => this.settings.model === 'fm2' && this.toVolca()
+
+  /** The browser's chorus and reverb as the volca would have them: the fm2's depths, or the fm's chorus button. */
+  private applyEffects() {
+    const s = this.settings
+    this.engine?.setEffects(s.model === 'fm2' ? { chorus: s.chorus / 127, reverb: s.reverb / 127 } : { chorus: s.fmChorus ? 0.6 : 0, reverb: 0 })
+  }
+
+  /** The effect depths to the fm2, as they are now. */
+  private sendEffects() {
+    if (!this.fm2ToVolca()) return
+    send(this.output, [0xb0 | this.ch(), CC_CHORUS, this.settings.chorus & 0x7f])
+    send(this.output, [0xb0 | this.ch(), CC_REVERB, this.settings.reverb & 0x7f])
   }
 
   private toBrowser = () => this.settings.target !== 'volca'
@@ -88,6 +117,7 @@ export class Playback {
     this.engine = await BrowserEngine.start()
     this.engine.setModel(this.settings.model)
     this.engine.setGain(this.settings.volume)
+    this.applyEffects()
     if (this.voice) this.engine.setVoice(this.voice)
   }
 
@@ -100,8 +130,9 @@ export class Playback {
       const fill = () => {
         this.output = findOutput(this.access!, this.settings.port)
         this.volcaHasVoice = false
-        // the volca gets the voice on stage as soon as it can
+        // the volca gets the voice on stage and the effect depths as soon as it can
         if (this.voice && this.toVolca()) this.sendToVolca()
+        this.sendEffects()
         this.onPorts()
       }
       this.access.onstatechange = fill
@@ -133,6 +164,12 @@ export class Playback {
 
   allNotesOff() {
     for (const n of [...this.held]) this.noteOff(n)
+  }
+
+  /** For tests: an output without Web MIDI. */
+  useOutput(output: MIDIOutput | null) {
+    this.output = output
+    this.volcaHasVoice = false
   }
 
   /** Plays a note briefly, to hear a new voice without touching the keyboard. */

@@ -12,4 +12,4 @@ volca fm and volca fm2. Each answer carries its date and the firmware it was tes
 | Q5 | Voice parameters ignored or played differently | later (velocity: Korg's document says it isn't used) | **From experience, not probed:** all of them, as in Dexed. |
 | Q6 | Connections and MIDI settings | | |
 | Q7 | Operator bit order, loudness against Dexed | | |
-| Q8 | CCs, and whether a voice send resets them | | |
+| Q8 | CCs, and whether a voice send resets them | **From Korg's MIDI implementation (rev. 1.01, 2016):** CCs 40–50 only (transpose, velocity, modulator/carrier attack and decay, LFO rate and pitch depth, algorithm, arpeggiator); no chorus CC: the chorus is a button | **From Korg's MIDI implementation (rev. 1.00, 2022-11-17), not probed:** the same CCs 40–50 plus **91 reverb depth** and **93 chorus depth** (0–127), with *MIDI Short Message* on. Chorus and reverb on/off are switches in the sequence data, not CCs: they're switched on at the volca |
