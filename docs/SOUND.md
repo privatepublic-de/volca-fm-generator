@@ -147,3 +147,24 @@ it; the horn algorithm 10, two soft stacks). What makes them brass: modulators t
 8.47:1 that blats at the start and dies, and a pitch envelope that bends into the note from a step above (`pitchEg`,
 starting and ending on 50). Two equal carriers detuned apart beat into near-silence: the horn's stay in tune.
 `local/dx7-brass.syx` and `local/dx7-pianos.syx` (not in git) hold the originals and ours side by side.
+
+### Checked against the library (2026-10-25)
+
+`tools/compare-library.ts` measures every instrument beside the patches of its name in the library, Yamaha's own
+first. Most of our first recipes were darker and shorter than the classics (the e-piano, harpsichord, clavinet,
+guitars, sitar, FM bass, the winds and the strings by a factor of 2–10 in brightness). They are now the originals:
+`tools/recipe-from-voice.ts` writes a recipe from a library voice, operator by operator (ratios, exact levels,
+detune, velocity, envelopes, rate and level scaling, the LFO with each operator's amplitude sensitivity, the pitch
+envelope, transpose, key sync), and each recipe names its source in a comment. Mostly the DX7 ROM cartridges 1–4,
+then the VRC-101/102/103 cartridges, the TX7 and TX816 sets. Each measures the same as its source (attack, decay,
+brightness, noise, pitch); the loudness is ours.
+
+Learned on the way:
+- The recipes' own velocity setting raised every modulator's sensitivity to 4 or more, which dulls them at normal
+  playing strength: the trombone measured 3.6 against the original's 9.3. Recipes no longer set it.
+- Levels are copied exactly. One level step on a feedback-7 operator, or on the e-piano's modulators, changes the
+  sound (the e-piano's loudest moment moved from 0.08 s to 0.56 s). Variety comes from Wild: it moves the envelope
+  rates up to 4 steps; at none the instrument is the original.
+- The classic harmonica fades a little while held (to −13 dB over 2.6 s); the hold test allows it.
+- Kick, snare, tom, hi-hat, cymbal, cowbell, choir, ooh and whistle stay ours: they measure close to the classics
+  (the classic whistles are plain sines, ours has air).
