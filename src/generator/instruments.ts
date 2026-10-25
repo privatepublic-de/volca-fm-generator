@@ -9,10 +9,10 @@ import type { GeneratorChoices, Tonality } from './choices'
 import type { Eg } from './shapes'
 import type { Skeleton } from './tonalities'
 
-export const INSTRUMENT_GROUPS = ['keys', 'plucked', 'mallets', 'bass', 'winds', 'strings', 'percussion', 'voices'] as const
+export const INSTRUMENT_GROUPS = ['keys', 'plucked', 'mallets', 'bass', 'winds', 'brass', 'strings', 'percussion', 'voices'] as const
 export type InstrumentGroup = (typeof INSTRUMENT_GROUPS)[number]
 export const INSTRUMENT_GROUP_LABELS: Record<InstrumentGroup, string> = {
-  keys: 'Keys', plucked: 'Plucked', mallets: 'Mallets', bass: 'Bass', winds: 'Winds', strings: 'Strings', percussion: 'Percussion', voices: 'Voices',
+  keys: 'Keys', plucked: 'Plucked', mallets: 'Mallets', bass: 'Bass', winds: 'Winds', brass: 'Brass', strings: 'Strings', percussion: 'Percussion', voices: 'Voices',
 }
 
 export interface Instrument {
@@ -37,6 +37,8 @@ export interface Instrument {
   tremolo?: readonly [speed: number, depth: number]
   /** a drum's pitch drop: where the pitch starts (pitch EG level, 50 = the note) and how fast it falls */
   pitchDrop?: readonly [level: number, rate: number]
+  /** the pitch envelope: a lip's bend into the note (it starts and ends on 50, so a release doesn't glide) */
+  pitchEg?: Eg
   /** a short pitch fall or scoop into every note */
   accent?: 'above' | 'below'
   /** the controls it starts with */
@@ -379,6 +381,121 @@ const RECIPES = {
       },
     },
     eg: { carrier: eg([80, 99, 99, 70], [99, 99, 99, 0]), modulator: eg([80, 99, 99, 70], [99, 99, 99, 0]) },
+  },
+  // ---------- brass ----------
+  // After the classic DX7 brass. What they share: modulators that open slower than the carrier, so the brightness
+  // swells in after the attack (the lips building up); a bright modulator high up (8.47:1) that blats at the start
+  // and dies; feedback 7; the pitch bending into the note from just above.
+  // the trumpet after ROM3 HI TRUMPT1 and the TX7 TRUMPET: one carrier, every modulator on it
+  trumpet: {
+    label: 'Trumpet', group: 'brass', family: 'brass', hint: 'After the classic DX7 trumpet: a blat at the start, brightness swelling in, a lip bend',
+    skeleton: {
+      algorithms: [18], shape: 'bowed', feedback: 7, vibrato: [34, 60, 5],
+      ops: {
+        1: { ratio: [1], level: 99, velocity: 4 }, 2: { ratio: [2.1], level: [48, 52], velocity: 6 },
+        3: { ratio: [1], level: [77, 80], velocity: 1 }, 4: { ratio: [1], level: [72, 75], velocity: 4 },
+        5: { ratio: [6.24], level: [48, 52] }, 6: { ratio: [8.47], level: [96, 99], velocity: 3 },
+      },
+    },
+    ops: {
+      1: { eg: eg([70, 24, 19, 55], [99, 86, 86, 0]), rateScaling: 2 },
+      2: { eg: eg([99, 12, 22, 50], [85, 0, 0, 0]), rateScaling: 2, scaling: [68, 0, 96, 0, 1] },
+      3: { eg: eg([41, 12, 22, 50], [99, 61, 61, 0]), rateScaling: 5 },
+      4: { eg: eg([66, 76, 22, 50], [99, 61, 61, 0]), rateScaling: 5 },
+      5: { eg: eg([48, 12, 22, 50], [99, 61, 61, 0]), rateScaling: 5 },
+      6: { eg: eg([42, 56, 20, 70], [99, 0, 0, 0]), rateScaling: 7 },
+    },
+    pitchEg: eg([86, 67, 95, 60], [52, 50, 50, 50]),
+    controls: { velocity: 0.5 },
+  },
+  // the trombone after the VRC-102 TROMBONE 1 and ROM3 BRASSHORNS: the trumpet's build an octave down, slower to
+  // speak, a wider bend
+  trombone: {
+    label: 'Trombone', group: 'brass', family: 'brass', hint: 'After the classic DX7 trombone: slower to speak, a wide lip bend, an octave down',
+    skeleton: {
+      algorithms: [18], shape: 'bowed', feedback: 7, vibrato: [35, 70, 5],
+      ops: {
+        1: { ratio: [1], level: 99, velocity: 2 }, 2: { ratio: [1], level: [65, 68] },
+        3: { ratio: [1], level: [79, 81], velocity: 1 }, 4: { ratio: [1], level: [79, 82], velocity: 1 },
+        5: { ratio: [3.18], level: [68, 70] }, 6: { ratio: [8.47], level: [77, 80] },
+      },
+    },
+    ops: {
+      1: { eg: eg([56, 24, 19, 60], [99, 99, 99, 0]), rateScaling: 3 },
+      2: { eg: eg([37, 34, 15, 64], [85, 0, 0, 0]), rateScaling: 2 },
+      3: { eg: eg([46, 25, 22, 56], [99, 94, 92, 0]), rateScaling: 3 },
+      4: { eg: eg([66, 92, 22, 50], [53, 61, 62, 0]) },
+      5: { eg: eg([48, 55, 22, 50], [98, 61, 62, 0]) },
+      6: { eg: eg([77, 56, 20, 70], [99, 0, 0, 0]), rateScaling: 7 },
+    },
+    pitchEg: eg([94, 67, 98, 98], [53, 50, 50, 50]),
+    transpose: -12, controls: { velocity: 0.4 },
+  },
+  // the horn after the VRC-102 HORN 1: two soft stacks side by side, the modulators starting low and growing
+  frenchHorn: {
+    label: 'Horn', name: 'French horn', group: 'brass', family: 'brass', hint: 'After the classic DX7 horn: round and soft, the brightness growing as it speaks',
+    skeleton: {
+      algorithms: [10], shape: 'bowed', feedback: 7,
+      ops: {
+        1: { ratio: [1], level: 99, velocity: 2 }, 2: { ratio: [1], level: [70, 72], velocity: 1 },
+        3: { ratio: [1], level: [94, 97], velocity: 1 }, 4: { ratio: [1], level: 99, velocity: 2 },
+        5: { ratio: [1], level: [70, 72], velocity: 2 }, 6: { ratio: [2], level: [79, 81], velocity: 1 },
+      },
+    },
+    ops: {
+      1: { eg: eg([99, 55, 28, 55], [63, 99, 99, 0]), rateScaling: 3 },
+      2: { eg: eg([99, 37, 35, 54], [60, 96, 92, 0]), rateScaling: 3 },
+      3: { eg: eg([70, 99, 70, 50], [70, 99, 80, 0]), scaling: [19, 0, 15, 0, 0] },
+      4: { eg: eg([99, 55, 28, 57], [63, 99, 99, 0]), rateScaling: 3 },
+      5: { eg: eg([99, 37, 35, 54], [60, 96, 92, 0]), rateScaling: 3 },
+      6: { eg: eg([70, 99, 70, 50], [70, 99, 80, 0]), rateScaling: 3, scaling: [19, 0, 15, 0, 0] },
+    },
+    pitchEg: eg([60, 67, 95, 60], [49, 50, 50, 50]),
+    controls: { velocity: 0.4 },
+  },
+  // the tuba after the VRC-102 Tuba: the trumpet's build with the modulators an octave under, dark and slow
+  tuba: {
+    label: 'Tuba', group: 'brass', family: 'brass', hint: 'After the classic DX7 tuba: dark, slow to speak, rising into the note',
+    skeleton: {
+      algorithms: [18], shape: 'bowed', feedback: 7,
+      ops: {
+        1: { ratio: [1], level: 99 }, 2: { ratio: [2], level: [87, 90] },
+        3: { ratio: [0.5], level: [79, 82], velocity: 1 }, 4: { ratio: [1], level: [94, 97], velocity: 1 },
+        5: { ratio: [0.5], level: [87, 90], velocity: 1 }, 6: { ratio: [0.5], level: [84, 87], velocity: 1 },
+      },
+    },
+    ops: {
+      1: { eg: eg([72, 49, 35, 54], [71, 99, 84, 0]), rateScaling: 2, scaling: [68, 0, 99, 0, 0] },
+      2: { eg: eg([56, 35, 28, 17], [84, 89, 84, 0]), rateScaling: 3, scaling: [0, 0, 99, 0, 0] },
+      3: { eg: eg([99, 49, 31, 46], [46, 97, 91, 0]), rateScaling: 6, scaling: [42, 0, 0, 0, 0] },
+      4: { eg: eg([66, 92, 22, 50], [53, 61, 62, 0]) },
+      5: { eg: eg([48, 55, 22, 50], [98, 61, 62, 0]) },
+      6: { eg: eg([77, 56, 20, 70], [99, 88, 89, 0]), rateScaling: 7 },
+    },
+    pitchEg: eg([67, 67, 98, 98], [48, 50, 50, 50]),
+    transpose: -12,
+  },
+  // the section after ROM1 BRASS 1, the most copied DX7 brass: three carriers apart in tune, one feedback modulator
+  // on all three opening late, and a pair an octave down
+  brassSection: {
+    label: 'Brass Sect', name: 'Brass section', group: 'brass', family: 'brass', hint: 'After the DX7 BRASS 1: a section in unison, swelling bright, an octave pair under it',
+    skeleton: {
+      algorithms: [22], shape: 'bowed', feedback: 7, vibrato: [37, 0, 5],
+      ops: {
+        1: { ratio: [0.5], level: 98, detune: 7 }, 2: { ratio: [0.5], level: [84, 87], detune: 7 },
+        3: { ratio: [1], level: 99, detune: -2, velocity: 2 }, 4: { ratio: [1], level: 99, velocity: 2 },
+        5: { ratio: [1], level: 98, detune: 1, velocity: 2 }, 6: { ratio: [1], level: [80, 83], velocity: 2 },
+      },
+    },
+    ops: {
+      1: { eg: eg([72, 76, 99, 71], [99, 88, 96, 0]), rateScaling: 3, scaling: [39, 0, 14, 3, 3] },
+      2: { eg: eg([62, 51, 29, 71], [82, 95, 96, 0]), rateScaling: 1, scaling: [27, 0, 7, 3, 1] },
+      3: { eg: eg([77, 76, 82, 71], [99, 98, 98, 0]), rateScaling: 3, scaling: [39, 0, 0, 3, 3] },
+      4: { eg: eg([77, 36, 41, 71], [99, 98, 98, 0]), rateScaling: 3, scaling: [39, 0, 0, 3, 3] },
+      5: { eg: eg([77, 36, 41, 71], [99, 98, 98, 0]), rateScaling: 3, scaling: [39, 0, 0, 3, 3] },
+      6: { eg: eg([49, 99, 28, 68], [98, 98, 91, 0]), rateScaling: 1, scaling: [39, 54, 50, 1, 1] },
+    },
+    controls: { velocity: 0.3 },
   },
   // ---------- strings ----------
   violin: {

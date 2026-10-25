@@ -303,7 +303,7 @@ describe('starting from an instrument', () => {
       const ratio = Math.sqrt(late.samples.reduce((a, x) => a + x * x, 0) / late.samples.length)
         / Math.sqrt(early.samples.reduce((a, x) => a + x * x, 0) / early.samples.length)
       if (group === 'percussion' || group === 'plucked') expect(ratio, id).toBeLessThan(0.5)
-      if (group === 'winds' || group === 'voices') expect(ratio, id).toBeGreaterThan(0.3)
+      if (group === 'winds' || group === 'brass' || group === 'voices') expect(ratio, id).toBeGreaterThan(0.3)
     }
   })
 

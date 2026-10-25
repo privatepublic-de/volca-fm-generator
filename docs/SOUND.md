@@ -113,8 +113,8 @@ name and a number don't fit). Naming costs about 30 ms, so it is skipped while a
 
 ## Instruments (2026-10-25)
 
-"Start from…" offers the sounds FM was first sold on, as bases for the wheel: 36 recipes in
-`src/generator/instruments.ts`, in eight groups (keys, plucked, mallets, bass, winds, strings, percussion, voices),
+"Start from…" offers the sounds FM was first sold on, as bases for the wheel: 41 recipes in
+`src/generator/instruments.ts`, in nine groups (keys, plucked, mallets, bass, winds, brass, strings, percussion, voices),
 plus the plain-sine Init voice. A recipe is a skeleton like a tonality's (algorithms, ratios, levels, feedback) with
 its own envelopes and a few touches: transpose, keyboard rate scaling, treble (level scaling), tremolo, a pitch drop
 (drums: the pitch jumps up and falls to the note, starting and ending on it so a release doesn't glide) or a pitch
@@ -138,3 +138,12 @@ to 91 (the thump), carriers R 88 28 27 50 / L 99 90 0 0, rate scaling 2–3. The
 algorithm 3, carriers 2–4 steps apart, a 4:1 hammer, a 3:1 feedback-7 modulator for the buzz, rate scaling 4–5, one
 carrier holding at 52 while the key is down. What they share, and our first piano lacked: per-operator envelopes
 (the role envelopes were too uniform), a slow first fall (R2 about 28, not 48) and level scaling per modulator.
+
+The brass follows the Yamaha originals: ROM1 BRASS 1 for the section (algorithm 22: three carriers apart in tune
+under one feedback-7 modulator that opens late, plus a pair an octave down), ROM3 HI TRUMPT1 and the TX7 TRUMPET for
+the trumpet, the VRC-102 TROMBONE 1, HORN 1 and Tuba for the rest (algorithm 18: one carrier, every modulator on
+it; the horn algorithm 10, two soft stacks). What makes them brass: modulators that open slower than the carrier
+(the brightness swells in after the attack, the trombone about 3 dB over its first second), a bright modulator at
+8.47:1 that blats at the start and dies, and a pitch envelope that bends into the note from a step above (`pitchEg`,
+starting and ending on 50). Two equal carriers detuned apart beat into near-silence: the horn's stay in tune.
+`local/dx7-brass.syx` and `local/dx7-pianos.syx` (not in git) hold the originals and ours side by side.

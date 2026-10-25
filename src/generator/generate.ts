@@ -185,6 +185,7 @@ function applyInstrument(v: Voice, inst: Instrument, ownEgs: boolean) {
     const [level, rate] = inst.pitchDrop
     v.set([99, rate, 99, 99, level, 50, 50, 50], VC.pitchRate1)
   }
+  if (inst.pitchEg) v.set([...inst.pitchEg.rates, ...inst.pitchEg.levels], VC.pitchRate1)
   if (inst.accent) applyPitchBlip(v, inst.accent)
   for (const [key, d] of Object.entries(inst.ops ?? {})) {
     const op = Number(key)
