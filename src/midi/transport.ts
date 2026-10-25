@@ -5,7 +5,7 @@ export function webMidiUnavailable(): string | null {
   if ('requestMIDIAccess' in navigator) return null
   // Browsers only offer Web MIDI on secure pages: a file opened from disk or a plain-http host has none.
   if (!window.isSecureContext) return 'Web MIDI needs the served page: open it with npm run dev, not from disk.'
-  return 'This browser doesn’t support Web MIDI with SysEx. Use Chrome or Edge.'
+  return 'This browser doesn’t support Web MIDI with SysEx. Use Chrome, Edge or Firefox.'
 }
 
 export async function requestWebMidi(): Promise<MIDIAccess> {

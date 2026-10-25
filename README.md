@@ -4,8 +4,8 @@
 Put pins on a wheel of twelve tonalities, shape the result with a handful of controls, hear it in the browser or
 on the volca, and keep what you like. Every voice is a standard DX7 voice.
 
-**[Open the generator →](https://privatepublic-de.github.io/volca-fm-generator/)** Chrome or Edge, nothing to
-install.
+**[Open the generator →](https://privatepublic-de.github.io/volca-fm-generator/)** Chrome, Edge or Firefox,
+nothing to install.
 
 ![The generator: the tonality wheel with two pins on the left, the envelope, tone, playing and effect controls on
 the right, the voice it made below them with its algorithm and six operators, and the keyboard along the
@@ -40,8 +40,9 @@ The help inside the app (**Help**, or `?`) explains every part.
 | Notes at once | 6 | 3 |
 
 1. Connect a MIDI interface to the volca's MIDI IN.
-2. Open the generator in Chrome or Edge (Safari has no Web MIDI), choose the model, press **Connect the volca**
-   and allow MIDI access.
+2. Open the generator in Chrome, Edge or Firefox (Safari has no Web MIDI), choose the model, press **Connect the
+   volca** and allow MIDI access. Firefox first offers a small *site permission add-on* for the page: that's how it
+   grants MIDI with SysEx. Add it; it covers this page only and can be removed under Add-ons and themes.
 3. Pick the MIDI out and the volca's channel, then **Volca** or **Both**.
 
 A voice sent to the volca replaces the sound of the program it's on until you choose another program. To keep it,

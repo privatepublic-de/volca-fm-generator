@@ -146,6 +146,8 @@ export class Playback {
       fill()
       return null
     } catch (e) {
+      // Firefox grants MIDI through a site permission add-on it offers to install; turned down, it says so
+      if (/add-on/i.test((e as Error).message)) return 'No MIDI access: Firefox needs its site permission add-on for this page. Press Connect again and add it.'
       return `No MIDI access: ${(e as Error).message}`
     }
   }

@@ -146,9 +146,14 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             </tbody>
           </table>
           <p>
-            Choose the model in the top bar. To connect, use Chrome or Edge (Safari has no Web MIDI) and a MIDI interface
-            into the volca's MIDI IN; press Connect the volca, allow MIDI access when the browser asks, then pick the MIDI
-            out and the volca's channel. The dot beside them turns green while notes go to the volca (Volca or Both).
+            Choose the model in the top bar. To connect, use Chrome, Edge or Firefox (Safari has no Web MIDI) and a MIDI
+            interface into the volca's MIDI IN; press Connect the volca, allow MIDI access when the browser asks, then pick
+            the MIDI out and the volca's channel. The dot beside them turns green while notes go to the volca (Volca or Both).
+          </p>
+          <p>
+            <strong>In Firefox:</strong> the first time you press Connect the volca (with the MIDI interface plugged in),
+            Firefox offers to add a small site permission add-on for this page, the way it allows MIDI with SysEx. Add it,
+            then allow the access. It applies to this page only and can be removed under Add-ons and themes.
           </p>
           <p>
             A voice sent to the volca replaces the sound of the program it's on until you pick another program. To keep it

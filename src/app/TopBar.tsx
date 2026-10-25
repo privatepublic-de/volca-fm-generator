@@ -49,7 +49,7 @@ export function TopBar({ onStore, onHelp, audioOn }: { onStore: () => void; onHe
                 title={status ? `${status}${statusTitle ? ` (${statusTitle})` : ''}` : undefined} aria-label={status ?? undefined} />
             </>
           ) : (
-            <button onClick={async () => { setProblem((await playback.connect()) ?? ''); refresh((n) => n + 1) }} title="Needs Chrome or Edge and a MIDI interface into the volca's MIDI IN">Connect the volca</button>
+            <button onClick={async () => { setProblem((await playback.connect()) ?? ''); refresh((n) => n + 1) }} title="Needs Chrome, Edge or Firefox and a MIDI interface into the volca's MIDI IN">Connect the volca</button>
           )}
         </div>
       </div>

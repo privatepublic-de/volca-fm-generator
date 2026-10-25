@@ -26,7 +26,7 @@ export function StoreDialog({ open, onClose }: { open: boolean; onClose: () => v
         <>
           <p>
             To keep a voice on the volca, the volca has to get it first: connect it, then come back here. The voice goes
-            over MIDI, from a MIDI interface into the volca's MIDI IN, in Chrome or Edge.
+            over MIDI, from a MIDI interface into the volca's MIDI IN, in Chrome, Edge or Firefox.
           </p>
           {problem && <p className="dialog-note">{problem}</p>}
           <div className="dialog-actions">
