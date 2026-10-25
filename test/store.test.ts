@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useApp } from '../src/app/store'
 import { voiceName } from '../src/dx7/voice'
+import { centroid, decayTime, slice } from '../src/engine/measure'
+import { renderNote } from '../src/engine/render'
 
 describe('the app store', () => {
   beforeEach(() => {
@@ -50,6 +52,22 @@ describe('the app store', () => {
       expect(useApp.getState().generated, e.name).not.toBeNull()
       expect(useApp.getState().voice).toEqual(e.voice)
     }
+  })
+
+  it('init voice: one mild pin, everything down, a plain held sine that brightness opens up', () => {
+    const s = useApp.getState()
+    s.setControl('motion', 0.8)
+    s.initVoice()
+    const now = useApp.getState()
+    expect(now.pins).toHaveLength(1)
+    expect(now.controls.shape).toBe('gate')
+    expect(now.controls.motion).toBe(0)
+    const seg = (v: Uint8Array) => ({ samples: renderNote(v, { sampleRate: 24000, holdSeconds: 2 }), sampleRate: 24000 })
+    const sine = seg(now.voice)
+    expect(centroid(slice(sine, 0.3, 0.8)) / 261.6).toBeLessThan(1.1)
+    expect(decayTime(sine)).toBe(Infinity)
+    useApp.getState().setControl('brightness', 1)
+    expect(centroid(slice(seg(useApp.getState().voice), 0.3, 0.8)) / 261.6).toBeGreaterThan(1.3)
   })
 
   it('keeps, renames and forgets favourites', () => {

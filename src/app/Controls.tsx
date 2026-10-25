@@ -235,20 +235,41 @@ export function Controls() {
   )
 }
 
+/** What each action does, shown under them for the one pointed at (New voice's when none is). */
+const ACTION_HINTS = {
+  init: 'Init voice: back to the start, one mild Warm pin with everything dialled down: a plain sine, held like an organ. Explore from there.',
+  generate: 'New voice: your pins and controls rolled again: other ratios and levels, and another algorithm where the tonality has a choice.',
+  variation: 'Variation: your pins and controls rolled much freer, at least three quarters wild: further from the usual sound.',
+  mutate: 'Mutate: the pins wander around the wheel and in or out, the controls get a push, sometimes a pin comes or goes; then a new voice.',
+  keep: 'Keep: puts this voice in your kept voices, in this browser.',
+}
+type ActionKey = keyof typeof ACTION_HINTS
+
 export function Actions() {
-  const { generateNew, variation, mutateCurrent, keep } = useApp.getState()
+  const { initVoice, generateNew, variation, mutateCurrent, keep } = useApp.getState()
   const autoplay = useApp((s) => s.autoplay)
   const setAutoplay = useApp((s) => s.setAutoplay)
+  const [hint, setHint] = useState<ActionKey>('generate')
+  const button = (key: ActionKey, label: string, shortcut: string, run: () => void, primary = false) => (
+    <button className={primary ? 'primary' : ''} onClick={run} title={shortcut}
+      onPointerEnter={() => setHint(key)} onFocus={() => setHint(key)} onPointerLeave={() => setHint('generate')} onBlur={() => setHint('generate')}>
+      {label}
+    </button>
+  )
   return (
-    <div className="actions">
-      <button className="primary" onClick={() => { generateNew(); audition() }} title="Enter">New voice</button>
-      <button onClick={() => { variation(); audition() }} title="V: the same pins and controls, rolled wilder">Variation</button>
-      <button onClick={() => { mutateCurrent(); audition() }} title="M: the pins wander and the controls get a push, then a new voice">Mutate</button>
-      <button onClick={keep} title="Q: keep this voice in your favourites">Keep</button>
-      <label className="toggle small">
-        <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
-        <span>Play on change</span>
-      </label>
+    <div className="actions-block">
+      <div className="actions">
+        {button('init', 'Init voice', 'I', () => { initVoice(); audition() })}
+        {button('generate', 'New voice', 'Enter', () => { generateNew(); audition() }, true)}
+        {button('variation', 'Variation', 'V', () => { variation(); audition() })}
+        {button('mutate', 'Mutate', 'M', () => { mutateCurrent(); audition() })}
+        {button('keep', 'Keep', 'Q', keep)}
+        <label className="toggle small">
+          <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
+          <span>Play on change</span>
+        </label>
+      </div>
+      <p className="action-hint" aria-live="polite">{ACTION_HINTS[hint]}</p>
     </div>
   )
 }

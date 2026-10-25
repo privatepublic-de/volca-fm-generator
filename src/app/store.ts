@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { readSyx } from '../dx7/sysex'
 import { setVoiceName, voiceName, type Voice } from '../dx7/voice'
 import type { Model } from '../engine/models'
-import { DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, type Pin, type Tonality } from '../generator/choices'
+import { angleOf, DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, type Pin, type Tonality } from '../generator/choices'
 import { mutateChoices } from '../generator/explore'
 import { generate, type Generated } from '../generator/generate'
 import { rng as makeRng } from '../generator/random'
@@ -67,6 +67,8 @@ interface State extends Saved {
   /** the same seed again (after a change); `record` puts it in the history */
   regenerate(record?: boolean): void
   generateNew(): void
+  /** back to the start: one mild Warm pin, everything dialled down, a plain held sine */
+  initVoice(): void
   variation(): void
   mutateCurrent(): void
   recall(entry: Entry): void
@@ -111,6 +113,10 @@ function saveFavourites(list: Entry[]) {
     localStorage.setItem(FAVOURITES_KEY, JSON.stringify(list.map((f) => ({ voice: Array.from(f.voice), name: f.name, hue: f.hue }))))
   } catch { /* private window */ }
 }
+
+/** Init voice's controls: everything down, the gate envelope. */
+const { pins: _noPins, ...DEFAULT_CONTROLS } = DEFAULT_CHOICES
+export const INIT_CONTROLS: Controls = { ...DEFAULT_CONTROLS, shape: 'gate', brightness: -1, complexity: 0, motion: 0, length: 0, velocity: 0, pitchAccent: false, register: null }
 
 export const choicesOf = (s: Pick<State, 'pins' | 'controls'>): GeneratorChoices => ({ ...s.controls, pins: s.pins })
 
@@ -201,6 +207,16 @@ export const useApp = create<State>((set, get) => {
     },
     regenerate(record = false) {
       make(record)
+    },
+    initVoice() {
+      set({
+        pins: [{ id: nextId++, angle: angleOf('warm'), radius: 0, weight: 1 }],
+        controls: { ...INIT_CONTROLS },
+        wild: 0,
+        seed: newSeed(),
+        selectedPin: null,
+      })
+      make(true)
     },
     generateNew() {
       set({ seed: newSeed() })

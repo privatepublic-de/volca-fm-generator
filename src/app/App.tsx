@@ -30,6 +30,7 @@ export function App() {
       const s = useApp.getState()
       const act: Record<string, () => void> = {
         Enter: () => { s.generateNew(); audition() },
+        i: () => { s.initVoice(); audition() },
         v: () => { s.variation(); audition() },
         m: () => { s.mutateCurrent(); audition() },
         q: () => s.keep(),
@@ -66,6 +67,7 @@ export function App() {
       <Keyboard />
       {!audioOn && <p className="audio-hint">Click or press a key to start the sound.</p>}
       <footer className="footer">
+        <span><kbd>I</kbd> init voice</span>
         <span><kbd>Enter</kbd> new voice</span>
         <span><kbd>V</kbd> variation</span>
         <span><kbd>M</kbd> mutate</span>

@@ -217,6 +217,7 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 4px; }
 .actions .primary { font-size: 16px; padding: 9px 22px; }
+.action-hint { color: var(--muted); font-size: 13px; margin-top: 10px; min-height: 2.9em; max-width: 60ch; }
 .actions .toggle { margin-left: auto; }
 
 /* ---------- the voice ---------- */
