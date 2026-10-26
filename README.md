@@ -20,7 +20,7 @@ ear, and send it to the volca.
 
 | | |
 |---|---|
-| **The wheel** | Twelve tonalities around a circle: Noise, Metal, Bell, Glass, Tine, Wood, Organ, Sine, Reed, Brass, String, Breath. Up to three pins: the angle picks the tonality (between two names, a bit of both), the distance from the centre goes from mild to extreme, the ring around a pin is its weight. |
+| **The wheel** | Twelve tonalities around a circle: Noise, Metal, Bell, Glass, Tine, Wood, Organ, Sine, Reed, Brass, String, Breath. Up to three pins: the angle picks the tonality (between two names, a bit of both), the distance from the centre goes from mild to extreme, the ring around a pin is its weight. The heaviest pin is the base; weights count against each other, so a pin that seems to do nothing needs more weight against the base (or the base less), then more distance from the centre. |
 | **Start from…** | 41 classic DX7 instruments as a base, parameter for parameter: grand and upright pianos, e-piano, harpsichord, clavinet, guitars, harp, koto, sitar, mallets, basses, winds, a brass section, strings, drums, choirs. Mostly Yamaha's own factory voices. Pins colour them. |
 | **Three ways on** | **Variation** moves the details of the voice you hear. **Mutate** moves the pins and the controls. **New voice** rolls the wheel afresh. Undo and redo through every step. |
 | **Shaping** | Envelope (the voice's own, or pluck, struck, bowed, pad, swell, gate, reverse) and length; brightness, complexity, motion; wild; register; velocity; pitch accent; chorus and reverb. |

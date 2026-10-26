@@ -61,6 +61,12 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             room.
           </p>
           <p>
+            <strong>A pin that seems to do nothing</strong> is usually too light against the base: weights count against
+            each other, so raise its weight or lower the base's (the weight of a lone pin, or of all pins alike, changes
+            nothing). Then move it out from the centre: its radius sets how far it goes. A pin in line with a tonality's
+            name is that tonality alone; between two names it shares out.
+          </p>
+          <p>
             Rest the pointer anywhere on the wheel and a label says what a click there would do; on a tonality's name, what
             it sounds like.
           </p>
