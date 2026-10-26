@@ -135,7 +135,7 @@ kbd {
 .wheel-tick { stroke: rgb(21 19 31 / 0.55); stroke-width: 0.006; pointer-events: none; }
 .wheel-label {
   font: 500 0.092px var(--condensed);
-  letter-spacing: 0.002px;
+  letter-spacing: 0.006px;
   dominant-baseline: middle;
   pointer-events: none;
 }

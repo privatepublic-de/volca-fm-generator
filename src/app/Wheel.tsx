@@ -15,6 +15,8 @@ const CENTRE = 0.22
 /** Dragged further out than this, a pin is taken away on release. */
 const REMOVE_AT = 1.16
 const VIEW = 1.3
+/** The names' radius: just outside the rim, centred on it by their middle */
+const LABEL_R = 1.1
 
 /** The innermost a pin sits (mild), clear of the centre button. */
 const INNER = CENTRE + 0.11
@@ -308,16 +310,18 @@ export function Wheel() {
           return <line key={t} className="wheel-tick" x1={tick1.x} y1={tick1.y} x2={tick2.x} y2={tick2.y} />
         })}
         {TONALITIES.map((t) => {
-          // upright, quicker to read than along the rim: on the sides they start (or end) just outside it, at the
-          // top and bottom they sit centred a little further out, clear of the rim by their height
+          // set on the circle, each along its own sector's arc; on the lower half the arc runs the other way, so the
+          // names there read left to right too (less quick to read than upright, but the wheel stays a wheel)
           const a = angleOf(t)
-          const side = Math.sin((a * Math.PI) / 180)
-          const { x, y } = polar(a, 1.06 + 0.05 * Math.abs(Math.cos((a * Math.PI) / 180)))
+          const flip = a > 90 && a < 270
+          const [from, to] = flip ? [polar(a + SECTOR / 2, LABEL_R), polar(a - SECTOR / 2, LABEL_R)] : [polar(a - SECTOR / 2, LABEL_R), polar(a + SECTOR / 2, LABEL_R)]
           return (
-            <text key={t} className="wheel-label" x={x} y={y} textAnchor={side > 0.25 ? 'start' : side < -0.25 ? 'end' : 'middle'}
-              style={{ fill: rimColour(TONALITY_HUES[t]) }}>
-              {TONALITY_LABELS[t]}
-            </text>
+            <g key={t}>
+              <path id={`wheel-arc-${t}`} d={`M ${from.x} ${from.y} A ${LABEL_R} ${LABEL_R} 0 0 ${flip ? 0 : 1} ${to.x} ${to.y}`} fill="none" />
+              <text className="wheel-label" style={{ fill: rimColour(TONALITY_HUES[t]) }}>
+                <textPath href={`#wheel-arc-${t}`} startOffset="50%" textAnchor="middle">{TONALITY_LABELS[t]}</textPath>
+              </text>
+            </g>
           )
         })}
         {base && basePlace && (() => {
