@@ -126,6 +126,10 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             sounds. Play the keyboard at the bottom (softer at the top of a key, harder at the front), or the computer keys
             A to ; with Z and X for the octave. With Play on change (beside the keyboard), every change plays the last note you played.
           </p>
+          <p>
+            A change is heard from the next note on: a note that's already sounding keeps the voice it started with. So
+            while you move a pin or a control, play a new note to hear where it is (or leave Play on change on).
+          </p>
           <p className="help-note">
             The browser's sound is an emulation, not the volca. It runs the DX7 engine of the open-source MSFA project, the
             one Dexed is built on, and was tuned against an fm2, so it comes close. But the volca has its own converters,

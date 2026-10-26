@@ -8,7 +8,8 @@
     "test": "vitest run",
     "typecheck": "tsc",
     "calibrate": "vite-node tools/calibrate.ts",
-    "survey": "vite-node tools/survey.ts"
+    "survey": "vite-node tools/survey.ts",
+    "sensitivity": "vite-node tools/sensitivity.ts 3"
   },
   "author": "Peter Witzel",
   "license": "MIT",

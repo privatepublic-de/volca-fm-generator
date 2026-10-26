@@ -233,3 +233,80 @@ harmonics: what "warm" stood for, in FM's own word), so all twelve read as nouns
 the ids (`metallic`, `wooden`, `warm`). The rim names stand upright, a little larger, each in its hue at the
 lightness that gives the same luminance (blues and violets come out lighter, yellows darker), and pointing near one
 shows what it sounds like.
+
+## How much each control moves the sound (2026-10-26)
+
+`npm run sensitivity` sweeps every pin and control over the twelve tonalities, three seeds each,
+and measures each state against the neutral one: the RMS difference of a spectrogram (25 bands, 28 frames over 2.5 s,
+velocity 100 and 50), in dB. A notch of Brightness (0.1) is about 0.5 dB, and heard; another seed of the same
+choices is about 5.9 dB, another voice. `npx vite-node tools/sensitivity.ts 3 '' pairs` puts every tonality as a
+second pin over every other; `… calibrate` fits Complexity's curve.
+
+**Exactly nothing** (the same bytes): a single pin's weight, all weights scaled together, the angle within ±0.1 of a
+sector's centre, Register Mid, Velocity 0 where the tonality has no sensitivity of its own. Organ as the base takes
+no part of a second pin of Metal, Bell, Glass, Tine, Sine or Reed, and hardly any of Brass: algorithm 32 has no free
+pair and no modulators for their transforms. Noise ignores Metal (fixed-frequency modulators).
+
+**Little, at first:** a second pin's radius (0 → 1: under 0.6 dB in all), a second pin's weight between 0.25 and
+0.95 (0.2 dB a step: it set one carrier's level), a third pin's weight past 0.1. Below 0.25 a second pin's weight
+works in steps (0.1, 0.15 and 0.2 make the same voice), and at equal weights the base swaps to the earlier tonality
+on the wheel. Widened since (below).
+
+**Evened out:**
+- Complexity above ½ hardly moved the sound up to ¾ and then changed it 11 dB a notch. Its slider now runs through
+  `COMPLEXITY_CURVE`, fitted so a notch changes the sound a little more each time (equal steps of ln(1 + dB/3)):
+  per notch from ½ up, 0.45 0.51 1.0 1.3 1.7 2.0 3.6 3.3 3.7 4.7 dB (was 0.4 0 0.4 0 0.4 1.4 2.3 3.7 6.0 11.3).
+  Below ½ the operator count goes two, three, four, about a third of the slider each (4, 3 and 3 notches; was 3, 5
+  and 2).
+- Motion's first notch rewrote every modulator's envelope (its decay held at its peak), narrowed a string's own
+  detune and set a vibrato floor: 4.8 dB, then 0.1–0.6 almost alike. Now the envelopes move toward their targets
+  by degrees, the detune only widens, and the vibrato starts at nothing; the raw response is then even enough
+  (about 1 dB a notch) that it needs no curve. Between 0.8 and 0.9 the wild part comes in, a jump no curve can
+  smooth.
+- The pin's radius measured even (0.65 dB a notch outward, 0.4 inward): no curve.
+
+| From the neutral, dB | 0.6 | 0.7 | 0.8 | 0.9 | 1 |
+|---|---|---|---|---|---|
+| Complexity before | 0.45 | 1.14 | 2.67 | 7.47 | 16.95 |
+| Complexity now | 1.22 | 3.47 | 6.32 | 10.68 | 16.95 |
+
+| From the neutral, dB | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Motion before | 4.79 | 4.13 | 4.29 | 4.84 | 4.55 | 4.81 | 6.12 | 7.34 | 10.59 | 11.19 |
+| Motion now | 1.33 | 2.05 | 2.52 | 3.42 | 4.55 | 4.81 | 6.12 | 7.34 | 10.59 | 11.19 |
+
+**The pins, widened:**
+- A branch is as loud against the base's carriers together as its share (power share²), not against one of them:
+  the branch gives way when quieter, the base when louder, so at equal weights the two are equal.
+- A branch's radius moves its modulator ±16 levels, as the base's radius does (was −8 … 0).
+- A pin as a colour (a transform) goes as √share × (¼ … 1¾ by radius, 1 at the middle), was share × (0.4 … 1).
+  Noise keeps its own curve, set by ear.
+- An organ's radius changes its registration: each drawbar moves 10 levels an octave above the loudest, so mild is
+  16′ 8′ 4′ with the top ones far back (2′ at 47, 1′ at 24) and extreme everything out (all at 77–89); before,
+  every drawbar above the lowest moved ±16 alike.
+
+| From the first pin alone, dB | before | now |
+|---|---|---|
+| 2nd pin weight 0.25 → 0.95 (a branch) | 2.3 → 4.0 | 3.7 → 7.9 |
+| 2nd pin radius 0 → 1, weight 0.5 (a branch) | 0.56 | 5.1 |
+| 2nd pin radius 0 → 1, weight 0.15 (a colour) | 0.41 | 1.8 |
+| 3rd pin weight 0.05 → 0.5 (a colour) | 2.0 → 3.8 | 2.4 → 5.8 |
+
+A colour used to move in lumps: most transforms changed something whole (Reed doubled the ratios, Tine put a
+modulator at 14 at full depth, String set its vibrato, Organ held every carrier at 80, Metal, Wood and Brass picked
+at random), and only a part followed the amount, so a colour's weight stepped (0.1, 0.15 and 0.2 made the same
+voice) more than it slid. Now each goes as far as its amount: ratios move toward Metal's and Bell's by amount
+(ratio^amount), the repurposed modulator of Reed, Glass and Tine is as deep as the amount, String's detune and
+vibrato and Organ's sustain grow with it, Wood's knock moves the envelopes part of the way to a transient, and the
+pitch blips of Brass and Wood are as deep as the amount instead of now and then.
+
+| A step of weight, dB | 2nd pin 0.05 → 0.2 (a colour) | 3rd pin 0.05 → 0.5 |
+|---|---|---|
+| before | 0.00–0.20 | 0.00–0.11 |
+| now | 0.34–0.56 | 0.09–0.57 |
+
+Still: crossing 0.25, where a colour becomes a branch, is a step of 4 dB, and Organ as the base takes no colour
+from Bell, Glass, Tine, Sine or Reed (it has no modulators for them).
+
+Voices kept with Complexity above ½, with some Motion, with more than one pin or on an organ sound different when
+made again from their pins and controls; the kept voice itself is unchanged.

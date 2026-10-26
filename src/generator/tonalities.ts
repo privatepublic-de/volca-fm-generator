@@ -81,6 +81,20 @@ const slower = (v: Voice, op: number, by: number, stages: readonly number[] = [0
   for (const i of stages) if (v[b + OP.rate1 + i] < 99) v[b + OP.rate1 + i] = clamp99(v[b + OP.rate1 + i] - by)
 }
 const INHARMONIC = [1.41, 1.73, 2.27, 2.62, 3.14, 3.5, 4.24, 5.19]
+/** An operator's envelope `a` of the way to a transient's (makeTransient): a little faster at a little. */
+const transientBy = (v: Voice, op: number, a: number) => {
+  const b = opBase(op)
+  const to = (i: number, x: number) => { v[b + i] = clamp99(v[b + i] + (x - v[b + i]) * a) }
+  to(OP.rate1, 99)
+  to(OP.rate2, Math.max(v[b + OP.rate2], 58))
+  to(OP.level2, 0)
+  to(OP.level3, 0)
+}
+/** A pitch blip (applyPitchBlip) as deep as the amount: none below a tenth, 2 semitones at full. In place. */
+const pitchBlipBy = (v: Voice, from: 'above' | 'below', a: number) => {
+  const depth = Math.round(5 * Math.min(1, a))
+  if (depth) v.set([99, 75, 99, 99, 50 + (from === 'above' ? depth : -depth), 50, 50, 50], VC.pitchRate1)
+}
 
 /** Whether the feedback operator is a noise source: feedback 7, the operator at 97 or more, its envelope held. Then
  *  nothing may lower the feedback: at 6 it is a tone again. */
@@ -138,8 +152,10 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
         const base = opRatio(v, c)
         if (base === null) continue
         for (const m of algorithm.modulators[c]) if (level(v, m) > 0 && opRatio(v, m) !== null) {
+          // twice the carrier (odd harmonics), as deep as the amount: a quiet modulator at a little (a hint of
+          // hollowness), deep at full
           setRatio(v, m, base * 2)
-          setLevel(v, m, Math.max(level(v, m), 66 + 8 * a))
+          setLevel(v, m, Math.max(54 + 20 * a, level(v, m) - 14 * (1 - a)))
         }
       }
     },
@@ -162,7 +178,7 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
         setLevel(v, op, level(v, op) + 6 * a)
         slower(v, op, 10 * a, [0])
       }
-      if (rng.chance(0.5 * a)) applyPitchBlip(v, 'below')
+      pitchBlipBy(v, 'below', a)
     },
   },
   // three detuned saws side by side, bowed, with vibrato
@@ -178,14 +194,19 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
     },
     branch: { carrier: { ratio: [1], level: [86, 94], detune: [3, 5] }, modulator: { ratio: [1], level: [72, 78] } },
     transform(v, a) {
+      // detuned apart as far as the amount (never closer than they were), and a bowed vibrato as deep (the base's
+      // own, if deeper, stays)
       activeCarriers(v).forEach((op, i) => {
-        setOp(v, op, 'detune', 7 + (i % 2 ? 1 : -1) * Math.round(2 + 3 * a))
+        const apart = (i % 2 ? 1 : -1) * Math.round(1 + 4 * a)
+        if (Math.abs(apart) > Math.abs(getOp(v, op, 'detune') - 7)) setOp(v, op, 'detune', 7 + apart)
         slower(v, op, 8 * a, [0])
       })
-      setVc(v, 'lfoPitchDepth', Math.max(v[VC.lfoPitchDepth], 5 + 3 * a))
-      setVc(v, 'lfoSpeed', 62)
-      setVc(v, 'lfoDelay', 70)
-      setVc(v, 'pitchModSens', Math.max(v[VC.pitchModSens], 3))
+      if (v[VC.lfoPitchDepth] < Math.round(8 * a)) {
+        setVc(v, 'lfoPitchDepth', Math.round(8 * a))
+        setVc(v, 'lfoSpeed', 62)
+        setVc(v, 'lfoDelay', 70)
+        setVc(v, 'pitchModSens', Math.max(v[VC.pitchModSens], 3))
+      }
     },
   },
   // a tone, and a feedback-noise stack (OP6 at fb 7 over 90) that puffs at the start and stays a little
@@ -238,11 +259,11 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
     },
     branch: { carrier: { ratio: [1.41, 2.27], level: [76, 86] }, modulator: { ratio: [3.14, 5.19], level: [66, 76] } },
     transform(v, a, rng) {
-      for (const op of activeModulators(v)) if (rng.chance(0.4 + 0.6 * a)) scaleRatio(v, op, rng.pick(INHARMONIC))
-      if (a > 0.7) {
-        const cs = activeCarriers(v)
-        scaleRatio(v, cs[cs.length - 1], 1.41)
-      }
+      // every modulator toward an inharmonic ratio, as far as the amount: a little off (a shimmer) … all the way;
+      // past half, the last carrier apart from the first too
+      for (const op of activeModulators(v)) scaleRatio(v, op, rng.pick(INHARMONIC) ** a)
+      const cs = activeCarriers(v)
+      if (a > 0.5) scaleRatio(v, cs[cs.length - 1], 1.41 ** ((a - 0.5) * 2))
     },
   },
   // sparse inharmonic pairs that ring long; a hum below
@@ -260,7 +281,8 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
     transform(v, a, rng) {
       for (const op of activeCarriers(v)) slower(v, op, 10 * a, [1, 2])
       const mods = activeModulators(v)
-      if (mods.length) scaleRatio(v, rng.pick(mods), rng.pick([3.5, 1.41, 2.78]))
+      // one modulator toward a bell's ratio, as far as the amount
+      if (mods.length) scaleRatio(v, rng.pick(mods), rng.pick([3.5, 1.41, 2.78]) ** a)
       for (const op of mods) slower(v, op, -6 * a, [1, 2])
     },
   },
@@ -282,7 +304,8 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       if (!op) return
       const base = opRatio(v, activeCarriers(v)[0]) ?? 1
       setRatio(v, op, base * rng.pick([7, 14, 14]))
-      setLevel(v, op, Math.max(level(v, op), 70 + 18 * a))
+      // its highest modulator a sparkle, as loud as the amount: quiet at a little, bright at full
+      setLevel(v, op, 50 + 38 * a)
       makeTransient(v, op)
     },
   },
@@ -302,7 +325,7 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       const op = mods.find((m) => (opRatio(v, m) ?? 0) >= 7) ?? mods[mods.length - 1]
       if (!op) return
       setRatio(v, op, (opRatio(v, activeCarriers(v)[0]) ?? 1) * 14)
-      setLevel(v, op, 66 + 14 * a)
+      setLevel(v, op, 50 + 30 * a)
       setOp(v, op, 'velocitySens', 6)
       makeTransient(v, op)
     },
@@ -320,8 +343,9 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
     branch: { carrier: { ratio: [4], level: [62, 72] }, modulator: { ratio: [1], level: [50, 60], fast: true } },
     transform(v, a, rng) {
       for (let op = 1; op <= 6; op++) if (level(v, op) > 0) slower(v, op, -10 * a, [1, 2, 3])
-      for (const op of activeModulators(v)) makeTransient(v, op)
-      if (rng.chance(0.5 * a)) applyPitchBlip(v, 'above')
+      // the modulators knock: as far toward a transient, and a pitch blip, as the amount
+      for (const op of activeModulators(v)) transientBy(v, op, a)
+      pitchBlipBy(v, 'above', a)
     },
   },
   // drawbars: six carriers at harmonic ratios
@@ -339,7 +363,8 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       for (const op of activeModulators(v)) setLevel(v, op, level(v, op) - 12 * a)
       for (const op of activeCarriers(v)) {
         const b = opBase(op)
-        v[b + OP.level3] = Math.max(v[b + OP.level3], Math.round(80 + 15 * a))
+        // held: the sustain as far up toward 95 as the amount (a pluck doesn't turn into an organ at a little)
+        v[b + OP.level3] = Math.round(v[b + OP.level3] + Math.max(0, 95 - v[b + OP.level3]) * a)
         v[b + OP.level2] = Math.max(v[b + OP.level2], v[b + OP.level3])
       }
     },

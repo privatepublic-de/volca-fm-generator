@@ -27,8 +27,9 @@ export function applyBrightness(v: Voice, b: number) {
 }
 
 /** A pin's distance from the centre, 0 … 1 (½ the tonality as it comes): the depth of its modulation, mild to
- *  extreme, ±16 levels on every modulator and a step of feedback past a quarter. Its own axis, not folded into the
- *  brightness, so it is heard whatever the Brightness slider says (from Init, at its lowest, too). In place. */
+ *  extreme, ±16 levels on every modulator and a step of feedback past a quarter; on an organ, its registration.
+ *  Its own axis, not folded into the brightness, so it is heard whatever the Brightness slider says (from Init, at
+ *  its lowest, too). In place. */
 export function applyIntensity(v: Voice, intensity: number) {
   const x = (Math.max(0, Math.min(1, intensity)) - 0.5) * 2
   if (!x) return
@@ -36,16 +37,39 @@ export function applyIntensity(v: Voice, intensity: number) {
   const mods = modulators.filter((op) => level(v, op) > 0 && op !== noiseSource(v))
   for (const op of mods) setLevel(v, op, level(v, op) + 16 * x)
   if (!mods.length) {
-    // carriers side by side (drawbars): the ones above the lowest come in or fall back
+    // carriers side by side (drawbars): the registration changes, the higher a drawbar the further it moves, 10
+    // levels an octave above the loudest. Mild is the flutes (16′ 8′ 4′, the top ones far back), extreme everything
+    // out (before: every drawbar above the lowest ±16 alike, so mild was mostly the 16′)
     const ratios = carriers.map((op) => opRatio(v, op) ?? 1)
-    const lowest = Math.min(...ratios)
-    carriers.forEach((op, i) => { if (ratios[i] > lowest && level(v, op) > 0) setLevel(v, op, level(v, op) + 16 * x) })
+    const loudest = carriers.reduce((m, op, i) => (level(v, op) > level(v, carriers[m]) ? i : m), 0)
+    carriers.forEach((op, i) => {
+      const up = Math.log2(ratios[i] / ratios[loudest])
+      if (up > 0 && level(v, op) > 0) setLevel(v, op, level(v, op) + 10 * up * x)
+    })
   }
   if (v[VC.feedback] && Math.abs(x) > 0.5 && !hasNoiseSource(v)) setVc(v, 'feedback', v[VC.feedback] + Math.sign(x))
 }
 
-/** How many operators sound for complexity 0 … 1 (½ keeps the tonality's own). */
-export const targetOperators = (complexity: number) => Math.round(2 + 4 * complexity)
+/** Complexity's response above ½ (docs/SOUND.md): where the slider stands → the amount `applyComplexity` takes.
+ *  Raw, the sound hardly moves up to ¾ and then changes 11 dB a notch; through these points a notch changes it a
+ *  little more each time, from about ½ dB to 4 (`npx vite-node tools/sensitivity.ts 3 '' calibrate` fits them).
+ *  Linear between them; below ½ the operator count goes in thirds instead (targetOperators). */
+export const COMPLEXITY_CURVE: [number, number][] = [
+  [0.5, 0.5], [0.55, 0.609], [0.6, 0.744], [0.65, 0.787], [0.7, 0.82], [0.75, 0.854],
+  [0.8, 0.881], [0.85, 0.916], [0.9, 0.942], [0.95, 0.965], [1, 1],
+]
+
+export function complexityResponse(x: number): number {
+  if (x <= 0.5) return x
+  if (x >= 1) return 1
+  const k = COMPLEXITY_CURVE.findIndex(([at]) => at >= x)
+  const [[x0, y0], [x1, y1]] = [COMPLEXITY_CURVE[k - 1], COMPLEXITY_CURVE[k]]
+  return y0 + ((x - x0) / (x1 - x0)) * (y1 - y0)
+}
+
+/** How many operators sound for complexity 0 … 1 (½ keeps the tonality's own): below ½ two, three and four in
+ *  equal thirds (each a step of about the same size), above ½ up to six. */
+export const targetOperators = (complexity: number) => (complexity < 0.5 ? Math.min(4, 2 + Math.floor(complexity * 6)) : Math.round(2 + 4 * complexity))
 
 /** Pure (0) … dense (1). Below ½ operators fall silent, the least important first, but each pinned tonality keeps an
  *  FM pair of its own (`owned`: per tonality, the operators it made or changed); above, silent operators come in as
@@ -136,21 +160,27 @@ export function applyMotion(v: Voice, m: number, rng: Rng) {
   setVc(v, 'lfoWave', wild > 0.5 && rng.chance(wild) ? rng.pick([5, 3, 1]) : rng.pick([0, 4]))
   setVc(v, 'lfoSpeed', 28 + 8 * gentle + 34 * wild)
   setVc(v, 'lfoDelay', wild > 0.3 ? 0 : Math.min(v[VC.lfoDelay] || 99, 60))
-  setVc(v, 'lfoPitchDepth', Math.max(v[VC.lfoPitchDepth], 3 + 6 * gentle + 40 * wild))
+  setVc(v, 'lfoPitchDepth', Math.max(v[VC.lfoPitchDepth], 9 * gentle + 40 * wild))
   setVc(v, 'pitchModSens', Math.max(v[VC.pitchModSens], 3 + Math.round(2 * wild)))
   setVc(v, 'lfoAmpDepth', Math.round(25 * gentle + 60 * wild))
   const sounding = carriers.filter((op) => level(v, op) > 0)
-  sounding.forEach((op, i) => { if (sounding.length > 1) setOp(v, op, 'detune', 7 + (i % 2 ? 1 : -1) * Math.round(1 + 2 * gentle + 4 * wild)) })
+  // apart, never closer than they were (a string's own spread stays)
+  sounding.forEach((op, i) => {
+    const apart = (i % 2 ? 1 : -1) * Math.round(1 + 2 * gentle + 4 * wild)
+    if (sounding.length > 1 && Math.abs(apart) > Math.abs(getOp(v, op, 'detune') - 7)) setOp(v, op, 'detune', 7 + apart)
+  })
   const noise = noiseSource(v)
   modulators.filter((op) => level(v, op) > 0 && op !== noise).forEach((op, k) => {
     const b = opBase(op)
     setOp(v, op, 'ampModSens', wild > 0.3 ? 3 : m > 0.25 ? 2 : 1)
-    // later stages slow and apart: fading out, or growing in
-    v[b + OP.rate3] = clamp99(Math.min(v[b + OP.rate3], 60) - 6 * gentle * (k + 1) - 10 * wild)
+    // later stages slow and apart: fading out, or growing in; from the voice's own envelope by degrees, so the
+    // first notch of motion is a little motion, not another envelope
+    const toward = (i: number, x: number) => { v[b + i] = clamp99(v[b + i] + (x - v[b + i]) * gentle) }
+    toward(OP.rate3, Math.min(v[b + OP.rate3], 60) - 6 * gentle * (k + 1) - 10 * wild)
     const swing = 0.3 * gentle + 0.4 * wild
     const [lo, hi] = rng.chance(0.5) ? [1 - swing, 1] : [1, 1 - swing]
-    v[b + OP.level2] = clamp99(v[b + OP.level1] * lo)
-    v[b + OP.level3] = clamp99(v[b + OP.level1] * hi)
+    toward(OP.level2, v[b + OP.level1] * lo)
+    toward(OP.level3, v[b + OP.level1] * hi)
   })
   // a slow pitch drift over seconds, a little under then over, settling on the note (no glide on release)
   if (wild > 0.4 && v[VC.pitchLevel1] === 50) v.set([25, 20, 18, 99, Math.round(50 - 2 * wild), Math.round(50 + 3 * wild), 50, 50], VC.pitchRate1)

@@ -25,7 +25,7 @@ ear, and send it to the volca.
 | **Three ways on** | **Variation** moves the details of the voice you hear. **Mutate** moves the pins and the controls. **New voice** rolls the wheel afresh. Undo and redo through every step. |
 | **Shaping** | Envelope (the voice's own, or pluck, struck, bowed, pad, swell, gate, reverse) and length; brightness, complexity, motion; wild; register; velocity; pitch accent; chorus and reverb. |
 | **Your voice** | The algorithm as the DX7 draws it, the six operators with their ratios, levels and envelopes, and a name from how it sounds ("Airy Pad", "Clang Keys"), or one of your own. |
-| **Hearing it** | A DX7 engine in the browser, tuned against a volca fm2, with a keyboard and the computer keys to play. Or straight on the volca over Web MIDI, or both at once. |
+| **Hearing it** | A DX7 engine in the browser, tuned against a volca fm2, with a keyboard and the computer keys to play. Or straight on the volca over Web MIDI, or both at once. A change is heard from the next note on: a held note keeps the voice it started with. |
 | **Keeping it** | Keep voices in the browser, export one as a `.syx` file or 32 as a DX7 cartridge for Dexed, a DX7 or anything DX7-compatible; import `.syx` files back. |
 
 The help inside the app (**Help**, or `?`) explains every part.

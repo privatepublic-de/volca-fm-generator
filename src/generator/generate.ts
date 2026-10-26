@@ -6,7 +6,7 @@ import { setRatio } from '../dx7/frequency'
 import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
 import { varyVoice } from './explore'
-import { applyBrightness, applyComplexity, applyIntensity, applyMotion, applyRegister, applyVelocity } from './controls'
+import { applyBrightness, applyComplexity, applyIntensity, applyMotion, applyRegister, applyVelocity, complexityResponse } from './controls'
 import { normalizeLoudness, SILENT_DB } from './loudness'
 import { nameVoice, nameWithNoun } from './naming'
 import { rng as makeRng, type Rng } from './random'
@@ -87,7 +87,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, v
       roles.push({ tonality: part.tonality, as: 'branch' })
     } else {
       const before = Uint8Array.from(v)
-      TONALITY_DEFS[part.tonality].transform(v, Math.min(1, share * (0.4 + 0.6 * part.intensity)), rng)
+      TONALITY_DEFS[part.tonality].transform(v, colourAmount(part, share), rng)
       owned.push([1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0 && v.subarray(opBase(op), opBase(op) + 21).some((b, i) => b !== before[opBase(op) + i])))
       roles.push({ tonality: part.tonality, as: 'transform' })
     }
@@ -100,7 +100,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, v
   applyLength(v, c.length)
   applyBrightness(v, c.brightness)
   // a pair per pin (a pin between two tonalities is one pin), the heaviest tonalities first
-  applyComplexity(v, c.complexity, rng, owned.slice(0, Math.max(1, c.pins.length)))
+  applyComplexity(v, complexityResponse(c.complexity), rng, owned.slice(0, Math.max(1, c.pins.length)))
   applyMotion(v, c.motion, rng)
   applyRegister(v, c.register)
   if (MODELS[model].fixedVelocity === null) applyVelocity(v, c.velocity)
@@ -212,15 +212,35 @@ function applyInstrument(v: Voice, inst: Instrument, ownEgs: boolean, rng: Rng, 
   }
 }
 
-/** A secondary tonality as a second voice in the dominant's free operators, as loud as its share (−6 dB at half). */
+/** How far a pin colours the voice as a transform, 0 … 1: its share by the square root (a light pin is heard, an
+ *  equal one goes far) times its radius around the middle (a quarter at the centre, 1¾ at the rim). Before, share ×
+ *  0.4–1: a pin up to a quarter of the base's weight moved the sound less than a notch of Brightness
+ *  (docs/SOUND.md). Noise keeps its own curve, set by ear on the volca. */
+function colourAmount(part: MixPart, share: number): number {
+  if (part.tonality === 'noise') return Math.min(1, share * (0.4 + 0.6 * part.intensity))
+  return Math.min(1, Math.sqrt(Math.min(1, share)) * (0.25 + 1.5 * part.intensity))
+}
+
+/** A secondary tonality as a second voice in the dominant's free operators, as loud against the base as its share. */
 function fillBranch(v: Voice, [carrier, modulator]: readonly [number, number], part: MixPart, share: number, shape: GeneratorChoices['shape'], rng: Rng, spread: number) {
   const b = TONALITY_DEFS[part.tonality].branch
   applyOpSpec(v, carrier, b.carrier, rng, spread)
   applyOpSpec(v, modulator, b.modulator, rng, spread)
   // a noise branch is far louder to the ear than a tone at the same level: its own, wider curve (noiseDb)
-  const db = b.modulator.noise ? noiseDb(share * (0.4 + 0.6 * part.intensity)) : 20 * Math.log10(Math.min(1, share))
-  setOp(v, carrier, 'outputLevel', clamp99((b.modulator.noise ? 99 : getOp(v, carrier, 'outputLevel')) + Math.round(db / 0.75)))
-  setOp(v, modulator, 'outputLevel', clamp99(getOp(v, modulator, 'outputLevel') - 8 * (1 - part.intensity)))
+  if (b.modulator.noise) {
+    setOp(v, carrier, 'outputLevel', clamp99(99 + Math.round(noiseDb(share * (0.4 + 0.6 * part.intensity)) / 0.75)))
+  } else {
+    // against the base's carriers together, not one of them: its power to theirs as share², so at equal weights
+    // the two are equal (before, a full share was one carrier among the base's two or three, and the weight from a
+    // quarter up hardly moved the sound). The branch gives way when quieter, the base when louder
+    const power = (op: number) => 10 ** ((getOp(v, op, 'outputLevel') - 99) * 0.075)
+    const base = rolesOf(v).carriers.filter((op) => op !== carrier && getOp(v, op, 'outputLevel') > 0)
+    const db = 20 * Math.log10(Math.min(1, share)) + 10 * Math.log10(base.reduce((sum, op) => sum + power(op), 0) || 1) - 10 * Math.log10(power(carrier))
+    if (db <= 0) setOp(v, carrier, 'outputLevel', clamp99(getOp(v, carrier, 'outputLevel') + Math.round(db / 0.75)))
+    else for (const op of base) setOp(v, op, 'outputLevel', clamp99(getOp(v, op, 'outputLevel') - Math.round(db / 0.75)))
+  }
+  // its radius as the base's: ±16 levels on its modulator, mild to extreme
+  setOp(v, modulator, 'outputLevel', clamp99(getOp(v, modulator, 'outputLevel') + 16 * (Math.max(0, Math.min(1, part.intensity)) - 0.5) * 2))
   // the branch plays its own tonality's envelope only when no shape was chosen
   const own = shape ?? TONALITY_DEFS[part.tonality].skeleton.shape
   const tmp = initVoice()
