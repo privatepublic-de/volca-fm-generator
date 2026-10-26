@@ -1,10 +1,10 @@
-// Phase 0 probe: answers Q1–Q8 of PLAN.md §3 on a volca fm and a volca fm2, by ear. The volcas send nothing back,
+// Phase 0 probe: answers Q1–Q9 of PLAN.md §3 on a volca fm and a volca fm2, by ear. The volcas send nothing back,
 // so every test sends, plays a note pattern, and asks what was heard; the answers are kept per model in this
 // browser and come out as a Markdown report for docs/FINDINGS.md. Nothing is stored to the volca's memory.
 import { checksum, parameterChange, readSyx, vcedMessage, vmemMessage, type SyxVoice, type VcedOptions, type VcedTail } from './dx7/sysex'
 import { initVoice, OP, opBase, setOp, setVc, setVoiceName, VC, voiceName, type Voice } from './dx7/voice'
 import { findOutput, outputNames, requestWebMidi, send, webMidiUnavailable } from './midi/transport'
-import { bright, octaves, paramTests, pure, type NotePattern } from './probe/testVoices'
+import { bright, octaves, paramTests, pitchEgStart, pure, type NotePattern } from './probe/testVoices'
 
 // ---------- tiny DOM helpers ----------
 
@@ -404,7 +404,17 @@ section('Control changes', 'Q8',
   el('div', { class: 'row' }, el('label', {}, 'CC number ', numberInput(customCc, 0, 127, (n) => (customCc = n)))),
   textAnswer('Q8.notes', 'which CCs, and what they did'))
 
-// ---------- 8. Storing (Q2) ----------
+// ---------- 8. Pitch EG start (Q9) ----------
+
+const peg = pitchEgStart()
+section('Where the pitch EG starts', 'Q9',
+  'The DX7 starts each note’s pitch envelope at L4 and moves to L1 at R1; the reface DX starts at L1 and never plays R1. The generator’s drum drops, brass bends and pitch accent are written for an L4 start. A falls slowly into the note from above at R1, so only from L4; B falls the same way at R2, so from either start.',
+  testRow('Q9', 'Pitch EG start', 'Play A, then B (3 s each, C4).',
+    [runButton('A: from L4', 'Q9: A (PEG FROM L4: R 30 99 99 99, L 50 50 50 80)', async () => { sendVoice(peg.fromL4); await sleep(400); await playPattern('long') }),
+      runButton('B: from L1', 'Q9: B (PEG FROM L1: R 99 30 99 99, L 80 50 50 50)', async () => { sendVoice(peg.fromL1); await sleep(400); await playPattern('long') })],
+    ['both fall into the note (L4 start, as the DX7)', 'B falls, A is steady (L1 start, as the reface)', 'neither falls', 'something else']))
+
+// ---------- 9. Storing (Q2) ----------
 
 section('Storing on the volca', 'Q2',
   'Sends PROBE BRT to the program being played. Then store it on the volca as its manual says (volca fm: EDIT, then WRITE?), select another program and come back. Do you hear it again? What were the steps? (Pick a program you can lose.)',
@@ -413,7 +423,7 @@ section('Storing on the volca', 'Q2',
     runButton('Play C4', 'Q2: play', () => playNote(60, 900))),
   textAnswer('Q2', 'where the voice landed, how storing went'))
 
-// ---------- 9. Files ----------
+// ---------- 10. Files ----------
 
 let fileVoices: SyxVoice[] = []
 const fileSel = el('select', { style: 'min-width: 16em' })
@@ -437,7 +447,7 @@ section('Files', '',
       sendVoice(v.voice); await sleep(400); await playNote(60, 1500)
     })))
 
-// ---------- 10. Report ----------
+// ---------- 11. Report ----------
 
 function download(name: string, blob: Blob) {
   const a = el('a', { href: URL.createObjectURL(blob), download: name })

@@ -1,5 +1,6 @@
 // The probe's test voices (PLAN §3): two that sound plainly different (Q1, Q4), six carriers an octave apart
-// to tell the operator bits apart (Q7), and pairs that differ in one parameter only (Q5).
+// to tell the operator bits apart (Q7), pairs that differ in one parameter only (Q5), and two pitch envelopes that
+// tell where a note's pitch EG starts (Q9).
 import { initVoice, setOp, setVc, setVoiceName, type Voice } from '../dx7/voice'
 
 /** A sine: OP1 alone. */
@@ -27,6 +28,20 @@ export function octaves(): Voice {
   })
   setVoiceName(v, 'PROBE OCT')
   return v
+}
+
+/** Where a note's pitch EG starts (Q9): the DX7 (and the engine, MSFA) at L4, moving to L1 at R1; the reface DX at L1,
+ *  never playing R1. A falls slowly from above at R1, from L4: only from an L4 start. B falls slowly at R2, from L1:
+ *  from either start, so it shows the fall is heard at all. */
+export function pitchEgStart(): { fromL4: Voice; fromL1: Voice } {
+  const peg = (name: string, rates: number[], levels: number[]) => make(name, (v) => {
+    rates.forEach((r, i) => setVc(v, `pitchRate${i + 1}` as 'pitchRate1', r))
+    levels.forEach((l, i) => setVc(v, `pitchLevel${i + 1}` as 'pitchLevel1', l))
+  })
+  return {
+    fromL4: peg('PEG FROM L4', [30, 99, 99, 99], [50, 50, 50, 80]),
+    fromL1: peg('PEG FROM L1', [99, 30, 99, 99], [80, 50, 50, 50]),
+  }
 }
 
 /** The ear test of how a voice parameter is played: base, then a/b differ in one thing. */
