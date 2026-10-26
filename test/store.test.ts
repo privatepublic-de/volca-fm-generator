@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useApp } from '../src/app/store'
-import { voiceName } from '../src/dx7/voice'
+import { vmemMessage } from '../src/dx7/sysex'
+import { initVoice, setVoiceName, voiceName } from '../src/dx7/voice'
 import { centroid, decayTime, slice } from '../src/engine/measure'
 import { renderNote } from '../src/engine/render'
 
@@ -83,6 +84,23 @@ describe('the app store', () => {
     expect(voiceName(useApp.getState().favourites[0].voice)).toBe('MY VOICE L')
     useApp.getState().unkeep(f.id)
     expect(useApp.getState().favourites).toHaveLength(0)
+  })
+
+  it('a cartridge opens to be heard; only the ticked voices are kept, once each, with distinct names', () => {
+    const a = initVoice(); setVoiceName(a, 'BRASS 1')
+    const b = initVoice(); setVoiceName(b, 'BRASS 1'); b[0] = 50
+    const c = initVoice(); setVoiceName(c, 'E.PIANO'); c[0] = 70
+    const s = useApp.getState()
+    expect(s.openCart(new Uint8Array([0xf0, 0xf7]), 'empty.syx')).toMatch(/no DX7 voices/)
+    expect(useApp.getState().cart).toBeNull()
+    expect(s.openCart(vmemMessage([a, b, c]), 'rom1a.syx')).toBe('')
+    expect(useApp.getState().cart!.voices).toHaveLength(32)
+    expect(useApp.getState().favourites).toHaveLength(0)
+    expect(useApp.getState().keepFromCart([1, 0])).toBe('2 voices from rom1a.syx kept.')
+    expect(useApp.getState().favourites.map((f) => f.name)).toEqual(['BRASS 1', 'BRASS 1 2'])
+    expect(useApp.getState().keepFromCart([0, 2])).toBe('1 voice from rom1a.syx kept, 1 already there.')
+    useApp.getState().closeCart()
+    expect(useApp.getState().cart).toBeNull()
   })
 
   it('new voice: a fresh roll of the wheel, no instrument, the register kept', () => {

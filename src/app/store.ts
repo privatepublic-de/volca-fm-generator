@@ -1,7 +1,7 @@
 // The app's state (PLAN §6): the pins and controls, the voice they make, the session's history and the kept
 // favourites. Pins, controls and favourites are kept in this browser; the history lasts the session.
 import { create } from 'zustand'
-import { readSyx } from '../dx7/sysex'
+import { readSyx, type SyxVoice } from '../dx7/sysex'
 import { setVoiceName, VC, voiceName, type Voice } from '../dx7/voice'
 import type { Model } from '../engine/models'
 import { angleOf, DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, type Pin, type Tonality } from '../generator/choices'
@@ -17,6 +17,14 @@ import { Playback } from '../ui/playback'
 export const playback = new Playback()
 
 export type Controls = Omit<GeneratorChoices, 'pins'>
+
+/** A .syx file opened in the cartridge window: its voices to hear one by one, and keep the ones you pick. */
+export interface Cart {
+  file: string
+  voices: SyxVoice[]
+  /** what the reader noticed (checksums, skipped messages) */
+  notes: string[]
+}
 
 export interface AppPin extends Pin {
   id: number
@@ -65,6 +73,8 @@ interface State extends Saved {
   selectedPin: number | null
   /** the Start from… menu is open (its button and the base marker on the wheel open it) */
   startMenu: boolean
+  /** the .syx file in the cartridge window, while it's open */
+  cart: Cart | null
 
   addPin(angle: number, radius: number): number | null
   movePin(id: number, angle: number, radius: number): void
@@ -98,7 +108,12 @@ interface State extends Saved {
   rename(id: number, name: string): void
   /** the voice on stage: your own name for it (empty: the name its sound gives it again) */
   renameVoice(name: string): void
-  importFile(bytes: Uint8Array, fileName: string): string
+  /** a .syx file into the cartridge window; empty when it opened, else why not */
+  openCart(bytes: Uint8Array, fileName: string): string
+  /** closes the cartridge window: the voice on stage plays again */
+  closeCart(): void
+  /** the cartridge's voices at these places to the kept ones (not the ones already there); says what it did */
+  keepFromCart(indices: number[]): string
 }
 
 let nextId = 1
@@ -202,6 +217,7 @@ export const useApp = create<State>((set, get) => {
     favourites: loadFavourites(),
     selectedPin: null,
     startMenu: false,
+    cart: null,
 
     addPin(angle, radius) {
       if (get().pins.length >= MAX_PINS) return null
@@ -375,14 +391,35 @@ export const useApp = create<State>((set, get) => {
       set({ voice, customName: own || null, history, favourites, generated: s.generated && { ...s.generated, voice } })
       persist()
     },
-    importFile(bytes, fileName) {
+    openCart(bytes, fileName) {
       const read = readSyx(bytes)
       if (!read.voices.length) return `${fileName} has no DX7 voices.`
-      const entries = read.voices.map((v) => ({ id: nextId++, voice: v.voice, name: voiceName(v.voice), hue: 260 }))
-      const favourites = [...get().favourites, ...entries]
+      set({ cart: { file: fileName, voices: read.voices, notes: read.notes } })
+      return ''
+    },
+    closeCart() {
+      // the window plays its voices without putting them on stage: the browser and the volca get the stage's back
+      playback.setVoice(get().voice)
+      set({ cart: null })
+    },
+    keepFromCart(indices) {
+      const s = get()
+      if (!s.cart) return ''
+      const favourites = [...s.favourites]
+      let kept = 0
+      for (const i of [...indices].sort((a, b) => a - b)) {
+        const from = s.cart.voices[i]
+        if (!from || favourites.some((f) => sameSound(f.voice, from.voice))) continue
+        // as Keep does: a name already among the kept ones gets a number there
+        const voice = Uint8Array.from(from.voice)
+        setVoiceName(voice, distinctName(voiceName(voice), favourites.map((f) => f.name)))
+        favourites.push({ id: nextId++, voice, name: voiceName(voice), hue: 260 })
+        kept++
+      }
       saveFavourites(favourites)
       set({ favourites })
-      return `${entries.length} voice${entries.length === 1 ? '' : 's'} from ${fileName} kept.`
+      const already = indices.length - kept
+      return `${kept} voice${kept === 1 ? '' : 's'} from ${s.cart.file} kept${already ? `, ${already} already there` : ''}.`
     },
   }
 })

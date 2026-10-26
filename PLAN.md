@@ -70,7 +70,7 @@ F0 43 0n 00 01 1B   <155 bytes voice data>   <byte 155>   F7
 | 145–154 | Name, 10 ASCII |
 | 155 | volca: operator on/off bits B5…B0 (order assumed as the DX7's parameter 155, Q1/Q7). DX7: checksum |
 
-The count field says 155 but the volca message carries 156 bytes (Q1). The 32-voice VMEM (format 9, 4096 bytes packed) is in the codec for `.syx` import only: a bank file can be opened and its voices used as seeds.
+The count field says 155 but the volca message carries 156 bytes (Q1). The 32-voice VMEM (format 9, 4096 bytes packed) is in the codec for export and for the cartridge window: a bank file is opened, its voices heard one by one and kept.
 
 ---
 
@@ -208,7 +208,7 @@ It doesn't need to match the volca to the bit; it needs to sound close enough th
 
 - **Wheel**: a canvas colour field; drag a pin in, drag it out to remove it, drag its ring (or scroll) to set its weight; up to three pins. Under it, one bar of the weights: each pin's part of the whole in its colour (an instrument started from first, weighing 1); dragging the edge between two parts moves weight between just those two. The field glows towards the pins' colours as you mix. A pin snaps to sector centres with Shift held.
 - **The voice**, not as an editor: the algorithm drawn as the DX7 draws it, operators coloured by role, small EG curves. Read-only: it shows what was made.
-- **History**: every generated voice in the session (with its choices and seed), click to hear it again; **favourites** kept in the browser (localStorage), rename, export as `.syx` (volca or DX7/Dexed byte 155), import a `.syx` (1 voice or a 32-voice bank) to use as a starting point for Mutate.
+- **History**: every generated voice in the session (with its choices and seed), click to hear it again; **favourites** kept in the browser (localStorage), rename, export as `.syx` (volca or DX7/Dexed byte 155), open a `.syx` (1 voice or a 32-voice bank) in the **cartridge window**: its voices by name and algorithm, a click plays one (browser, volca or both, without putting it on stage; ↑ ↓ go through them), the ticked ones are kept (a sound already kept is skipped, a name already there gets a number); closing it, the voice on stage plays again.
 - **Listen**: browser, volca, or both. A new voice is sent to the volca debounced (Q4) and the last played note is repeated after the send, so a click on the wheel is heard right away.
 - **Store on the volca…**: a dialog with the steps for the chosen model (Q2).
 
@@ -268,6 +268,6 @@ docs/          FINDINGS.md (probe results), SOUND.md (tuning and measures)
 ## 9. Not in scope (for now)
 
 - Editing operators by hand (an editor's job; here only the generator's controls).
-- Building and sending 32-voice banks (the codec can read them for import).
+- Sending 32-voice banks to the volca (the codec reads them for the cartridge window and writes them for export).
 - Sequencer, arpeggiator and other volca performance settings.
 - Reading anything from the volcas (they have no MIDI out).

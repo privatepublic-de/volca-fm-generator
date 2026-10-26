@@ -1,8 +1,10 @@
 // The session's history and the kept favourites (PLAN §6.1). A click plays a voice again; favourites are kept in
-// this browser, can be renamed, and go out as .syx (one voice, or up to 32 as a cartridge Dexed loads).
+// this browser, can be renamed, and go out as .syx (one voice, or up to 32 as a cartridge Dexed loads). A .syx
+// file opens in the cartridge window (CartBrowser.tsx), to hear its voices and keep some.
 import { useRef, useState } from 'react'
 import { vcedMessage, vmemMessage } from '../dx7/sysex'
 import type { Voice } from '../dx7/voice'
+import { CartBrowser } from './CartBrowser'
 import { audition, useApp, type Entry } from './store'
 
 export function download(name: string, bytes: Uint8Array) {
@@ -51,7 +53,7 @@ export function History() {
 export function Favourites() {
   const favourites = useApp((s) => s.favourites)
   const voice = useApp((s) => s.voice)
-  const { recall, unkeep, rename, importFile } = useApp.getState()
+  const { recall, unkeep, rename, openCart } = useApp.getState()
   const [editing, setEditing] = useState<number | null>(null)
   const [message, setMessage] = useState('')
   const file = useRef<HTMLInputElement>(null)
@@ -62,17 +64,18 @@ export function Favourites() {
       <div className="fav-head">
         <h3>Kept</h3>
         <div className="fav-actions">
-          <button onClick={() => file.current?.click()}>Import .syx</button>
+          <button onClick={() => file.current?.click()} title="A DX7 cartridge or single voices: hear them, keep the ones you like">Open .syx…</button>
           <button disabled={!favourites.length} onClick={() => download('volca-fm-kept.syx', vmemMessage(favourites.slice(0, 32).map((f) => f.voice)))}
             title="The first 32 as one cartridge, as Dexed loads it">Export as cartridge</button>
           <input ref={file} type="file" accept=".syx,application/octet-stream" hidden onChange={async (e) => {
             const f = e.target.files?.[0]
-            if (f) setMessage(importFile(new Uint8Array(await f.arrayBuffer()), f.name))
+            if (f) setMessage(openCart(new Uint8Array(await f.arrayBuffer()), f.name))
             e.target.value = ''
           }} />
         </div>
       </div>
       {message && <p className="fav-message">{message}</p>}
+      <CartBrowser onKept={setMessage} />
       {!favourites.length && <p className="fav-empty">Keep a voice you like (Keep, or Q) and it waits here, in this browser.</p>}
       <ul className="fav-list">
         {favourites.map((f) => (

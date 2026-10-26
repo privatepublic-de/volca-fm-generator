@@ -30,6 +30,8 @@ export function App() {
     window.addEventListener('pointerdown', start, { once: true })
     window.addEventListener('keydown', start, { once: true })
     const shortcuts = (e: KeyboardEvent) => {
+      // not behind a dialog: the cartridge window plays its own voices, the stage's must stay as it is
+      if (document.querySelector('dialog[open]')) return
       // undo and redo step through this session's voices, wherever the focus is (but in a text field)
       const target = e.target as HTMLElement
       const typing = target.tagName === 'TEXTAREA' || (target.tagName === 'INPUT' && ['text', 'number'].includes((target as HTMLInputElement).type))

@@ -651,6 +651,34 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
 .dialog-note { color: var(--muted); font-size: 14px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 
+/* the cartridge window (CartBrowser.tsx): a .syx file's voices in two columns, numbered downwards as on the DX7 */
+.dialog.cart { max-width: 44em; width: calc(100vw - 32px); }
+.cart-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+.cart-head h2 { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cart-count { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.cart-hear { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; font-size: 14px; color: var(--muted); }
+.cart-hear button:not(.segmented button) { font-size: 13px; padding: 4px 10px; }
+.cart .dialog-note { margin-top: 10px; }
+.cart-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-auto-flow: column;
+  grid-template-rows: repeat(var(--rows), auto); grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px 18px;
+  max-height: min(60vh, 34em); overflow: auto; }
+.cart-voice { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px; border-radius: 6px; padding: 0 4px; }
+.cart-voice.on { background: hsl(var(--h) 45% 50% / 0.18); }
+.cart-voice input { margin: 0; }
+/* .dialog li button (the Store dialog's steps) would stack these */
+.dialog .cart-voice button { display: flex; align-items: baseline; gap: 8px; width: 100%; min-width: 0; margin: 0; padding: 3px 6px; background: none; border-color: transparent; text-align: left; }
+.cart-voice button:hover { color: hsl(var(--h) 80% 78%); }
+.cart-voice.on button { color: hsl(var(--h) 80% 78%); }
+.cart-num { width: 1.8em; text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cart-name { flex: 1; min-width: 0; font: 500 15px var(--condensed); letter-spacing: .03em; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.cart-alg { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cart-notes { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cart .cart-all { margin-right: auto; }
+@media (max-width: 640px) {
+  .dialog.cart { padding: 18px 16px; }
+  .cart-list { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); }
+}
+
 @media (max-width: 640px) {
   .app { padding: 0 16px 24px; }
   .stage { gap: 20px; }
