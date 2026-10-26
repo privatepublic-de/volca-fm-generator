@@ -55,6 +55,12 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             weight.
           </p>
           <p>
+            A light pin, under a quarter of the base's weight, only touches the base. Heavier, it gets operators of its
+            own: Noise, Tine, Bell and Reed go inside the base's tone first (grit, a struck attack, a ring, hollowness),
+            and from about 0.6 of its weight a pin plays as a layer of its own. The base may change algorithm to make
+            room.
+          </p>
+          <p>
             Rest the pointer anywhere on the wheel and a label says what a click there would do; on a tonality's name, what
             it sounds like.
           </p>

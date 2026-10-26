@@ -42,13 +42,15 @@ function layout(alg: Algorithm): Node[] {
   return [1, 2, 3, 4, 5, 6].map((op) => ({ op, x: x.get(op)! - minX, depth: depth.get(op)! }))
 }
 
-/** The mix in words: "Bell, with a Sine layer and a touch of Tine". */
-function describeMix(roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'transform' }[], base?: string) {
+/** The mix in words: "Bell, with Noise inside, a Sine layer and a touch of Tine". */
+function describeMix(roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'graft' | 'transform' }[], base?: string) {
   const names = (as: string) => roles.filter((r) => r.as === as).map((r) => TONALITY_LABELS[r.tonality])
   const list = (words: string[]) => (words.length > 1 ? `${words.slice(0, -1).join(', ')} and ${words.at(-1)}` : words[0])
   const layers = names('branch')
   const touches = names('transform')
+  const inside = names('graft')
   const parts = [
+    ...(inside.length ? [`${list(inside)} inside`] : []),
     ...(layers.length ? [`a ${list(layers)} layer`] : []),
     ...(touches.length ? [`a touch of ${list(touches)}`] : []),
   ]

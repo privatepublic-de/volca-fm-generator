@@ -326,3 +326,44 @@ The threshold is now a step of about 5.5 dB (was 4): below it the pin colours, a
 
 Voices kept with Complexity above ½, with some Motion, with more than one pin or on an organ sound different when
 made again from their pins and controls; the kept voice itself is unchanged.
+
+## Grafts: a tonality inside another (2026-10-27)
+
+A pin used to come in two ways: a colour (a transform of the base) or a layer (a pair of its own beside it). Now a
+third: a few tonalities have a modulator of their own that goes into the base's main carrier (`graft`,
+`GraftSpec`), a hybrid rather than a layer:
+
+| Tonality | Grafted | Level over the weight |
+|---|---|---|
+| Noise | a noise source into a modulator into the carrier: grit in the tone (a cymbal from Metal) | 44 … 85, the whole weight |
+| Tine | 14:1, dying at once, on velocity: a struck attack on any tone | 64 … 86 |
+| Bell | 3.5, 1.41 or 2.78 to the carrier: a ring through the tone | 56 … 76 |
+| Reed | 2:1: odd harmonics, hollow | 60 … 80 |
+
+From BRANCH_SHARE (0.25 of the base's weight) up to GRAFT_UNTIL (0.6) such a pin is grafted, heavier it gets a
+pair of its own (a graft only where there is none); its radius moves the modulator ±16, as a branch's. Noise grafts
+over its whole weight: its grit at a little was already noisier than a branch's hiss at more, and noise has to grow
+with the weight.
+
+The DX7 ties each operator's place to its number, so the main carrier of an algorithm often can't take one more
+modulator where it is. `graftSpot` renumbers the base's operators: it searches the 32 algorithms and the ways to
+place the base's sounding operators so that every one keeps its role (what modulates it, whether it is heard) and
+the base its feedback, with a free slot (two for noise, the feedback operator on top) feeding the main carrier.
+Silent operators go first; short of them the least important give way (every choice of them is tried), never the
+base's main pair, its noise source or an earlier pin's operators. The fewest moved win. About 2 ms a voice.
+
+Where Metal's one carrier already takes three modulators, Noise's graft replaces the quietest stack (OP5 under the
+feedback OP6), so Metal + Noise is a gong with grit in it ("Airy Gong", noisiness up 600× at 0.3 and 2500× at 0.5,
+still periodic 0.9); Bell in Sine or String at half the weight names it "Metal Pad"; Tine on Organ should be a
+percussive organ (not yet heard).
+
+| At weight 0.5, the first pin alone → with the second, dB | layer / take-over | graft |
+|---|---|---|
+| Sine, String + Bell | 9.2, 9.1 | 12.9, 14.9 |
+| Organ, Sine, Brass + Noise | 12.4, 9.0, 7.8 | 21.4, 16.0, 15.3 |
+| Organ, Sine + Tine | 8.3, 4.4 | 5.0, 3.3 |
+| A second pin's radius 0 → 1 | 5.1 | 8.7 |
+
+The step at 0.25, where a colour becomes operators of its own, is now about 6 dB (5.5 with take-overs, 4 with
+layers only). By ear on the volca to come: whether the grafts are worth it against the layers, how heavy Noise's
+grit should be, and whether 0.6 is the right place to turn into a layer.

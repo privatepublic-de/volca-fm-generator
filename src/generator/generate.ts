@@ -2,7 +2,7 @@
 // the other pins take free branches or act as transforms, then the shape and the controls, then loudness and a name.
 import { ALGORITHMS, algorithmOf } from '../dx7/algorithms'
 import { getOp, initVoice, OP, opBase, setOp, setVc, setVoiceName, VC, type Voice } from '../dx7/voice'
-import { setRatio } from '../dx7/frequency'
+import { opRatio, setRatio } from '../dx7/frequency'
 import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
 import { varyVoice } from './explore'
@@ -30,7 +30,7 @@ export interface Generated {
   /** the tonalities as read from the pins, heaviest first */
   mix: MixPart[]
   /** how each secondary tonality came in */
-  roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'transform' }[]
+  roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'graft' | 'transform' }[]
   /** loudness of the loudest 20 ms at C4, dB */
   loudness: number
   /** which tonality each sounding operator belongs to (1–6), for drawing */
@@ -43,6 +43,8 @@ export interface Generated {
 const spreadOf = (wild: number) => 0.3 + 0.7 * Math.max(0, Math.min(1, wild))
 /** A secondary needs this share of the dominant's weight to get a branch of its own. */
 const BRANCH_SHARE = 0.25
+/** Up to this share a tonality that can be grafted (a GraftSpec) goes into the base's tone instead. */
+const GRAFT_UNTIL = 0.6
 
 export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, vary = 0, keepName }: GenerateOptions): Generated {
   const rng = makeRng(seed)
@@ -80,6 +82,25 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, v
     // a noise branch needs the pair whose modulator can be the noise source
     const fits = (br: readonly [number, number]) => !TONALITY_DEFS[part.tonality].branch.modulator.noise || br[1] === noiseHostOp(v)
     const free = freeBranches.findIndex(fits)
+    // a graft first while the pin is lighter than GRAFT_UNTIL (a hybrid); heavier, a voice of its own, and a graft
+    // only when there's no pair for one
+    const takenOps = Object.keys(opTonality).map(Number)
+    const until = TONALITY_DEFS[part.tonality].graft?.until ?? GRAFT_UNTIL
+    const room = free >= 0 || (share >= until && takeOver(Uint8Array.from(v), TONALITY_DEFS[part.tonality].branch.modulator.noise === true, takenOps))
+    const grafted = share >= BRANCH_SHARE && (share < until || !room) ? graft(v, part, share, takenOps, rng) : null
+    if (grafted) {
+      // the operators as renumbered: who owns which, and no free pair is sure to be one any more
+      const { ops, perm } = grafted
+      const was = { ...opTonality }
+      for (const k of Object.keys(opTonality)) delete opTonality[Number(k) as 1]
+      for (const [k, t] of Object.entries(was)) if (!ops.includes(perm[Number(k)])) opTonality[perm[Number(k)] as 1] = t
+      owned.forEach((group, i) => { owned[i] = group.map((op) => perm[op]).filter((op) => !ops.includes(op)) })
+      if (perm.some((to, from) => from > 0 && to !== from) || ops.some((op) => freeBranches.some((br) => br.includes(op)))) freeBranches.length = 0
+      for (const op of ops) opTonality[op as 1] = part.tonality
+      owned.push(ops)
+      roles.push({ tonality: part.tonality, as: 'graft' })
+      continue
+    }
     let branch = share >= BRANCH_SHARE && free >= 0 ? freeBranches.splice(free, 1)[0] : null
     const taken = !branch && share >= BRANCH_SHARE ? takeOver(v, TONALITY_DEFS[part.tonality].branch.modulator.noise === true, Object.keys(opTonality).map(Number)) : null
     if (taken) {
@@ -225,6 +246,112 @@ function applyInstrument(v: Voice, inst: Instrument, ownEgs: boolean, rng: Rng, 
       Object.entries({ breakPoint, leftDepth, rightDepth, leftCurve, rightCurve }).forEach(([k, x]) => setOp(v, op, k as 'breakPoint', x))
     }
   }
+}
+
+/** Where a graft goes: one operator (two for noise: the source above the modulator) into the base's main carrier,
+ *  in some algorithm and some numbering of the base's operators (`perm`, old → new; the DX7 ties each operator's
+ *  place to its number) where every other sounding operator keeps its place and the base its feedback. Free (silent)
+ *  operators first; short of them, the least important give way, never the base's main pair, its noise source or
+ *  an earlier pin's operators (`taken`). The fewest operators moved, the base's algorithm if it can. `ops`: the one
+ *  into the carrier first, numbered as after. */
+function graftSpot(v: Voice, noise: boolean, taken: readonly number[]): { algorithm: number; perm: number[]; ops: number[] } | null {
+  const now = algorithmOf(v[VC.algorithm])
+  const all = [1, 2, 3, 4, 5, 6]
+  const sounding = all.filter((op) => getOp(v, op, 'outputLevel') > 0)
+  const source = noiseSourceOp(v)
+  if (noise && source !== null) return null
+  const order = byImportance(v)
+  const main = order.find((op) => now.carriers.includes(op) && !taken.includes(op) && op !== source)
+  if (main === undefined) return null
+  const protect = [...taken, main, ...byImportance(v, taken).slice(0, 2)]
+  if (source !== null) protect.push(source, ...now.carriers.filter((c) => now.modulators[c].includes(source)))
+  const need = Math.max(0, (noise ? 2 : 1) - (6 - sounding.length))
+  // which of the base's operators give way: every choice of `need` of the unprotected, the least important best
+  const spare = order.filter((op) => !protect.includes(op))
+  const gives: number[][] = need === 0 ? [[]] : need === 1 ? spare.map((op) => [op]) : spare.flatMap((op, i) => spare.slice(i + 1).map((o) => [op, o]))
+  const rank = (op: number) => order.indexOf(op)
+  const fb = now.feedback
+  const feeds = (a: typeof now, op: number) => all.filter((x) => a.modulators[x].includes(op))
+  let best: { algorithm: number; perm: number[]; ops: number[]; score: number } | null = null
+  const m: number[] = []
+  const tryAlgorithm = (a: typeof now, give: number[]) => {
+    const kept = sounding.filter((op) => !give.includes(op))
+    const keepFb = v[VC.feedback] > 0 && kept.includes(fb.to) && kept.includes(fb.from)
+    // the base's operators to slots, one by one, each keeping its role against the ones placed before it
+    const place = (i: number) => {
+      if (i < kept.length) {
+        for (const slot of all) {
+          if (kept.slice(0, i).some((k) => m[k] === slot)) continue
+          const k = kept[i]
+          m[k] = slot
+          const ok = a.carriers.includes(slot) === now.carriers.includes(k) && kept.slice(0, i + 1).every((j) =>
+            kept.slice(0, i + 1).every((l) => a.modulators[m[j]].includes(m[l]) === now.modulators[j].includes(l)))
+          if (ok) place(i + 1)
+        }
+        return
+      }
+      if (keepFb && (a.feedback.from !== m[fb.from] || a.feedback.to !== m[fb.to])) return
+      const used = kept.map((k) => m[k])
+      const free = all.filter((slot) => !used.includes(slot))
+      const into = m[main]
+      for (const y of free) {
+        if (a.carriers.includes(y) || feeds(a, y).join() !== String(into)) continue
+        let ops = [y]
+        if (noise) {
+          const x = a.modulators[y].length === 1 ? a.modulators[y][0] : 0
+          if (!free.includes(x) || x === y || a.feedback.from !== x || a.feedback.to !== x || feeds(a, x).join() !== String(y)) continue
+          ops = [y, x]
+        } else if (a.modulators[y].some((z) => z !== y)) continue
+        // the rest of the base's old numbers into the slots left, in order
+        const perm = [0, ...all.map(() => 0)]
+        for (const k of kept) perm[k] = m[k]
+        const rest = all.filter((op) => !kept.includes(op))
+        const left = free.filter((slot) => !ops.includes(slot))
+        rest.forEach((op, i) => { perm[op] = i < left.length ? left[i] : ops[i - left.length] })
+        const moved = kept.filter((k) => m[k] !== k).length
+        const score = 2 * give.reduce((sum, op) => sum + rank(op), 0) - moved - (a === now ? 0 : 0.5)
+        if (!best || score > best.score) best = { algorithm: a.number - 1, perm, ops, score }
+      }
+    }
+    place(0)
+  }
+  for (const give of gives) for (const a of ALGORITHMS) tryAlgorithm(a, give)
+  const found = best as { algorithm: number; perm: number[]; ops: number[] } | null
+  return found && { algorithm: found.algorithm, perm: found.perm, ops: found.ops }
+}
+
+/** A tonality grafted into the base (graftSpot): its modulator in the main carrier at its ratio to it, as deep as
+ *  the share (and ±16 by radius, as a branch), with the carrier's envelope; a noise source above it for noise. The
+ *  base's operators may be renumbered: the numbering, old → new, is returned with the graft's operators, or null
+ *  when there is no place. In place. */
+function graft(v: Voice, part: MixPart, share: number, taken: readonly number[], rng: Rng): { ops: number[]; perm: number[] } | null {
+  const spec = TONALITY_DEFS[part.tonality].graft
+  if (!spec) return null
+  const spot = graftSpot(v, !!spec.noise, taken)
+  if (!spot) return null
+  const before = Uint8Array.from(v)
+  const fbBefore = spot.perm[algorithmOf(v[VC.algorithm]).feedback.to]
+  for (let op = 1; op <= 6; op++) v.set(before.subarray(opBase(op), opBase(op) + 21), opBase(spot.perm[op]))
+  setVc(v, 'algorithm', spot.algorithm)
+  if (!spec.noise && algorithmOf(v[VC.algorithm]).feedback.to !== fbBefore) setVc(v, 'feedback', 0)
+  const init = initVoice()
+  for (const op of spot.ops) v.set(init.subarray(opBase(op), opBase(op) + 21), opBase(op))
+  const [mod, source] = spot.ops
+  const target = [1, 2, 3, 4, 5, 6].find((c) => algorithmOf(v[VC.algorithm]).modulators[c].includes(mod))!
+  setRatio(v, mod, (opRatio(v, target) ?? 1) * rng.pick(spec.ratio))
+  // over the graft's own stretch of the weight, BRANCH_SHARE … GRAFT_UNTIL (heavier only where nothing else fits)
+  const t = Math.max(0, Math.min(1, (share - BRANCH_SHARE) / ((spec.until ?? GRAFT_UNTIL) - BRANCH_SHARE)))
+  const x = (Math.max(0, Math.min(1, part.intensity)) - 0.5) * 2
+  setOp(v, mod, 'outputLevel', clamp99(spec.level[0] + (spec.level[1] - spec.level[0]) * t + 16 * x))
+  v.set(v.subarray(opBase(target) + OP.rate1, opBase(target) + OP.rate1 + 8), opBase(mod) + OP.rate1)
+  if (spec.fast) makeTransient(v, mod)
+  if (spec.velocity) setOp(v, mod, 'velocitySens', spec.velocity)
+  if (source) {
+    setRatio(v, source, rng.pick([7.07, 3.5]))
+    setVc(v, 'feedback', 7)
+    makeNoise(v, source, carrierRelease(v))
+  }
+  return { ops: spot.ops, perm: spot.perm }
 }
 
 /** A pair of the base's operators a pin can take over when no free branch fits: the least important two (silent

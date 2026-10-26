@@ -52,9 +52,25 @@ export interface BranchSpec {
   modulator: OpSpec
 }
 
+/** What a tonality brings grafted into another: a modulator in the base's main carrier, a hybrid rather than a
+ *  layer (generate.ts graft). Its ratio is to the carrier's; its level grows with the pin's share, low … high. */
+export interface GraftSpec {
+  ratio: readonly number[]
+  level: readonly [number, number]
+  /** dies away fast (a tine's strike) */
+  fast?: boolean
+  velocity?: number
+  /** a noise source above the modulator (two operators): the modulator's level is how rough */
+  noise?: boolean
+  /** grafted up to this share (GRAFT_UNTIL when not given), a branch above */
+  until?: number
+}
+
 export interface TonalityDef {
   skeleton: Skeleton
   branch: BranchSpec
+  /** where it can be grafted (a few tonalities: what a modulator of their own does to another's tone) */
+  graft?: GraftSpec
   /** as a secondary pin, at amount 0…1: in place, by role */
   transform: (v: Voice, amount: number, rng: Rng) => void
   /** a word for names: as the noun, and as the adjective */
@@ -146,6 +162,8 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       },
     },
     branch: { carrier: { ratio: [1], level: [78, 86] }, modulator: { ratio: [2], level: [70, 78] } },
+    // twice the carrier: its odd harmonics, hollow
+    graft: { ratio: [2], level: [60, 80] },
     transform(v, a) {
       const { carriers, algorithm } = rolesOf(v)
       for (const c of carriers) {
@@ -237,6 +255,9 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       },
     },
     branch: { carrier: { ratio: [1, 5.19], level: [86, 94] }, modulator: { ratio: [7.07, 3.5], level: 99, noise: true } },
+    // noise roughening a modulator of the carrier: grit in the tone itself (a cymbal from a metal), not hiss beside it;
+    // over the whole weight, up to all noise (a branch's hiss above it would be less noisy than the grit below)
+    graft: { ratio: [1, 3.5], level: [44, 85], noise: true, until: 1 },
     transform(v, a) {
       if (!addNoise(v, a)) {
         // no place for a noise source: the feedback operator buzzes instead, as far as it goes without breaking
@@ -278,6 +299,8 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       },
     },
     branch: { carrier: { ratio: [1, 2], level: [80, 88] }, modulator: { ratio: [3.5, 1.41], level: [62, 72] } },
+    // an inharmonic partial in the carrier: a bell's ring through the tone
+    graft: { ratio: [3.5, 1.41, 2.78], level: [56, 76] },
     transform(v, a, rng) {
       for (const op of activeCarriers(v)) slower(v, op, 10 * a, [1, 2])
       const mods = activeModulators(v)
@@ -320,6 +343,8 @@ export const TONALITY_DEFS: Record<Tonality, TonalityDef> = {
       },
     },
     branch: { carrier: { ratio: [1], level: [84, 92] }, modulator: { ratio: [14], level: [70, 80], velocity: [5, 7], fast: true } },
+    // the tine's 14:1 strike on the carrier: a struck attack on any tone (a percussive organ)
+    graft: { ratio: [14], level: [64, 86], fast: true, velocity: 6 },
     transform(v, a) {
       const mods = activeModulators(v)
       const op = mods.find((m) => (opRatio(v, m) ?? 0) >= 7) ?? mods[mods.length - 1]

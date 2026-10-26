@@ -116,11 +116,12 @@ describe('mixing', () => {
     }
   })
 
-  it('a noise branch stays noise whatever comes after it', () => {
+  it('noise with operators of its own (a branch or a graft) stays noise whatever comes after it', () => {
     for (const brightness of [-1, 0, 1]) {
       const c = { ...DEFAULT_CHOICES, brightness, pins: [pin('bell', 0.6), pin('noise', 0.5), pin('warm', 0.4)] }
       const g = generate(c, { seed: 1 })
-      expect(g.roles[1]).toEqual({ tonality: 'noise', as: 'branch' })
+      expect(g.roles[1].tonality).toBe('noise')
+      expect(['branch', 'graft']).toContain(g.roles[1].as)
       expect(g.voice[VC.feedback], `brightness ${brightness}`).toBe(7)
     }
   })
@@ -201,12 +202,12 @@ describe('controls', () => {
       const g = generate(c, { seed })
       const v = g.voice
       const sounding = [1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0)
-      // the bell, a third of the tine's weight, takes over the tine's second pair
-      expect(g.roles.map((r) => r.as)).toEqual(['skeleton', 'branch', 'branch'])
-      // the string branch (OP5 with OP6) and the bell's sound next to the tine's own pair
-      expect(sounding, `seed ${seed}`).toEqual(expect.arrayContaining([5, 6]))
+      // the bell, a third of the tine's weight, is grafted into the tine (its operators may be renumbered)
+      expect(g.roles.map((r) => r.as)).toEqual(['skeleton', 'branch', 'graft'])
+      // the string branch and the bell's modulator sound next to the tine's own pair
+      expect(sounding.filter((op) => g.opTonality[op] === 'string').length, `seed ${seed}`).toBe(2)
       expect(sounding.filter((op) => g.opTonality[op] === 'tine').length, `seed ${seed}`).toBeGreaterThanOrEqual(2)
-      expect(sounding.filter((op) => g.opTonality[op] === 'bell').length, `seed ${seed}`).toBe(2)
+      expect(sounding.filter((op) => g.opTonality[op] === 'bell').length, `seed ${seed}`).toBe(1)
     }
     // a pin between two tonalities is one pin: three pins, at most three pairs
     const split = generate({ ...DEFAULT_CHOICES, complexity: 0, pins: [pin('tine', 0.45), pin('string', 0.41), { angle: angleOf('glass') - 15, radius: 1, weight: 0.14 }] }, { seed: 1 })
