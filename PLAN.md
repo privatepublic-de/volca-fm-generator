@@ -88,6 +88,7 @@ A probe page (`/probe.html`, as in the siblings) sends test voices and notes; re
 | Q6 | fm2 connections: MIDI IN only, or USB-MIDI too? Channel and Short Message settings? | Connection help |
 | Q7 | Do the fm's operator on/off bits work, and does the volca keep voice levels as a DX7 does (loudness comparable to Dexed)? | Loudness matching between the generator, the engine and the volca |
 | Q8 | Do the fm's CCs 42–48 act on the voice just sent, and does the next voice send reset them? Does either model take a voice-mode (mono/poly) or portamento CC (the fm's list has none)? | Live tweaking on the fm; whether Play can offer mono and portamento |
+| Q9 | **To do (2026-10-26):** does the volca fm/fm2 start each note's pitch EG at L4 and move to L1 at R1, as the DX7 and the engine (MSFA) do? The reface DX starts at L1 and never plays R1 (measured in the reface-dx-editor, its docs/SOUND.md). Record a voice whose pitch EG has L4 ≠ L1 and a slow R1 (e.g. R 30 99 99 99, L 62 50 50 50) on the volca and see whether it bends from L4. | The drums' pitch drops, the brass bends and the pitch accent are written for an L4 start (starting and ending on 50); with an L1 start they'd play differently |
 
 ---
 
