@@ -184,17 +184,25 @@ export const useApp = create<State>((set, get) => {
     let history = get().history
     if (record) {
       const s = get()
-      const made = generated ? { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: wildUsed, vary: s.vary, name: s.customName ?? undefined } : undefined
+      // what was on the wheel with it: for a voice from a file, the empty wheel (fromFile), so going back clears it too
+      const made = { pins: s.pins.map((p) => ({ ...p })), controls: { ...s.controls }, seed: s.seed, wild: wildUsed, vary: s.vary, name: s.customName ?? undefined }
       // the step it was made from: the one on stage, else the newest
       const from = (history.find((h) => h.id === s.currentId) ?? history.at(-1))?.made
       const entry: Entry = {
         id: nextId++, voice, name: voiceName(voice), hue: hueOf(generated), made,
-        change: change ?? (made ? describeChange(from, made) : 'From a file'),
+        change: change ?? describeChange(from, made),
       }
       history = [...history, entry].slice(-HISTORY_LENGTH)
       currentId = entry.id
     }
     set({ voice, generated, currentId, history })
+  }
+
+  /** A voice from a file on stage: the generator didn't make it and can't build on it, so the wheel and the controls
+   *  go back to the start (no pins, every control at its default), ready to start a new voice from there. */
+  const fromFile = () => {
+    set({ pins: [], controls: { ...DEFAULT_CONTROLS }, wild: 0, seed: newSeed(), vary: 0, customName: null, selectedPin: null })
+    persist()
   }
 
   /** The voice of the current pins and controls. */
@@ -322,7 +330,7 @@ export const useApp = create<State>((set, get) => {
       if (entry.made) {
         set({ pins: entry.made.pins.map((p) => ({ ...p })), controls: { ...entry.made.controls }, seed: entry.made.seed, wild: entry.made.wild, vary: entry.made.vary ?? 0, customName: entry.made.name ?? null })
         persist()
-      }
+      } else fromFile()
       // the entry's own bytes (a mutation can't be made again from pins), with the generator's view when it has one
       const g = entry.made ? generate(choicesOf(get()), { seed: get().seed, model: get().model, wild: get().wild, vary: get().vary, keepName: get().customName ?? undefined }) : null
       playback.setVoice(entry.voice)
@@ -408,9 +416,10 @@ export const useApp = create<State>((set, get) => {
       const cart = get().cart
       const from = cart?.voices[index]
       if (!cart || !from) return
-      // the file's bytes as they are: the pins and controls stay, but they didn't make it (no generator view)
-      show(Uint8Array.from(from.voice), null, true, get().wild, `From ${cart.file}`)
-      set({ cart: null, selectedPin: null })
+      // the file's bytes as they are, on an empty wheel
+      fromFile()
+      show(Uint8Array.from(from.voice), null, true, 0, `From ${cart.file}`)
+      set({ cart: null })
     },
     keepFromCart(indices) {
       const s = get()

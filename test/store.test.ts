@@ -115,8 +115,17 @@ describe('the app store', () => {
     expect(voiceName(now.voice)).toBe('E.PIANO 1')
     expect(now.generated).toBeNull()
     expect(now.history.at(-1)).toMatchObject({ change: 'From rom1a.syx', name: 'E.PIANO 1' })
+    // the wheel and the controls start over: they didn't make this voice
+    expect(now.pins).toEqual([])
+    expect(now.controls.instrument).toBeNull()
+    expect(now.controls.brightness).toBe(0)
+    const pinsBefore = useApp.getState().history.at(-2)!.made!.pins
     now.back()
     expect(useApp.getState().voice).toEqual(before)
+    expect(useApp.getState().pins.map((p) => p.angle)).toEqual(pinsBefore.map((p) => p.angle))
+    useApp.getState().forward()
+    expect(useApp.getState().pins).toEqual([])
+    expect(voiceName(useApp.getState().voice)).toBe('E.PIANO 1')
   })
 
   it('new voice: a fresh roll of the wheel, no instrument, the register kept', () => {
