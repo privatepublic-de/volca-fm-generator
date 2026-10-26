@@ -103,6 +103,22 @@ describe('the app store', () => {
     expect(useApp.getState().cart).toBeNull()
   })
 
+  it('a cartridge voice put on stage is a step in the history, undone like any other', () => {
+    const e = initVoice(); setVoiceName(e, 'E.PIANO 1'); e[0] = 70
+    const s = useApp.getState()
+    s.generateNew()
+    const before = useApp.getState().voice
+    s.openCart(vmemMessage([e]), 'rom1a.syx')
+    useApp.getState().useFromCart(0)
+    const now = useApp.getState()
+    expect(now.cart).toBeNull()
+    expect(voiceName(now.voice)).toBe('E.PIANO 1')
+    expect(now.generated).toBeNull()
+    expect(now.history.at(-1)).toMatchObject({ change: 'From rom1a.syx', name: 'E.PIANO 1' })
+    now.back()
+    expect(useApp.getState().voice).toEqual(before)
+  })
+
   it('new voice: a fresh roll of the wheel, no instrument, the register kept', () => {
     const s = useApp.getState()
     s.startFrom('violin')

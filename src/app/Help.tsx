@@ -186,7 +186,7 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             a DX7, a TX802 and other DX7-compatible synths load them. <strong>Export .syx</strong> beside the voice's name saves the voice you hear, under its name.
             <strong> Open .syx…</strong> opens a DX7 cartridge (or a file of single voices) in a window of its own: click a
             voice to hear it in the browser, on the volca or both (↑ and ↓ go through them, the keys play
-            it), tick the ones you like and <strong>Keep</strong> them. Closing the window, your voice plays again.
+            it), <strong>Use</strong> puts the one you hear on stage (a step ⌘Z undoes), tick the ones you like and <strong>Keep</strong> them. Closing the window, your voice plays again.
           </p>
         </section>
 

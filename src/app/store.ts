@@ -112,6 +112,8 @@ interface State extends Saved {
   openCart(bytes: Uint8Array, fileName: string): string
   /** closes the cartridge window: the voice on stage plays again */
   closeCart(): void
+  /** the cartridge's voice at this place on stage, as a step in the history, and the window closed */
+  useFromCart(index: number): void
   /** the cartridge's voices at these places to the kept ones (not the ones already there); says what it did */
   keepFromCart(indices: number[]): string
 }
@@ -401,6 +403,14 @@ export const useApp = create<State>((set, get) => {
       // the window plays its voices without putting them on stage: the browser and the volca get the stage's back
       playback.setVoice(get().voice)
       set({ cart: null })
+    },
+    useFromCart(index) {
+      const cart = get().cart
+      const from = cart?.voices[index]
+      if (!cart || !from) return
+      // the file's bytes as they are: the pins and controls stay, but they didn't make it (no generator view)
+      show(Uint8Array.from(from.voice), null, true, get().wild, `From ${cart.file}`)
+      set({ cart: null, selectedPin: null })
     },
     keepFromCart(indices) {
       const s = get()

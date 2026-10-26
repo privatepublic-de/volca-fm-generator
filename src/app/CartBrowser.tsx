@@ -1,6 +1,6 @@
 // The cartridge window: a .syx file's voices by name (a DX7 cartridge's 32, or any number of single voices). A click
-// plays one, in the browser or on the volca, without putting it on stage; the ticked ones go to the kept voices.
-// Closing it, the voice on stage plays again.
+// plays one, in the browser or on the volca, without putting it on stage; Use puts it there (a step in the
+// history), and the ticked ones go to the kept voices. Closing it, the voice on stage plays again.
 import { useEffect, useRef, useState } from 'react'
 import { VC, voiceName } from '../dx7/voice'
 import type { Target } from '../ui/playback'
@@ -9,7 +9,7 @@ import { playback, useApp } from './store'
 export function CartBrowser({ onKept }: { onKept: (message: string) => void }) {
   const ref = useRef<HTMLDialogElement>(null)
   const cart = useApp((s) => s.cart)
-  const { closeCart, keepFromCart } = useApp.getState()
+  const { closeCart, keepFromCart, useFromCart } = useApp.getState()
   const [picked, setPicked] = useState<number[]>([])
   const [hearing, setHearing] = useState<number | null>(null)
   const [, refresh] = useState(0)
@@ -77,7 +77,7 @@ export function CartBrowser({ onKept }: { onKept: (message: string) => void }) {
       {problem && <p className="dialog-note">{problem}</p>}
       <p className="dialog-note">
         Click a voice to hear it, or play it on the keys; ↑ and ↓ go through them. It plays in the program the volca is
-        on until you close this. Tick the ones to keep.
+        on until you close this. Use puts the one you hear on stage; tick the ones to keep.
       </p>
       {cart && (
         <ul className="cart-list" style={{ '--rows': rows } as React.CSSProperties}>
@@ -97,6 +97,10 @@ export function CartBrowser({ onKept }: { onKept: (message: string) => void }) {
       <div className="dialog-actions">
         <button className="cart-all" onClick={() => setPicked(allPicked ? [] : all)}>{allPicked ? 'Tick none' : 'Tick all'}</button>
         <button onClick={closeCart} title="Back to your voice (Escape)">Close</button>
+        <button disabled={hearing === null} onClick={() => hearing !== null && useFromCart(hearing)}
+          title={hearing === null ? 'Click a voice first' : 'This voice on stage, as a step you can undo; the window closes'}>
+          Use{hearing !== null && cart ? ` ${voiceName(cart.voices[hearing].voice).trim()}` : ''}
+        </button>
         <button className="primary" disabled={!picked.length} onClick={() => { onKept(keepFromCart(picked)); closeCart() }}
           title="Keeps the ticked voices in this browser; your voice comes back">
           {picked.length ? `Keep ${picked.length}` : 'Keep'}
