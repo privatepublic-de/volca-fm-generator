@@ -185,7 +185,7 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             <strong> Export as cartridge</strong> writes the first 32 as one DX7 bank. Both are standard DX7 SysEx: Dexed,
             a DX7, a TX802 and other DX7-compatible synths load them. <strong>Export .syx</strong> beside the voice's name saves the voice you hear, under its name.
             <strong> Open .syx…</strong> opens a DX7 cartridge (or a file of single voices) in a window of its own: click a
-            voice to hear it, in the browser or on the volca as the top bar says (↑ and ↓ go through them, the keys play
+            voice to hear it in the browser, on the volca or both (↑ and ↓ go through them, the keys play
             it), tick the ones you like and <strong>Keep</strong> them. Closing the window, your voice plays again.
           </p>
         </section>

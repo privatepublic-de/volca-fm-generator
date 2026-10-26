@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { VC, voiceName } from '../dx7/voice'
 import type { Target } from '../ui/playback'
-import { audition, playback, useApp } from './store'
+import { playback, useApp } from './store'
 
 export function CartBrowser({ onKept }: { onKept: (message: string) => void }) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -25,10 +25,11 @@ export function CartBrowser({ onKept }: { onKept: (message: string) => void }) {
     if (!cart) return
     playback.setVoice(cart.voices[i].voice)
     setHearing(i)
-    audition()
+    // a click here asks to hear it, whether or not play-on-change is on (after the volca's debounced send)
+    setTimeout(() => playback.audition(), 140)
   }
   const toggle = (i: number) => setPicked((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]))
-  // ↑ ↓ (and ← → across the columns) go on to the next voice and play it
+  // ↑ ↓ (and ← → across the columns) go on to the next voice and play it, from anywhere in the window
   const step = (e: React.KeyboardEvent) => {
     const by = { ArrowDown: 1, ArrowUp: -1, ArrowRight: rows, ArrowLeft: -rows }[e.key]
     if (!by || !cart) return
@@ -52,7 +53,7 @@ export function CartBrowser({ onKept }: { onKept: (message: string) => void }) {
   const allPicked = cart !== null && picked.length === cart.voices.length
 
   return (
-    <dialog ref={ref} className="dialog cart" onClose={() => { if (useApp.getState().cart) closeCart() }} aria-labelledby="cart-title">
+    <dialog ref={ref} className="dialog cart" onKeyDown={step} onClose={() => { if (useApp.getState().cart) closeCart() }} aria-labelledby="cart-title">
       <div className="cart-head">
         <h2 id="cart-title">{cart?.file ?? 'Cartridge'}</h2>
         <span className="cart-count">{cart?.voices.length} voice{cart?.voices.length === 1 ? '' : 's'}</span>
@@ -79,7 +80,7 @@ export function CartBrowser({ onKept }: { onKept: (message: string) => void }) {
         on until you close this. Tick the ones to keep.
       </p>
       {cart && (
-        <ul className="cart-list" onKeyDown={step} style={{ '--rows': rows } as React.CSSProperties}>
+        <ul className="cart-list" style={{ '--rows': rows } as React.CSSProperties}>
           {cart.voices.map((v, i) => (
             <li key={i} className={`cart-voice${hearing === i ? ' on' : ''}`}>
               <input type="checkbox" checked={picked.includes(i)} onChange={() => toggle(i)} aria-label={`Keep ${voiceName(v.voice)}`} />
