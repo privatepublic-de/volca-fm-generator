@@ -205,7 +205,7 @@ It doesn't need to match the volca to the bit; it needs to sound close enough th
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Wheel**: a canvas colour field; drag a pin in, drag it out to remove it, drag its ring (or scroll) to set its weight; up to three pins. The field glows towards the pins' colours as you mix. A pin snaps to sector centres with Shift held.
+- **Wheel**: a canvas colour field; drag a pin in, drag it out to remove it, drag its ring (or scroll) to set its weight; up to three pins. Under it, one bar of the weights: each pin's part of the whole in its colour (an instrument started from first, weighing 1); dragging the edge between two parts moves weight between just those two. The field glows towards the pins' colours as you mix. A pin snaps to sector centres with Shift held.
 - **The voice**, not as an editor: the algorithm drawn as the DX7 draws it, operators coloured by role, small EG curves. Read-only: it shows what was made.
 - **History**: every generated voice in the session (with its choices and seed), click to hear it again; **favourites** kept in the browser (localStorage), rename, export as `.syx` (volca or DX7/Dexed byte 155), import a `.syx` (1 voice or a 32-voice bank) to use as a starting point for Mutate.
 - **Listen**: browser, volca, or both. A new voice is sent to the volca debounced (Q4) and the last played note is repeated after the send, so a click on the wheel is heard right away.

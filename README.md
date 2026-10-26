@@ -7,9 +7,9 @@ on the volca, and keep what you like. Every voice is a standard DX7 voice.
 **[Open the generator →](https://privatepublic-de.github.io/volca-fm-generator/)** Chrome, Edge or Firefox,
 nothing to install.
 
-![The generator: the tonality wheel with two pins on the left, the envelope, tone, playing and effect controls on
-the right, the voice it made below them with its algorithm and six operators, and the keyboard along the
-bottom](docs/screenshot.png)
+![The generator: the tonality wheel with two pins on the left and the bar of their weights under it, the
+envelope, tone, playing and effect controls on the right, the voice it made below them with its algorithm and six
+operators, and the keyboard along the bottom](docs/screenshot.png)
 
 ## The idea
 
@@ -20,7 +20,7 @@ ear, and send it to the volca.
 
 | | |
 |---|---|
-| **The wheel** | Twelve tonalities around a circle: Noise, Metal, Bell, Glass, Tine, Wood, Organ, Sine, Reed, Brass, String, Breath. Up to three pins: the angle picks the tonality (between two names, a bit of both), the distance from the centre goes from mild to extreme, the ring around a pin is its weight. The heaviest pin is the base; weights count against each other, so a pin that seems to do nothing needs more weight against the base (or the base less), then more distance from the centre. |
+| **The wheel** | Twelve tonalities around a circle: Noise, Metal, Bell, Glass, Tine, Wood, Organ, Sine, Reed, Brass, String, Breath. Up to three pins: the angle picks the tonality (between two names, a bit of both), the distance from the centre goes from mild to extreme, the ring around a pin is its weight. The bar under the wheel shows each pin's part of the whole; drag the edge between two parts to move weight from one to the other. The heaviest pin is the base; weights count against each other, so a pin that seems to do nothing needs more weight against the base (or the base less), then more distance from the centre. |
 | **Start from…** | 41 classic DX7 instruments as a base, parameter for parameter: grand and upright pianos, e-piano, harpsichord, clavinet, guitars, harp, koto, sitar, mallets, basses, winds, a brass section, strings, drums, choirs. Mostly Yamaha's own factory voices. Pins colour them. |
 | **Three ways on** | **Variation** moves the details of the voice you hear. **Mutate** moves the pins and the controls. **New voice** rolls the wheel afresh. Undo and redo through every step. |
 | **Shaping** | Envelope (the voice's own, or pluck, struck, bowed, pad, swell, gate, reverse) and length; brightness, complexity, motion; wild; register; velocity; pitch accent; chorus and reverb. |
