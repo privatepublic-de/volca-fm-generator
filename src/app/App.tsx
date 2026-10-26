@@ -11,6 +11,7 @@ import { audition, playback, useApp } from './store'
 import { TopBar } from './TopBar'
 import { VoiceView } from './VoiceView'
 import { Wheel } from './Wheel'
+import { Weights } from './Weights'
 
 export function App() {
   const [storing, setStoring] = useState(false)
@@ -77,6 +78,7 @@ export function App() {
             <StartActions />
           </div>
           <Wheel />
+          <Weights />
           <PinList />
         </div>
         <div className="stage-controls">

@@ -171,8 +171,7 @@ export function PinList() {
   const pins = useApp((s) => s.pins)
   const selected = useApp((s) => s.selectedPin)
   const instrument = useApp((s) => s.controls.instrument)
-  const { setWeight, removePin, selectPin, regenerate } = useApp.getState()
-  const total = pins.reduce((s, p) => s + p.weight, 0)
+  const { removePin, selectPin } = useApp.getState()
   if (!pins.length) return (
     <div className="pin-area">
       <BaseChip />
@@ -188,13 +187,6 @@ export function PinList() {
           <span className="pin-swatch" style={{ background: `hsl(${hueOfAngle(p.angle)} 85% 64%)` }} />
           <span className="pin-name">{pinLabel(p)}</span>
           <span className="pin-extreme" title="Drag the pin towards the rim: more extreme">{intensityWord(p.radius)}</span>
-          <input
-            type="range" min={0.05} max={1} step={0.05} value={p.weight} aria-label={`${pinLabel(p)} weight`}
-            style={{ '--fill': `${p.weight * 100}%`, '--accent': `hsl(${hueOfAngle(p.angle)} 85% 64%)` } as React.CSSProperties}
-            onChange={(e) => setWeight(p.id, Number(e.target.value))}
-            onPointerUp={() => { regenerate(true); audition() }}
-          />
-          <span className="pin-share" title="Its share of the mix (the slider and the ring set its weight)">{Math.round((p.weight / total) * 100)} %</span>
           <button className="pin-remove" aria-label={`Remove ${pinLabel(p)}`} onClick={(e) => { e.stopPropagation(); removePin(p.id); audition() }}>×</button>
         </li>
       ))}

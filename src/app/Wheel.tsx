@@ -1,5 +1,5 @@
 // The wheel (PLAN §6.1): the twelve tonalities as a colour field, pins on it. The names on the rim are labels only (a
-// click near them shouldn't pin anything: the bottom one sits right above the pin sliders). Click the field to pin, drag a pin to
+// click near them shouldn't pin anything: the bottom one sits right above the weights bar). Click the field to pin, drag a pin to
 // move it (towards the rim: more extreme), drag it off the wheel to take it away. The ring around a pin is a dial
 // for its weight: turn it (or scroll on the pin). An instrument to start from shows as a marker at its tonality,
 // not a pin: it doesn't change the sound or take a pin's place; click it to choose another, drag it off to remove it.

@@ -168,6 +168,32 @@ kbd {
 .wheel-hint { font: 400 0.042px var(--sans); fill: var(--muted); text-anchor: middle; }
 
 .pin-area { margin-top: 10px; }
+/* the weights: one bar as wide as the wheel's rim, each pin's part of the whole in its colour; the edges between
+   the parts are what's dragged */
+.weights { position: relative; width: 76.9%; height: 24px; margin: 0 auto; border-radius: 6px; background: var(--panel); }
+.weights-empty { visibility: hidden; }
+.weights-part {
+  position: absolute; top: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: center; gap: 5px; padding: 0 6px;
+  overflow: hidden; white-space: nowrap; font-size: 12px; line-height: 1; color: var(--ink); background: var(--colour);
+  border: 1px solid var(--ink); cursor: default; transition: left 0.12s, width 0.12s;
+}
+.weights-part:first-child { border-radius: 6px 0 0 6px; }
+.weights-part:nth-last-child(1 of .weights-part) { border-radius: 0 6px 6px 0; }
+.weights-part:only-of-type { border-radius: 6px; }
+.weights-part.selected { box-shadow: inset 0 0 0 2px var(--text); }
+/* the instrument: the ground the pins colour, so a little quieter */
+.weights-part.base { background: color-mix(in srgb, var(--colour) 45%, var(--panel)); color: var(--text); }
+.weights-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.weights-share { flex: none; opacity: 0.8; }
+/* an edge: a wide grip over the seam, a bar that shows on hover and focus */
+.weights-edge { position: absolute; top: -4px; bottom: -4px; width: 14px; margin-left: -7px; z-index: 1; cursor: ew-resize; touch-action: none; outline: none; }
+.weights-edge::after {
+  content: ''; position: absolute; left: 5px; top: 2px; bottom: 2px; width: 4px; border-radius: 2px;
+  background: var(--text); border: 1px solid var(--ink); opacity: 0; transition: opacity 0.12s;
+}
+.weights-edge:hover::after, .weights-edge:active::after { opacity: 1; }
+.weights-edge:focus-visible::after { opacity: 1; box-shadow: 0 0 0 2px var(--accent); }
 .base-chip {
   display: grid;
   grid-template-columns: 12px auto auto 1fr 28px;
@@ -185,7 +211,7 @@ kbd {
 .pins li { height: 30px; }
 .pins li {
   display: grid;
-  grid-template-columns: 12px minmax(5em, 1fr) 4.5em minmax(80px, 1.4fr) 3em 28px;
+  grid-template-columns: 12px minmax(5em, 1fr) 4.5em 28px;
   align-items: center;
   gap: 10px;
   padding: 2px 8px;
@@ -197,8 +223,7 @@ kbd {
 .pins li.pins-more, .pins-empty { display: block; color: var(--dim); font-size: 13px; cursor: default; padding: 6px 8px; }
 .pin-swatch { width: 12px; height: 12px; border-radius: 50%; }
 .pin-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.pin-extreme, .pins .pin-share { color: var(--muted); font-size: 13px; }
-.pins .pin-share { text-align: right; }
+.pin-extreme { color: var(--muted); font-size: 13px; }
 .pin-remove { padding: 0; width: 26px; height: 26px; border-color: transparent; background: none; color: var(--muted); }
 
 .stage-wheel { align-self: start; }
@@ -639,8 +664,6 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   /* the keyboard across the whole width, its octave and fold above it */
   .keyboard-dock-inner { flex-wrap: wrap; justify-content: space-between; }
   .keyboard { flex-basis: 100%; order: 3; height: 120px; }
-  .pins li { grid-template-columns: 12px minmax(4em, 1fr) minmax(70px, 1.2fr) 3em 28px; gap: 8px; }
-  .pin-extreme { display: none; }
   .voice { padding: 16px; }
   .field { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'label' 'input'; row-gap: 6px; }
 }

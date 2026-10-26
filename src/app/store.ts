@@ -69,6 +69,8 @@ interface State extends Saved {
   addPin(angle: number, radius: number): number | null
   movePin(id: number, angle: number, radius: number): void
   setWeight(id: number, weight: number): void
+  /** several pins' weights as one change (the weights bar moves two at once) */
+  setWeights(weights: Record<number, number>): void
   removePin(id: number): void
   selectPin(id: number | null): void
   setStartMenu(open: boolean): void
@@ -214,6 +216,10 @@ export const useApp = create<State>((set, get) => {
     },
     setWeight(id, weight) {
       set({ pins: get().pins.map((p) => (p.id === id ? { ...p, weight: Math.max(0.05, Math.min(1, weight)) } : p)) })
+      make(false)
+    },
+    setWeights(weights) {
+      set({ pins: get().pins.map((p) => (p.id in weights ? { ...p, weight: Math.max(0.05, Math.min(1, weights[p.id])) } : p)) })
       make(false)
     },
     removePin(id) {
