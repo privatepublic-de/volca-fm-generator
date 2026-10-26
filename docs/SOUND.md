@@ -243,9 +243,10 @@ choices is about 5.9 dB, another voice. `npx vite-node tools/sensitivity.ts 3 ''
 second pin over every other; `… calibrate` fits Complexity's curve.
 
 **Exactly nothing** (the same bytes): a single pin's weight, all weights scaled together, the angle within ±0.1 of a
-sector's centre, Register Mid, Velocity 0 where the tonality has no sensitivity of its own. Organ as the base takes
+sector's centre, Register Mid, Velocity 0 where the tonality has no sensitivity of its own. Organ as the base took
 no part of a second pin of Metal, Bell, Glass, Tine, Sine or Reed, and hardly any of Brass: algorithm 32 has no free
-pair and no modulators for their transforms. Noise ignores Metal (fixed-frequency modulators).
+pair and no modulators for their transforms. Noise ignored Metal (fixed-frequency modulators). Below the threshold
+both still do; above it the pin takes over operators (below).
 
 **Little, at first:** a second pin's radius (0 → 1: under 0.6 dB in all), a second pin's weight between 0.25 and
 0.95 (0.2 dB a step: it set one carrier's level), a third pin's weight past 0.1. Below 0.25 a second pin's weight
@@ -305,8 +306,23 @@ pitch blips of Brass and Wood are as deep as the amount instead of now and then.
 | before | 0.00–0.20 | 0.00–0.11 |
 | now | 0.34–0.56 | 0.09–0.57 |
 
-Still: crossing 0.25, where a colour becomes a branch, is a step of 4 dB, and Organ as the base takes no colour
-from Bell, Glass, Tine, Sine or Reed (it has no modulators for them).
+**Taking over operators.** A pin used to get operators of its own only where its base had a free pair: Organ and
+Noise have none, and a third pin found the one most tonalities have taken. Now, from the same share (0.25 of the
+base's weight), a pin without a free pair takes over the base's least important two (`takeOver`): silent ones
+first, then the quietest by `byImportance`, never the base's main pair, its noise source or an earlier pin's pair.
+It looks through the 32 algorithms for one where the two are a stack of their own (modulator into carrier, nothing
+else in or out) and every other sounding operator keeps its place and the base its feedback; a noise pin needs the
+modulator to be the feedback operator. Organ gives up its two top drawbars in algorithm 31; Noise, already in
+pairs, hands one over as it is. Where no algorithm fits (Metal's one carrier, algorithm 16, takes three
+modulators) the pin colours, as below the threshold.
+
+| At weight 0.5, the first pin alone → with the second, dB | before | now |
+|---|---|---|
+| Organ + Metal, Bell, Glass, Tine, Sine or Reed | 0 (the same voice) | 8–14 |
+| Noise + Glass, Tine or Sine | 0.6–0.7 | 4.0–7.7 |
+| 3rd pin at 0.3 (two pins at 1 and 0.5) | 3.7 | 6.4 |
+
+The threshold is now a step of about 5.5 dB (was 4): below it the pin colours, above it it sounds on its own.
 
 Voices kept with Complexity above ½, with some Motion, with more than one pin or on an organ sound different when
 made again from their pins and controls; the kept voice itself is unchanged.

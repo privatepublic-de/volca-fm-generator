@@ -98,8 +98,14 @@ describe('mixing', () => {
     expect(strong.roles).toEqual([{ tonality: 'bell', as: 'skeleton' }, { tonality: 'warm', as: 'branch' }])
     const weak = generate({ ...DEFAULT_CHOICES, pins: [pin('bell', 0.9), pin('warm', 0.1)] }, { seed: 1 })
     expect(weak.roles[1].as).toBe('transform')
-    // the organ has no free branch (six drawbars)
-    expect(generate({ ...DEFAULT_CHOICES, pins: [pin('organ', 0.6), pin('bell', 0.4)] }, { seed: 1 }).roles[1].as).toBe('transform')
+    // the organ has no free branch (six drawbars): a strong pin takes over its two quietest, in algorithm 31
+    const organ = generate({ ...DEFAULT_CHOICES, pins: [pin('organ', 0.6), pin('bell', 0.4)] }, { seed: 1 })
+    expect(organ.roles[1].as).toBe('branch')
+    expect(organ.voice[VC.algorithm] + 1).toBe(31)
+    expect(organ.opTonality[5]).toBe('bell')
+    expect(organ.opTonality[6]).toBe('bell')
+    // a weak one colours (an organ has no modulators for Bell's: none at all)
+    expect(generate({ ...DEFAULT_CHOICES, pins: [pin('organ', 0.9), pin('bell', 0.1)] }, { seed: 1 }).roles[1].as).toBe('transform')
   })
 
   it('a second tonality changes the sound', () => {
@@ -195,11 +201,12 @@ describe('controls', () => {
       const g = generate(c, { seed })
       const v = g.voice
       const sounding = [1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0)
-      expect(g.roles.map((r) => r.as)).toEqual(['skeleton', 'branch', 'transform'])
-      // the string branch (OP5 with OP6) sounds next to the tine's own pair
+      // the bell, a third of the tine's weight, takes over the tine's second pair
+      expect(g.roles.map((r) => r.as)).toEqual(['skeleton', 'branch', 'branch'])
+      // the string branch (OP5 with OP6) and the bell's sound next to the tine's own pair
       expect(sounding, `seed ${seed}`).toEqual(expect.arrayContaining([5, 6]))
       expect(sounding.filter((op) => g.opTonality[op] === 'tine').length, `seed ${seed}`).toBeGreaterThanOrEqual(2)
-      expect(sounding.length).toBeLessThanOrEqual(5)
+      expect(sounding.filter((op) => g.opTonality[op] === 'bell').length, `seed ${seed}`).toBe(2)
     }
     // a pin between two tonalities is one pin: three pins, at most three pairs
     const split = generate({ ...DEFAULT_CHOICES, complexity: 0, pins: [pin('tine', 0.45), pin('string', 0.41), { angle: angleOf('glass') - 15, radius: 1, weight: 0.14 }] }, { seed: 1 })

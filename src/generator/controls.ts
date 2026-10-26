@@ -85,15 +85,7 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng, owned: r
   const kept = noise === null ? [] : [noise, ...carriers.filter((c) => algorithm.modulators[c].includes(noise))]
   const own = () => sounding().filter((op) => !kept.includes(op))
   if (complexity < 0.5) {
-    // importance: the loudest carrier, then what modulates it (deepest first, down its stack), then the next carrier
-    // and its stack
-    const order: number[] = []
-    const visit = (op: number) => {
-      if (order.includes(op) || kept.includes(op) || level(v, op) === 0) return
-      order.push(op)
-      for (const m of [...algorithm.modulators[op]].sort((x, y) => level(v, y) - level(v, x))) visit(m)
-    }
-    for (const c of [...carriers].sort((x, y) => level(v, y) - level(v, x))) visit(c)
+    const order = byImportance(v, kept)
     // every pinned tonality keeps one FM pair of its own operators, so a pure mix is still the mix: its most
     // important operator, with the strongest modulator it has (a carrier) or the operator it modulates (a modulator)
     const keep = new Set<number>()
@@ -146,6 +138,20 @@ export function applyComplexity(v: Voice, complexity: number, rng: Rng, owned: r
     const into = [1, 2, 3, 4, 5, 6].find((c) => algorithm.modulators[c].includes(op))!
     v.copyWithin(opBase(op) + OP.rate1, opBase(into) + OP.rate1, opBase(into) + OP.rate1 + 8)
   }
+}
+
+/** The sounding operators, the most important first: the loudest carrier, then what modulates it (deepest first,
+ *  down its stack), then the next carrier and its stack. `skip`: left out. */
+export function byImportance(v: Voice, skip: readonly number[] = []): number[] {
+  const { carriers, algorithm } = rolesOf(v)
+  const order: number[] = []
+  const visit = (op: number) => {
+    if (order.includes(op) || skip.includes(op) || level(v, op) === 0) return
+    order.push(op)
+    for (const m of [...algorithm.modulators[op]].sort((x, y) => level(v, y) - level(v, x))) visit(m)
+  }
+  for (const c of [...carriers].sort((x, y) => level(v, y) - level(v, x))) visit(c)
+  return order
 }
 
 /** Still (0) … alive (1): vibrato, detune shimmer between the carriers, the modulators drifting while the note is

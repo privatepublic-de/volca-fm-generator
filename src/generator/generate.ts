@@ -1,12 +1,12 @@
 // The generator (PLAN §4.4): (choices, seed) → voice, pure and deterministic. The heaviest pin builds the skeleton,
 // the other pins take free branches or act as transforms, then the shape and the controls, then loudness and a name.
-import { algorithmOf } from '../dx7/algorithms'
+import { ALGORITHMS, algorithmOf } from '../dx7/algorithms'
 import { getOp, initVoice, OP, opBase, setOp, setVc, setVoiceName, VC, type Voice } from '../dx7/voice'
 import { setRatio } from '../dx7/frequency'
 import { MODELS, type Model } from '../engine/models'
 import { mixOf, type GeneratorChoices, type MixPart, type Tonality } from './choices'
 import { varyVoice } from './explore'
-import { applyBrightness, applyComplexity, applyIntensity, applyMotion, applyRegister, applyVelocity, complexityResponse } from './controls'
+import { applyBrightness, applyComplexity, applyIntensity, applyMotion, applyRegister, applyVelocity, byImportance, complexityResponse } from './controls'
 import { normalizeLoudness, SILENT_DB } from './loudness'
 import { nameVoice, nameWithNoun } from './naming'
 import { rng as makeRng, type Rng } from './random'
@@ -69,8 +69,9 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, v
   if (inst) applyInstrument(v, inst, !c.shape, rng, spread)
   else applyIntensity(v, dominant.intensity)
 
-  // 2. the other tonalities: a free branch while there is one, else a transform. Each tonality's own operators are
-  // noted (the skeleton's, a branch's two, the ones a transform changed), so pure can keep a pair of each
+  // 2. the other tonalities: a free branch while there is one; from BRANCH_SHARE without one, the pin takes over the
+  // base's least important pair (another algorithm if it needs one); else a transform. Each tonality's own operators
+  // are noted (the skeleton's, a branch's two, the ones a transform changed), so pure can keep a pair of each
   const owned: number[][] = [[1, 2, 3, 4, 5, 6].filter((op) => getOp(v, op, 'outputLevel') > 0)]
   const freeBranches = [...(skeleton.branches ?? [])]
   for (const part of rest) {
@@ -79,8 +80,22 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, v
     // a noise branch needs the pair whose modulator can be the noise source
     const fits = (br: readonly [number, number]) => !TONALITY_DEFS[part.tonality].branch.modulator.noise || br[1] === noiseHostOp(v)
     const free = freeBranches.findIndex(fits)
-    if (share >= BRANCH_SHARE && free >= 0) {
-      const [branch] = freeBranches.splice(free, 1)
+    let branch = share >= BRANCH_SHARE && free >= 0 ? freeBranches.splice(free, 1)[0] : null
+    const taken = !branch && share >= BRANCH_SHARE ? takeOver(v, TONALITY_DEFS[part.tonality].branch.modulator.noise === true, Object.keys(opTonality).map(Number)) : null
+    if (taken) {
+      if (taken.algorithm !== v[VC.algorithm]) freeBranches.length = 0
+      const fbBefore = algorithmOf(v[VC.algorithm]).feedback.to
+      setVc(v, 'algorithm', taken.algorithm)
+      // the feedback stays with the operator that had it; on one of the base's that hadn't, none
+      const fbNow = algorithmOf(v[VC.algorithm]).feedback.to
+      if (fbNow !== fbBefore && !taken.branch.includes(fbNow)) setVc(v, 'feedback', 0)
+      // the two start afresh: nothing of the base's settings (fixed frequency, scaling, sensitivities) stays
+      const init = initVoice()
+      for (const op of taken.branch) v.set(init.subarray(opBase(op), opBase(op) + 21), opBase(op))
+      owned[0] = owned[0].filter((op) => !taken.branch.includes(op))
+      branch = taken.branch
+    }
+    if (branch) {
       fillBranch(v, branch, part, share, shape, rng, spread)
       for (const op of branch) opTonality[op] = part.tonality
       owned.push([...branch])
@@ -210,6 +225,39 @@ function applyInstrument(v: Voice, inst: Instrument, ownEgs: boolean, rng: Rng, 
       Object.entries({ breakPoint, leftDepth, rightDepth, leftCurve, rightCurve }).forEach(([k, x]) => setOp(v, op, k as 'breakPoint', x))
     }
   }
+}
+
+/** A pair of the base's operators a pin can take over when no free branch fits: the least important two (silent
+ *  ones first) that some algorithm makes a stack of their own (modulator → carrier, nothing else in or out), while
+ *  every other sounding operator keeps its place and the base its feedback. For a noise pin the modulator must be
+ *  the feedback operator. The base keeps its most important pair, a noise source of its own, and earlier pins'
+ *  branches (`taken`). Null when no algorithm fits: the pin colours instead. */
+function takeOver(v: Voice, noise: boolean, taken: readonly number[]): { algorithm: number; branch: [number, number] } | null {
+  const now = algorithmOf(v[VC.algorithm])
+  const sounding = (op: number) => getOp(v, op, 'outputLevel') > 0
+  const source = noiseSourceOp(v)
+  if (noise && source !== null) return null
+  const protect = [...taken, ...byImportance(v, taken).slice(0, 2)]
+  if (source !== null) protect.push(source, ...now.carriers.filter((c) => now.modulators[c].includes(source)))
+  const order = byImportance(v)
+  const rank = (op: number) => (sounding(op) ? order.indexOf(op) : 9)
+  const roles = (a: typeof now, op: number, kept: number[]) => `${a.carriers.includes(op)}:${a.modulators[op].filter((m) => kept.includes(m)).join()}`
+  let best: { algorithm: number; branch: [number, number]; score: number } | null = null
+  for (const a of ALGORITHMS) for (let c = 1; c <= 6; c++) for (let m = 1; m <= 6; m++) {
+    if (c === m || protect.includes(c) || protect.includes(m)) continue
+    // a stack of their own
+    if (!a.carriers.includes(c) || a.modulators[c].join() !== String(m) || a.modulators[m].some((x) => x !== m)) continue
+    if ([1, 2, 3, 4, 5, 6].some((x) => x !== c && a.modulators[x].includes(m))) continue
+    if (noise && (a.feedback.from !== m || a.feedback.to !== m)) continue
+    // the rest as it was
+    const kept = [1, 2, 3, 4, 5, 6].filter((x) => x !== c && x !== m && sounding(x))
+    if (kept.some((x) => roles(a, x, kept) !== roles(now, x, kept))) continue
+    const fb = now.feedback
+    if (!noise && v[VC.feedback] > 0 && kept.includes(fb.to) && (a.feedback.from !== fb.from || a.feedback.to !== fb.to)) continue
+    const score = rank(c) + rank(m) + (a === now ? 0.5 : 0)
+    if (!best || score > best.score) best = { algorithm: a.number - 1, branch: [c, m], score }
+  }
+  return best && { algorithm: best.algorithm, branch: best.branch }
 }
 
 /** How far a pin colours the voice as a transform, 0 … 1: its share by the square root (a light pin is heard, an
