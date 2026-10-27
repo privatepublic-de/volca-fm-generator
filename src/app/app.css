@@ -18,6 +18,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--ink); color: var(--text); }
+/* the scrollbar's room kept whether the page scrolls or not: opening the details doesn't shift the layout */
+html { scrollbar-gutter: stable; }
 body { font: 15px/1.45 var(--sans); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
 h1, h2, h3, p { margin: 0; }
 button, select, input { font: inherit; color: inherit; }
