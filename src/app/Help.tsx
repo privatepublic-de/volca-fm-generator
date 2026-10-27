@@ -1,13 +1,14 @@
 // How it works: a sheet over the app (Help in the top bar, the ? key, or #help in the address). The wheel is
-// explained on a small drawing of itself; the rest is plain text: where to start, the three ways on, the controls,
-// what the browser's sound is and isn't, the two volcas, the files.
+// explained on a small drawing of itself; the rest is short plain text: where to start, the three ways on, the voice,
+// the controls, what the browser's sound is and isn't, the two volcas, the files, and last the details (for those
+// who dare).
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { angleOf, TONALITY_HUES } from '../generator/choices'
 import { FIELD } from './Wheel'
 
 const SECTIONS = [
   ['wheel', 'The wheel'], ['start', 'Starting points'], ['ways', 'Three ways on'], ['voice', 'Your voice'],
-  ['shaping', 'Shaping'], ['listening', 'Listening'], ['volca', 'Your volca'], ['files', 'Files'], ['keys', 'Keys'],
+  ['shaping', 'Shaping'], ['listening', 'Listening'], ['volca', 'Your volca'], ['files', 'Files'], ['details', 'Details'], ['keys', 'Keys'],
   ['privacy', 'Privacy'], ['credits', 'Credits'],
 ] as const
 
@@ -31,9 +32,8 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
           <button className="help-close" onClick={onClose} aria-label="Close help">×</button>
         </header>
         <p className="help-lead">
-          This makes single FM voices for the Korg volca fm2 and volca fm by where they live, not by their parameters:
-          put pins on a wheel of tonalities, shape the result with a few controls, listen in the browser or on the volca,
-          and keep what you like. Every voice is a standard DX7 voice.
+          Single FM voices for the Korg volca fm2 and volca fm, made by sound, not by parameters. Pins on a wheel, a few
+          controls, listen in the browser or on the volca, keep what you like. Every voice is a standard DX7 voice.
         </p>
         <nav className="help-nav" aria-label="Help sections">
           {SECTIONS.map(([id, label]) => <button key={id} onClick={() => go(id)}>{label}</button>)}
@@ -43,110 +43,107 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
           <h3>The wheel</h3>
           <HelpWheel />
           <dl className="help-wheel-list">
-            <dt>Around the wheel</dt><dd>which tonality: Noise, Metal, Bell, Glass, Tine, Wood, Organ, Sine, Reed, Brass, String, Breath. Between two names a pin is a bit of both.</dd>
-            <dt>Out from the centre</dt><dd>how far it goes: mild near the middle, extreme at the rim.</dd>
-            <dt>The ring around a pin</dt><dd>its weight. Turn it, scroll on the pin, or drag the edges in the bar under the wheel: each pin's part of the whole.</dd>
-            <dt>The diamond</dt><dd>the instrument you started from. Click it to choose another, drag it off to remove it.</dd>
-            <dt>The centre</dt><dd>a new voice, and the name of the one you hear.</dd>
+            <dt>Around the wheel</dt><dd>Which tonality: Noise, Metal, Bell, Glass, Tine, Wood, Organ, Sine, Reed, Brass, String, Breath. Between two names: a bit of both.</dd>
+            <dt>Out from the centre</dt><dd>How far: mild in the middle, extreme at the rim.</dd>
+            <dt>The ring around a pin</dt><dd>Its weight. Turn it, scroll on the pin, or drag the edges in the bar below the wheel.</dd>
+            <dt>The diamond</dt><dd>The instrument you started from. Click for another, drag off to remove.</dd>
+            <dt>The centre</dt><dd>A new voice, and the name of the one you hear.</dd>
           </dl>
           <p>
-            Click the wheel to place a pin, up to three. The heaviest is the voice's base, the others colour it. Drag a pin to
-            move it, off the wheel (or × in its row) to remove it. A selected pin moves with the arrow keys; + and − set its
-            weight.
+            Click the wheel for a pin, up to three. The heaviest is the base, the others colour it. Drag to move, off the
+            wheel (or ×) to remove. Arrow keys move a selected pin, + and − set its weight.
           </p>
           <p>
-            A light pin, under a quarter of the base's weight, only touches the base. Heavier, it gets operators of its
-            own: Noise, Tine, Bell and Reed go inside the base's tone first (grit, a struck attack, a ring, hollowness),
-            and from about 0.6 of its weight a pin plays as a layer of its own. The base may change algorithm to make
-            room.
+            Light pins, under a quarter of the base's weight, only touch the base. Heavier ones get operators of their own:
+            Noise, Tine, Bell and Reed go inside the base's tone first (grit, a struck attack, a ring, hollowness). From
+            about 0.6 of its weight, a pin plays as a layer of its own. The base may switch algorithm to make room.
           </p>
           <p>
-            <strong>A pin that seems to do nothing</strong> is usually too light against the base: weights count against
-            each other, so raise its weight or lower the base's (the weight of a lone pin, or of all pins alike, changes
-            nothing). Then move it out from the centre: its radius sets how far it goes. A pin in line with a tonality's
-            name is that tonality alone; between two names it shares out.
+            <strong>A pin that does nothing?</strong> Too light against the base. Weights count against each other: raise
+            its weight or lower the base's. Then move it outwards. In line with a name, a pin is that tonality alone;
+            between two names, it shares.
           </p>
-          <p>
-            Rest the pointer anywhere on the wheel and a label says what a click there would do; on a tonality's name, what
-            it sounds like.
-          </p>
+          <p>Hover the wheel: a label says what a click would do. On a name: what it sounds like.</p>
         </section>
 
         <section id="help-start">
           <h3>Starting points</h3>
           <p>
-            <strong>Start from…</strong>, over the wheel, offers 41 instruments in nine groups: keys, plucked, mallets, bass, winds, brass,
-            strings, percussion and voices. Most are Yamaha's own DX7 voices (the ROM and VRC cartridges, the TX7 and TX816
-            sets), copied operator by operator; the pianos change between a few of them with each new roll. The instrument
-            shows as a diamond on the wheel. It isn't a pin: it doesn't change the sound, and pins you add colour it.
+            <strong>Start from…</strong>, over the wheel: 41 instruments in nine groups. Keys, plucked, mallets, bass,
+            winds, brass, strings, percussion, voices. Mostly Yamaha's own DX7 voices (ROM and VRC cartridges, TX7, TX816),
+            copied operator by operator. The instrument shows as a diamond on the wheel. Not a pin: pins you add colour it.
           </p>
-          <p><strong>Init voice</strong>, at the top of the same menu (or I), is a plain sine with everything turned down, to build up from.</p>
+          <p>
+            Grand and upright piano come in several originals; dots beside their names count them. Pick again for the
+            next. Under the wheel, the dots show which one plays; click them for the next.
+          </p>
+          <p><strong>Init voice</strong>, top of the same menu (or I): a plain sine, everything down. Build up from there.</p>
         </section>
 
         <section id="help-ways">
           <h3>Three ways on</h3>
-          <p>Variation and Mutate are at the top of Your voice, New voice over the wheel.</p>
+          <p>Variation and Mutate: top of Your voice. New voice: over the wheel.</p>
           <dl className="help-defs">
-            <dt>Variation <kbd>V</kbd></dt><dd>A small step. The same pins, controls and instrument; the details move: envelopes, levels, tuning. A sibling of the voice.</dd>
-            <dt>Mutate <kbd>M</kbd></dt><dd>A medium step. The pins wander around the wheel and in or out, the controls get a push, a pin may come or go. An instrument without pins gets its first one.</dd>
-            <dt>New voice <kbd>Enter</kbd></dt><dd>A fresh start: new pins anywhere, the controls back to their defaults, no instrument. Register, Wild and the effects stay as you set them. The wheel's centre does the same.</dd>
+            <dt>Variation <kbd>V</kbd></dt><dd>Small step. Same pins, controls and instrument; envelopes, levels and tuning move. A sibling.</dd>
+            <dt>Mutate <kbd>M</kbd></dt><dd>Medium step. Pins wander, controls get a push, a pin may come or go. An instrument without pins gets its first.</dd>
+            <dt>New voice <kbd>Enter</kbd></dt><dd>Fresh start. New pins, controls at their defaults, no instrument. Register, Wild and the effects stay. The wheel's centre does the same.</dd>
           </dl>
         </section>
 
         <section id="help-voice">
           <h3>Your voice</h3>
-          <p>The panel under the controls shows the voice you hear and what you can do with it.</p>
+          <p>The panel under the controls: the voice you hear, and what to do with it.</p>
           <dl className="help-defs">
-            <dt>Its name</dt><dd>Given by how it sounds ("Airy Pad", "Clang Keys") or by the instrument you started from. Click it to give the voice a name of your own, up to 10 characters as on the DX7; empty it for the automatic one again. Your name stays through your changes until a new start, and goes with the voice to the volca and into files.</dd>
-            <dt>The line below</dt><dd>What it's made of: its base and the tonalities colouring it.</dd>
-            <dt>The algorithm</dt><dd>How its six operators are wired, as the DX7 draws it: the bottom row is heard, the ones above shape the sound of the one below.</dd>
-            <dt>The operators</dt><dd>Each one's frequency ratio, level and envelope; heard or shapes says which kind it is. Coloured by the tonality each belongs to.</dd>
-            <dt>Export .syx</dt><dd>Saves the voice you hear as a DX7 file.</dd>
+            <dt>Its name</dt><dd>From how it sounds ("Airy Pad", "Clang Keys") or from the instrument. Click to name it yourself: 10 characters, as on the DX7. Empty it for the automatic one. Your name stays until a new start and goes with the voice to the volca and into files.</dd>
+            <dt>The line below</dt><dd>What it's made of: the base and the tonalities colouring it.</dd>
+            <dt>The algorithm</dt><dd>How the six operators are wired, drawn as on the DX7. Bottom row: heard. Above: shaping the one below.</dd>
+            <dt>The operators</dt><dd>Frequency ratio, level, envelope. Heard or shapes says which kind. Coloured by their tonality.</dd>
+            <dt>Export .syx</dt><dd>The voice you hear, as a DX7 file.</dd>
+            <dt>Details…</dt><dd>Every parameter, for those who dare. See Details, further down.</dd>
           </dl>
           <p>
-            At the top of the panel, beside Variation and Mutate: <strong>Keep</strong> (<kbd>Q</kbd>) puts the voice, with
-            its pins and controls, in your kept voices (Kept, click to take it out again), and <strong>Undo</strong> and
-            <strong> Redo</strong> (<kbd>⌘Z</kbd>, <kbd>⇧⌘Z</kbd>) go back and forth through this session.
+            Top of the panel: <strong>Keep</strong> (<kbd>Q</kbd>) files the voice with its pins and controls; click Kept
+            to take it out again. <strong>Undo</strong> and <strong>Redo</strong> (<kbd>⌘Z</kbd>, <kbd>⇧⌘Z</kbd>) step
+            through the session.
           </p>
           <p>
-            Below it, <strong>Recent changes</strong> lists the last steps by what they changed; click one to go back to
-            it. <strong>Kept</strong> lists the voices you kept: click one to bring it back with its pins and controls,
-            double-click its name to rename it, .syx to export it, × to remove it.
+            Below: <strong>Recent changes</strong>, the last steps by what they changed. Click one to go back.
+            <strong> Kept</strong>, your kept voices. Click to bring one back with its pins and controls, double-click its
+            name to rename, .syx to export, × to remove.
           </p>
         </section>
 
         <section id="help-shaping">
           <h3>Shaping the sound</h3>
           <dl className="help-defs">
-            <dt>Envelope</dt><dd>The voice's own, or Pluck, Struck, Bowed, Pad, Swell, Gate, Reverse. Length makes it shorter or longer.</dd>
+            <dt>Envelope</dt><dd>The voice's own, or Pluck, Struck, Bowed, Pad, Swell, Gate, Reverse. Length: shorter or longer. Own also lights up for envelopes changed in Details.</dd>
             <dt>Brightness</dt><dd>Mellow to bright: how deep the modulation goes.</dd>
-            <dt>Complexity</dt><dd>How many of the six operators sound: two when pure, all six and denser past the middle.</dd>
-            <dt>Motion</dt><dd>Vibrato, shimmer and drifting brightness; past the middle, wobbles, random steps and pitch drift.</dd>
-            <dt>Wild</dt><dd>How far a voice may stray from its tonalities' usual sound: odd ratios, other feedback, near the top another algorithm.</dd>
-            <dt>Register</dt><dd>The voice's own octave, or sub, bass, mid, lead or high.</dd>
-            <dt>Velocity</dt><dd>How much harder notes play brighter and louder. It starts at the voice's own (marked own) and moves all operators together.</dd>
-            <dt>Pitch accent</dt><dd>A short fall in pitch into every note.</dd>
-            <dt>Chorus, Reverb</dt><dd>On the fm2 they set the volca's own effect depths (switch the effects on at the volca). The fm's chorus is a button on the volca; here it is a chorus for the browser's sound only.</dd>
+            <dt>Complexity</dt><dd>How many operators sound: two when pure, all six and denser past the middle.</dd>
+            <dt>Motion</dt><dd>Vibrato, shimmer, drifting brightness. Past the middle: wobbles, random steps, pitch drift.</dd>
+            <dt>Wild</dt><dd>How far a voice strays from its tonalities: odd ratios, other feedback, near the top another algorithm.</dd>
+            <dt>Register</dt><dd>The voice's own octave, or sub, bass, mid, lead, high.</dd>
+            <dt>Velocity</dt><dd>How much harder notes play brighter and louder. Starts at the voice's own (marked own); moves all operators together.</dd>
+            <dt>Pitch accent</dt><dd>A short pitch fall into every note.</dd>
+            <dt>Chorus, Reverb</dt><dd>fm2: the volca's own effect depths (switch the effects on at the volca). fm: its chorus is a button, so here it's a chorus for the browser only.</dd>
           </dl>
-          <p>A double-click puts a slider back where it started.</p>
+          <p>Double-click a slider to reset it.</p>
         </section>
 
         <section id="help-listening">
           <h3>Listening</h3>
           <p>
-            <strong>Browser</strong>, <strong>Volca</strong> or <strong>Both</strong> in the top bar choose where a note
-            sounds. Play the keyboard at the bottom (softer at the top of a key, harder at the front), or the computer keys
-            A to ; with Z and X for the octave. With Play on change (beside the keyboard), every change plays the last note you played.
+            <strong>Browser</strong>, <strong>Volca</strong> or <strong>Both</strong>, in the top bar: where notes sound.
+            Play the keyboard at the bottom (top of a key softer, front harder) or the computer keys A to ;, Z and X for
+            the octave. Play on change, beside the keyboard, replays your last note after every change.
           </p>
           <p>
-            A change is heard from the next note on: a note that's already sounding keeps the voice it started with. So
-            while you move a pin or a control, play a new note to hear where it is (or leave Play on change on).
+            Changes count from the next note: a sounding note keeps the voice it started with. Moving a pin or a control?
+            Play a new note, or leave Play on change on.
           </p>
           <p className="help-note">
-            The browser's sound is an emulation, not the volca. It runs the DX7 engine of the open-source MSFA project, the
-            one Dexed is built on, and was tuned against an fm2, so it comes close. But the volca has its own converters,
-            output stage and effects, the fm plays three notes at once and the fm2 six, and the fm ignores velocity. Judge a
-            voice on the volca; Both plays the two together.
+            The browser's sound is an emulation. It runs MSFA's DX7 engine, the one inside Dexed, tuned against an fm2:
+            close, not the same. The volca has its own converters, output stage and effects. The fm plays three notes, the
+            fm2 six; the fm ignores velocity. Judge on the volca; Both plays the two together.
           </p>
         </section>
 
@@ -162,31 +159,55 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
             </tbody>
           </table>
           <p>
-            Choose the model in the top bar. To connect, use Chrome, Edge or Firefox (Safari has no Web MIDI) and a MIDI
-            interface into the volca's MIDI IN; press Connect the volca, allow MIDI access when the browser asks, then pick
-            the MIDI out and the volca's channel. The dot beside them turns green while notes go to the volca (Volca or Both).
+            Choose the model in the top bar. You need Chrome, Edge or Firefox (Safari has no Web MIDI) and a MIDI
+            interface into the volca's MIDI IN. Press Connect the volca, allow MIDI access, pick the MIDI out and the
+            volca's channel. The dot turns green while notes go out (Volca or Both).
           </p>
           <p>
-            <strong>In Firefox:</strong> the first time you press Connect the volca (with the MIDI interface plugged in),
-            Firefox offers to add a small site permission add-on for this page, the way it allows MIDI with SysEx. Add it,
-            then allow the access. It applies to this page only and can be removed under Add-ons and themes.
+            <strong>Firefox:</strong> on the first connect, with the interface plugged in, it offers a small site
+            permission add-on for this page: its way of allowing MIDI with SysEx. Add it, then allow access. This page
+            only; remove it under Add-ons and themes.
           </p>
           <p>
-            A voice sent to the volca replaces the sound of the program it's on until you pick another program. To keep it
-            there, write it on the volca: <strong>Store on the volca…</strong> walks you through it. The volcas send
-            nothing back, so this app can't read voices from them or confirm a write.
+            A voice sent to the volca replaces the current program's sound until you switch programs. To keep it, store
+            it on the volca: <strong>Store on the volca…</strong> walks you through. The volcas send nothing back: no
+            reading voices, no confirming a write.
           </p>
         </section>
 
         <section id="help-files">
           <h3>Files</h3>
           <p>
-            Kept voices stay in this browser. Each one exports as a single-voice <code>.syx</code> (its .syx button), and
-            <strong> Export as cartridge</strong> writes the first 32 as one DX7 bank. Both are standard DX7 SysEx: Dexed,
-            a DX7, a TX802 and other DX7-compatible synths load them. <strong>Export .syx</strong> beside the voice's name saves the voice you hear, under its name.
-            <strong> Open .syx…</strong> opens a DX7 cartridge (or a file of single voices) in a window of its own: click a
-            voice to hear it in the browser, on the volca or both (↑ and ↓ go through them, the keys play
-            it), <strong>Use</strong> puts the one you hear on stage (a step ⌘Z undoes) on an empty wheel, the controls at their defaults: the generator didn't make it, so a pin or a control starts a new voice from there, tick the ones you like and <strong>Keep</strong> them. Closing the window, your voice plays again.
+            Kept voices live in this browser. Each exports as a single-voice <code>.syx</code> (its .syx button);
+            <strong> Export as cartridge</strong> writes the first 32 as one DX7 bank. Standard DX7 SysEx: Dexed, a DX7, a
+            TX802 and other DX7-compatibles load them. <strong>Export .syx</strong> beside the name saves the voice you hear.
+          </p>
+          <p>
+            <strong>Open .syx…</strong> opens a DX7 cartridge, or a file of single voices, in its own window. Click a voice
+            to hear it in the browser, on the volca or both; ↑ and ↓ step through, the keys play. <strong>Use</strong> puts
+            it on stage (⌘Z undoes) on an empty wheel, controls at their defaults: the generator didn't make it, so a pin or
+            a control starts a new voice from there. Tick the ones you like and <strong>Keep</strong> them. Close the
+            window, and your voice plays again.
+          </p>
+        </section>
+
+        <section id="help-details">
+          <h3>Details</h3>
+          <p>
+            For those who dare. <strong>Details…</strong>, top of Your voice, swaps the controls for every parameter of
+            the voice. The wheel stays. Made for last touches: a softer attack, less feedback, one operator detuned.
+            <strong> Done</strong> brings the controls back.
+          </p>
+          <dl className="help-defs">
+            <dt>The operators</dt><dd>Click one on the algorithm, or its tab. Its parameters come grouped as on the volca's Parameter List card: Envelope, Frequency, Level, Level scale. Below: the whole voice's pitch envelope, LFO and transpose. Under the algorithm: algorithm, feedback, osc key sync.</dd>
+            <dt>The red names</dt><dd>The volca's display names in EDIT mode (EGr1, LSbP, FdbK…), to find them on the volca. Knob: the volca has a knob for it.</dd>
+            <dt>A value</dt><dd>Drag up or down, scroll, or the arrow keys (⇧ for steps of ten). Envelope points drag too. Level scale shows the keyboard, the break point and each side's curve.</dd>
+          </dl>
+          <p>
+            Heard at once. Let go, and it's a step in Recent changes ("OP2 rate 1 ↓"); ⌘Z takes it back. Edits stay
+            through pins and controls until a new start: New voice, Variation, Mutate, an instrument, Init voice.
+            <strong> Clear edits</strong> gives the voice as the wheel and the controls make it. An edited envelope shows
+            Own; pick a shape to replace it. A voice from a file has no wheel under it: its parameters change as they are.
           </p>
         </section>
 
@@ -207,12 +228,11 @@ export function Help({ open, onClose }: { open: boolean; onClose: () => void }) 
         <section id="help-privacy">
           <h3>Privacy</h3>
           <p>
-            Everything happens in your browser: the sound, the voices, the files. There are no accounts, no cookies, no
-            analytics or tracking, and nothing is loaded from other sites. The generator only sends MIDI to the volca you
-            choose; it reads nothing back. What it remembers (your pins and controls, your kept voices, the sound
-            settings) stays in this browser’s storage, and clearing the site’s data deletes it. The page is hosted on
-            GitHub Pages, which logs your IP address when you open it. The full statement:{' '}
-            <a href="privacy.html" target="_blank" rel="noreferrer">Privacy</a>.
+            Everything runs in your browser: sound, voices, files. No accounts, no cookies, no analytics or tracking,
+            nothing loaded from other sites. The generator only sends MIDI to the volca you choose and reads nothing back.
+            What it remembers (pins, controls, kept voices, sound settings) stays in this browser's storage; clearing the
+            site's data deletes it. GitHub Pages, the host, logs your IP address when you open the page. The full
+            statement:{' '}<a href="privacy.html" target="_blank" rel="noreferrer">Privacy</a>.
           </p>
         </section>
 

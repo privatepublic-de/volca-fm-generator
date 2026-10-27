@@ -21,13 +21,14 @@ ear, and send it to the volca.
 | | |
 |---|---|
 | **The wheel** | Twelve tonalities around a circle: Noise, Metal, Bell, Glass, Tine, Wood, Organ, Sine, Reed, Brass, String, Breath. Up to three pins: the angle picks the tonality (between two names, a bit of both), the distance from the centre goes from mild to extreme, the ring around a pin is its weight. The bar under the wheel shows each pin's part of the whole; drag the edge between two parts to move weight from one to the other. The heaviest pin is the base; weights count against each other, so a pin that seems to do nothing needs more weight against the base (or the base less), then more distance from the centre. |
-| **Start from…** | 41 classic DX7 instruments as a base, parameter for parameter: grand and upright pianos, e-piano, harpsichord, clavinet, guitars, harp, koto, sitar, mallets, basses, winds, a brass section, strings, drums, choirs. Mostly Yamaha's own factory voices. Pins colour them. |
+| **Start from…** | 41 classic DX7 instruments as a base, parameter for parameter: grand and upright pianos, e-piano, harpsichord, clavinet, guitars, harp, koto, sitar, mallets, basses, winds, a brass section, strings, drums, choirs. Mostly Yamaha's own factory voices. The pianos come in several originals, one after the other each time you pick them. Pins colour them. |
 | **Three ways on** | **Variation** moves the details of the voice you hear. **Mutate** moves the pins and the controls. **New voice** rolls the wheel afresh. Undo and redo through every step. |
 | **Shaping** | Envelope (the voice's own, or pluck, struck, bowed, pad, swell, gate, reverse) and length; brightness, complexity, motion; wild; register; velocity; pitch accent; chorus and reverb. |
 | **Your voice** | The algorithm as the DX7 draws it, the six operators with their ratios, levels and envelopes, and a name from how it sounds ("Airy Pad", "Clang Keys"), or one of your own. |
 | **Hearing it** | A DX7 engine in the browser, tuned against a volca fm2, with a keyboard and the computer keys to play. Or straight on the volca over Web MIDI, or both at once. A change is heard from the next note on: a held note keeps the voice it started with. |
 | **Keeping it** | Keep voices in the browser, export one as a `.syx` file or 32 as a DX7 cartridge for Dexed, a DX7 or anything DX7-compatible. |
 | **Cartridges** | Open a DX7 cartridge (`.syx`) and see its 32 voices by name; click one to hear it in the browser or on the volca, use it, keep the ones you like. |
+| **Details** | For those who dare: every parameter of the voice, grouped and named as on the volca's own Parameter List card. Pick an operator on the algorithm, drag its envelope, set frequency, level, level scaling, pitch envelope, LFO. Every change undoable; edits stay while you move the wheel and the controls. Not a full DX7 editor. |
 
 The help inside the app (**Help**, or `?`) explains every part.
 
