@@ -7,8 +7,8 @@ import { touchOf } from '../generator/controls'
 import { algorithmOf } from '../dx7/algorithms'
 import { getOp, OP, opBase, VC, type Voice } from '../dx7/voice'
 import { hueOfAngle, intensityWord, pinHint, pinLabel } from './Wheel'
-import { StartFromMenu } from './StartFrom'
-import { instrumentName, INSTRUMENTS } from '../generator/instruments'
+import { StartFromMenu, VariantDots } from './StartFrom'
+import { instrumentName, INSTRUMENTS, variantCount } from '../generator/instruments'
 import { audition, egEdited, playback, sameSound, useApp, type Controls as ControlValues } from './store'
 
 /** A slider that makes the voice again while it moves and plays it when let go. A double-click puts it back to
@@ -161,13 +161,24 @@ const REGISTER_HINTS: Record<Register, string> = {
 
 function BaseChip() {
   const id = useApp((s) => s.controls.instrument)
+  const variant = useApp((s) => s.controls.variant ?? 0)
   const clear = useApp((s) => s.clearInstrument)
   if (!id) return null
   const inst = INSTRUMENTS[id]
+  const count = variantCount(inst)
   return (
     <div className="base-chip" title={`${inst.hint}. The base of the voice: pins on the wheel colour it.`}>
       <span className="pin-swatch" style={{ background: `hsl(${TONALITY_HUES[inst.family]} 85% 64%)` }} />
-      <span className="base-name">{instrumentName(inst)}</span>
+      <span className="base-name">
+        {instrumentName(inst)}
+        {/* several originals: which one plays, and a click for the next */}
+        {count > 1 && (
+          <button className="base-next" onClick={() => { useApp.getState().startFrom(id); audition() }}
+            title={`Version ${variant + 1} of ${count}: click for the next`}>
+            <VariantDots count={count} at={variant} />
+          </button>
+        )}
+      </span>
       <span className="base-tag">base</span>
       <button className="pin-remove" aria-label={`Back to the wheel alone, without ${instrumentName(inst)}`} title="Back to the wheel alone" onClick={() => { clear(); audition() }}>×</button>
     </div>

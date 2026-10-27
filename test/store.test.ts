@@ -328,4 +328,29 @@ describe('the app store', () => {
     expect(now.voice[opBase(1) + OP.leftCurve]).toBe(2)
     expect(now.history.at(-1)!.change).toBe('OP1 left curve: EXP')
   })
+
+  it('an instrument with several originals: picked again, the next one in turn, round to the first', () => {
+    const s = useApp.getState()
+    s.startFrom('upright')
+    const first = useApp.getState().history.at(-1)!
+    expect(useApp.getState().controls.variant).toBe(0)
+    expect(first.change).toBe('Start: Upright piano 1/4')
+    const algorithms = new Set([first.voice[VC.algorithm]])
+    for (let i = 1; i < 4; i++) {
+      useApp.getState().startFrom('upright')
+      expect(useApp.getState().controls.variant).toBe(i)
+      algorithms.add(useApp.getState().voice[VC.algorithm])
+    }
+    // the originals differ (not all on one algorithm), and after the last comes the first
+    expect(algorithms.size).toBeGreaterThan(1)
+    useApp.getState().startFrom('upright')
+    expect(useApp.getState().controls.variant).toBe(0)
+    // undo brings each back exactly, the original with it
+    const second = useApp.getState().history.at(-4)!
+    useApp.getState().recall(second)
+    expect(useApp.getState().voice).toEqual(second.voice)
+    expect(useApp.getState().controls.variant).toBe(1)
+    useApp.getState().startFrom('piano')
+    expect(useApp.getState().controls.variant).toBe(0)
+  })
 })

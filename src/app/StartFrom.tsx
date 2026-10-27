@@ -2,12 +2,22 @@
 // the wheel then colours it.
 import { useEffect, useRef } from 'react'
 import { TONALITY_HUES } from '../generator/choices'
-import { INSTRUMENT_GROUP_LABELS, INSTRUMENT_GROUPS, INSTRUMENT_IDS, instrumentName, INSTRUMENTS } from '../generator/instruments'
+import { INSTRUMENT_GROUP_LABELS, INSTRUMENT_GROUPS, INSTRUMENT_IDS, instrumentName, INSTRUMENTS, variantCount } from '../generator/instruments'
 import { audition, useApp } from './store'
+
+/** An instrument's originals as dots, the one playing filled: there are more, picked in turn. */
+export function VariantDots({ count, at }: { count: number; at: number | null }) {
+  return (
+    <span className="variant-dots" aria-label={at === null ? `${count} versions` : `version ${at + 1} of ${count}`}>
+      {Array.from({ length: count }, (_, i) => <span key={i} className={i === at ? 'on' : ''} />)}
+    </span>
+  )
+}
 
 export function StartFromMenu({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const current = useApp((s) => s.controls.instrument)
+  const variant = useApp((s) => s.controls.variant ?? 0)
   const startFrom = useApp((s) => s.startFrom)
   const initVoice = useApp((s) => s.initVoice)
   useEffect(() => {
@@ -35,11 +45,13 @@ export function StartFromMenu({ onClose }: { onClose: () => void }) {
           <h4>{INSTRUMENT_GROUP_LABELS[g]}</h4>
           {INSTRUMENT_IDS.filter((id) => INSTRUMENTS[id].group === g).map((id) => {
             const inst = INSTRUMENTS[id]
+            const count = variantCount(inst)
             return (
               <button key={id} className={current === id ? 'on' : ''} title={inst.hint}
                 style={{ '--h': TONALITY_HUES[inst.family] } as React.CSSProperties}
                 onClick={() => { startFrom(id); onClose(); audition() }}>
                 {instrumentName(inst)}
+                {count > 1 && <VariantDots count={count} at={current === id ? variant : null} />}
               </button>
             )
           })}

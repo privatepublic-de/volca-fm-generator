@@ -50,7 +50,7 @@ export function generate(c: GeneratorChoices, { seed, model = 'fm2', wild = 0, v
   const rng = makeRng(seed)
   const spread = spreadOf(wild)
   const mix = mixOf(c.pins)
-  const inst = c.instrument ? variantOf(INSTRUMENTS[c.instrument], rng) : null
+  const inst = c.instrument ? variantOf(INSTRUMENTS[c.instrument], rng, c.variant) : null
   // the base: an instrument (then every pin is a colour on it), else the heaviest pin, else a tonality picked by the
   // seed
   if (!inst && !mix.length) mix.push({ tonality: rng.pick(Object.keys(TONALITY_DEFS) as Tonality[]), weight: 1, intensity: 0.5 })

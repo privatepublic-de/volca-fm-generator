@@ -68,6 +68,8 @@ export interface GeneratorChoices {
   pins: Pin[]
   /** an instrument to start from: the base of the voice in place of the heaviest pin, the pins colour it */
   instrument: InstrumentId | null
+  /** which of the instrument's originals, 0 = its recipe (variantCount); unset: the seed picks one */
+  variant?: number
   /** null: the dominant tonality's own */
   shape: Shape | null
   /** −1 short … +1 long */

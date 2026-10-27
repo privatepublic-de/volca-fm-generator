@@ -59,10 +59,15 @@ export interface Instrument {
 /** A variant replaces the sound of the recipe; its name, group and colour stay. */
 export type InstrumentVariant = Omit<Instrument, 'label' | 'name' | 'group' | 'hint' | 'family' | 'variants'>
 
-/** The recipe or one of its variants, by the seed's first draw (an instrument without variants draws nothing). */
-export function variantOf(inst: Instrument, rng: Rng): Instrument {
+/** How many originals an instrument has: its recipe and its variants. */
+export const variantCount = (inst: Instrument) => (inst.variants?.length ?? 0) + 1
+
+/** The recipe (0) or one of its variants: the one `pick`ed, else by the seed's first draw. The draw is made either
+ *  way, so the rest of the seed's draws stay as they were (an instrument without variants draws nothing). */
+export function variantOf(inst: Instrument, rng: Rng, pick?: number): Instrument {
   if (!inst.variants?.length) return inst
-  const i = rng.int(0, inst.variants.length)
+  const drawn = rng.int(0, inst.variants.length)
+  const i = pick === undefined ? drawn : pick % variantCount(inst)
   if (i === 0) return inst
   // a variant's sound in full: none of the recipe's own settings carry over
   const { label, name, group, hint, family } = inst
@@ -86,7 +91,7 @@ const RECIPES = {
   // ---------- keys ----------
   // after STEINWAY (Original Yamaha/TX7/TX18 #18)
   piano: {
-    label: 'Grand', name: 'Grand piano', group: 'keys', family: 'tine', hint: 'The classic DX7 grands: a Steinway or a Bösendorfer, a new one each time',
+    label: 'Grand', name: 'Grand piano', group: 'keys', family: 'tine', hint: 'The classic DX7 grands: a Steinway or a Bösendorfer: pick it again for the next',
     skeleton: {
       algorithms: [13], shape: 'struck',
       ops: {
@@ -135,7 +140,7 @@ const RECIPES = {
   },
   // after UPRIGHT (Original Yamaha/TX7/TX18 #21)
   upright: {
-    label: 'Upright', name: 'Upright piano', group: 'keys', family: 'tine', hint: 'Four classic DX7 uprights, honky and short, a new one each time',
+    label: 'Upright', name: 'Upright piano', group: 'keys', family: 'tine', hint: 'Four classic DX7 uprights, honky and short: pick it again for the next',
     skeleton: {
       algorithms: [3], shape: 'struck', feedback: 7,
       ops: {

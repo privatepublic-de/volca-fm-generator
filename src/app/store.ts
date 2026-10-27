@@ -8,7 +8,7 @@ import { angleOf, DEFAULT_CHOICES, mixOf, TONALITY_HUES, type GeneratorChoices, 
 import { freshChoices, mutateChoices } from '../generator/explore'
 import { generate, type Generated } from '../generator/generate'
 import { distinctName } from '../generator/naming'
-import { instrumentName, INSTRUMENTS, type InstrumentId } from '../generator/instruments'
+import { instrumentName, INSTRUMENTS, variantCount, type InstrumentId } from '../generator/instruments'
 import { describeChange, describeEdit } from './changes'
 import { rng as makeRng } from '../generator/random'
 import { newSeed } from '../generator/random'
@@ -317,9 +317,13 @@ export const useApp = create<State>((set, get) => {
       make(true, 'Init voice')
     },
     startFrom(id) {
+      // an instrument with several originals: picked again, the next one (in turn, round to the first)
+      const s = get()
+      const count = variantCount(INSTRUMENTS[id])
+      const variant = s.controls.instrument === id ? ((s.controls.variant ?? 0) + 1) % count : 0
       set({
         pins: [],
-        controls: { ...DEFAULT_CONTROLS, ...INSTRUMENTS[id].controls, instrument: id },
+        controls: { ...DEFAULT_CONTROLS, ...INSTRUMENTS[id].controls, instrument: id, variant },
         wild: 0,
         seed: newSeed(),
         vary: 0,
@@ -327,10 +331,10 @@ export const useApp = create<State>((set, get) => {
         edits: {},
         selectedPin: null,
       })
-      make(true, `Start: ${instrumentName(INSTRUMENTS[id])}`)
+      make(true, `Start: ${instrumentName(INSTRUMENTS[id])}${count > 1 ? ` ${variant + 1}/${count}` : ''}`)
     },
     clearInstrument() {
-      set({ controls: { ...get().controls, instrument: null } })
+      set({ controls: { ...get().controls, instrument: null, variant: undefined } })
       make(true, 'Instrument off')
     },
     generateNew() {
