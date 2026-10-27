@@ -57,9 +57,13 @@ function describeMix(roles: { tonality: Tonality; as: 'skeleton' | 'branch' | 'g
   return `${base ?? names('skeleton')[0]}${parts.length ? `, with ${parts.join(' and ')}` : ''}`
 }
 
-const hueOf = (t: Tonality | undefined) => (t ? TONALITY_HUES[t] : 250)
+export const hueOf = (t: Tonality | undefined) => (t ? TONALITY_HUES[t] : 250)
 
-function AlgorithmDiagram({ voice, opTonality }: { voice: Voice; opTonality: Partial<Record<number, Tonality>> }) {
+/** The algorithm as the DX7 draws it; with `onSelect` its operators are buttons, `selected` ringed. With `scale`
+ *  it is drawn at that many pixels per unit, so every algorithm's operators come out the same size. */
+export function AlgorithmDiagram({ voice, opTonality, selected, onSelect, className = 'algorithm', scale }: {
+  voice: Voice; opTonality: Partial<Record<number, Tonality>>; selected?: number; onSelect?: (op: number) => void; className?: string; scale?: number
+}) {
   const alg = algorithmOf(voice[VC.algorithm])
   const nodes = layout(alg)
   const width = Math.max(...nodes.map((n) => n.x)) + 1
@@ -73,7 +77,7 @@ function AlgorithmDiagram({ voice, opTonality }: { voice: Voice; opTonality: Par
   const W = 36 + (width - 1) * S + 14
   const H = 28 + (height - 1) * S + 10
   return (
-    <svg className="algorithm" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Algorithm ${alg.number}`}>
+    <svg className={className} viewBox={`0 0 ${W} ${H}`} style={scale ? { width: W * scale, height: H * scale } : undefined} role="img" aria-label={`Algorithm ${alg.number}`}>
       {nodes.flatMap((n) => [1, 2, 3, 4, 5, 6].filter((c) => alg.modulators[c].includes(n.op)).map((c) => {
         const a = pos(n)
         const b = pos(byOp.get(c)!)
@@ -95,7 +99,9 @@ function AlgorithmDiagram({ voice, opTonality }: { voice: Voice; opTonality: Par
         const carrier = alg.carriers.includes(n.op)
         const hue = hueOf(opTonality[n.op])
         return (
-          <g key={n.op} className={`alg-op${sounding ? '' : ' silent'}${carrier ? ' carrier' : ''}`} style={{ '--h': hue } as React.CSSProperties}>
+          <g key={n.op} className={`alg-op${sounding ? '' : ' silent'}${carrier ? ' carrier' : ''}${selected === n.op ? ' selected' : ''}`} style={{ '--h': hue } as React.CSSProperties}
+            {...(onSelect && { role: 'button', tabIndex: 0, 'aria-label': `OP${n.op}`, onClick: () => onSelect(n.op), onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(n.op) } } })}>
+            {selected === n.op && <rect className="alg-ring" x={cx - 14} y={cy - 14} width={28} height={28} rx={6} />}
             <rect x={cx - 10} y={cy - 10} width={20} height={20} rx={4} />
             <text x={cx} y={cy + 4}>{n.op}</text>
           </g>
@@ -105,7 +111,7 @@ function AlgorithmDiagram({ voice, opTonality }: { voice: Voice; opTonality: Par
   )
 }
 
-function opEg(v: Voice, op: number): Eg {
+export function opEg(v: Voice, op: number): Eg {
   const b = opBase(op)
   return {
     rates: [v[b + OP.rate1], v[b + OP.rate2], v[b + OP.rate3], v[b + OP.rate4]],
@@ -113,14 +119,14 @@ function opEg(v: Voice, op: number): Eg {
   }
 }
 
-function frequency(v: Voice, op: number) {
+export function frequency(v: Voice, op: number) {
   const r = opRatio(v, op)
   if (r !== null) return `× ${r < 10 ? r.toFixed(2).replace(/\.?0+$/, '') : r.toFixed(1)}`
   const hz = 10 ** ((getOp(v, op, 'coarse') & 3) + getOp(v, op, 'fine') / 100)
   return `${hz < 100 ? hz.toFixed(1) : Math.round(hz)} Hz`
 }
 
-export function VoiceView() {
+export function VoiceView({ onDetails }: { onDetails?: () => void }) {
   const voice = useApp((s) => s.voice)
   const generated = useApp((s) => s.generated)
   const made = useApp((s) => [...s.history, ...s.favourites].find((e) => e.id === s.currentId)?.made)
@@ -133,6 +139,7 @@ export function VoiceView() {
       <div className="voice-bar">
         <h3 id="voice-title">Your voice</h3>
         <VoiceActions />
+        {onDetails && <button className="voice-details-open" onClick={onDetails} title="Every parameter of this voice, grouped as on the volca">Details…</button>}
       </div>
       <div className="voice-head">
         <VoiceName />
@@ -164,7 +171,7 @@ export function VoiceView() {
 
 /** The voice's name, yours to change: click it, type (the DX7 has 10 characters), Enter or click away to keep it,
  *  Escape to leave it. Emptied, it takes the name its sound gives it again. */
-function VoiceName() {
+export function VoiceName() {
   const voice = useApp((s) => s.voice)
   const own = useApp((s) => s.customName)
   const renameVoice = useApp((s) => s.renameVoice)

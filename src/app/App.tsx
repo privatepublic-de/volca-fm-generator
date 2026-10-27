@@ -10,6 +10,7 @@ import { StoreDialog } from './StoreDialog'
 import { audition, playback, useApp } from './store'
 import { TopBar } from './TopBar'
 import { VoiceView } from './VoiceView'
+import { Details } from './Details'
 import { Wheel } from './Wheel'
 import { Weights } from './Weights'
 
@@ -19,6 +20,8 @@ export function App() {
   const voiceBelow = useMedia('(min-width: 961px) and (max-width: 1100px)')
   // #help in the address opens the help, so it can be linked to
   const [helping, setHelping] = useState(() => location.hash === '#help')
+  // the details take the controls' place; the wheel stays
+  const [details, setDetails] = useState(false)
   const [audioOn, setAudioOn] = useState(playback.started)
   const hue = useApp((s) => (s.generated ? TONALITY_HUES[s.generated.roles[0].tonality] : s.history.find((h) => h.id === s.currentId)?.hue ?? 260))
 
@@ -83,12 +86,14 @@ export function App() {
           <Weights />
           <PinList />
         </div>
-        <div className="stage-controls">
-          <Controls />
-          {!voiceBelow && <VoiceView />}
-        </div>
+        {details
+          ? <div className="stage-controls"><Details onClose={() => setDetails(false)} /></div>
+          : <div className="stage-controls">
+            <Controls />
+            {!voiceBelow && <VoiceView onDetails={() => setDetails(true)} />}
+          </div>}
       </main>
-      {voiceBelow && <VoiceView />}
+      {voiceBelow && !details && <VoiceView onDetails={() => setDetails(true)} />}
       <div className="library">
         <Favourites />
         <History />

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { useApp } from '../src/app/store'
+import { egEdited, useApp } from '../src/app/store'
 import { vmemMessage } from '../src/dx7/sysex'
-import { initVoice, setVoiceName, voiceName } from '../src/dx7/voice'
+import { initVoice, OP, opBase, setVoiceName, VC, voiceName } from '../src/dx7/voice'
 import { centroid, decayTime, slice } from '../src/engine/measure'
 import { renderNote } from '../src/engine/render'
 
@@ -259,5 +259,73 @@ describe('the app store', () => {
     useApp.getState().removePin(id)
     expect(useApp.getState().pins).toHaveLength(2)
     expect(useApp.getState().generated!.mix.map((m) => m.tonality)).not.toContain('noise')
+  })
+
+  it('an edit by hand is heard, becomes a named step, and undo and redo pass it', () => {
+    const s = useApp.getState()
+    s.generateNew()
+    const before = useApp.getState().history.at(-1)!
+    const at = opBase(2) + OP.fine
+    const value = (before.voice[at] + 10) % 100
+    s.setEdit(at, value)
+    expect(useApp.getState().voice[at]).toBe(value)
+    s.commitEdit()
+    const step = useApp.getState().history.at(-1)!
+    expect(step.id).not.toBe(before.id)
+    expect(step.change).toBe(`OP2 fine ${value > before.voice[at] ? '↑' : '↓'}`)
+    useApp.getState().back()
+    expect(useApp.getState().voice).toEqual(before.voice)
+    expect(useApp.getState().edits).toEqual({})
+    useApp.getState().forward()
+    expect(useApp.getState().voice).toEqual(step.voice)
+    // the generator's view comes back with it: the wheel and the edit together
+    expect(useApp.getState().generated).not.toBeNull()
+  })
+
+  it('edits stay through the controls, and a new voice starts without them', () => {
+    const s = useApp.getState()
+    s.generateNew()
+    s.setEdit(VC.feedback, 7)
+    s.commitEdit()
+    useApp.getState().setControl('brightness', 0.3)
+    useApp.getState().regenerate(true)
+    expect(useApp.getState().voice[VC.feedback]).toBe(7)
+    useApp.getState().generateNew()
+    expect(useApp.getState().edits).toEqual({})
+  })
+
+  it('an envelope edit under a picked shape shows as Own and moves nothing else; the shape picked again wins', () => {
+    const s = useApp.getState()
+    s.generateNew()
+    s.setControl('shape', 'pluck')
+    s.regenerate(true)
+    const before = Uint8Array.from(useApp.getState().voice)
+    const at = opBase(2) + OP.rate1
+    const value = before[at] === 50 ? 60 : 50
+    useApp.getState().setEdit(at, value)
+    useApp.getState().commitEdit()
+    const now = useApp.getState()
+    expect(egEdited(now.edits)).toBe(true)
+    for (let i = 0; i < VC.name; i++) expect(now.voice[i], `byte ${i}`).toBe(i === at ? value : before[i])
+    useApp.getState().setControl('shape', 'pluck')
+    useApp.getState().regenerate(true)
+    expect(egEdited(useApp.getState().edits)).toBe(false)
+    expect(useApp.getState().voice.subarray(0, VC.name)).toEqual(before.subarray(0, VC.name))
+    expect(useApp.getState().history.at(-1)!.change).toBe('Envelope: Pluck')
+  })
+
+  it('a voice from a file changes as it is, a step at a time', () => {
+    const s = useApp.getState()
+    const file = initVoice()
+    setVoiceName(file, 'FROM FILE')
+    useApp.setState({ cart: { file: 'test.syx', voices: [{ voice: file, source: 'voice 1' }], notes: [] } })
+    s.useFromCart(0)
+    s.setEdit(opBase(1) + OP.leftCurve, 2)
+    s.commitEdit()
+    const now = useApp.getState()
+    expect(now.generated).toBeNull()
+    expect(voiceName(now.voice)).toBe('FROM FILE')
+    expect(now.voice[opBase(1) + OP.leftCurve]).toBe(2)
+    expect(now.history.at(-1)!.change).toBe('OP1 left curve: EXP')
   })
 })

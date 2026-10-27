@@ -700,3 +700,96 @@ input[type='range']::-moz-range-thumb { width: 12px; height: 12px; border-radius
   *, *::before, *::after { transition: none !important; }
   .help[open] { animation: none; }
 }
+
+/* ---------- details: every parameter, grouped as on the volca's Parameter List card ---------- */
+
+.voice-details-open { white-space: nowrap; }
+.details { display: grid; gap: 14px; background: var(--panel); border-radius: 12px; padding: 14px 18px 18px; }
+.details-note { margin-left: auto; font-size: 12px; color: var(--dim); }
+.details-top { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 1100px) { .details-top { grid-template-columns: minmax(0, 1fr); } }
+.details-map { display: grid; gap: 12px; justify-items: start; }
+/* the tallest algorithm is four operators high, the widest six across (220 × 140 units): the carriers stay on
+   one line at the foot, whichever algorithm it is */
+.details-alg { width: 220px; height: 140px; display: flex; align-items: flex-end; }
+.algorithm.big { flex: none; max-width: none; max-height: none; }
+.alg-op[role='button'] { cursor: pointer; }
+.alg-op[role='button']:hover rect:not(.alg-ring) { stroke-width: 2.4; }
+.alg-op:focus { outline: none; }
+.alg-op:focus-visible .alg-ring, .alg-ring { fill: none; stroke: var(--text); stroke-width: 1.3; }
+.details-sub { font: 500 13px var(--sans); color: var(--muted); margin-top: 4px; }
+
+/* the operators as tabs: the voice view's cards, made small */
+.dop-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.dop-tab { display: flex; gap: 6px; align-items: baseline; padding: 5px 8px; background: var(--raised); border-color: transparent; border-bottom: 2px solid hsl(var(--h) 60% 50% / 0.5); font-size: 13px; color: var(--muted); }
+.dop-tab b { color: hsl(var(--h) 80% 72%); font-weight: 600; }
+.dop-tab.on { border-color: hsl(var(--h) 70% 62%); background: hsl(var(--h) 60% 40% / 0.3); color: var(--text); }
+.dop-tab.silent { opacity: 0.55; border-bottom-color: var(--line); }
+.dop-head { display: flex; gap: 12px; align-items: baseline; margin: 12px 0 8px; font-size: 13px; color: var(--muted); }
+.dop-title { font: 600 20px var(--condensed); color: hsl(var(--h) 80% 78%); }
+
+.dcards { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.dcards.all { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+@media (max-width: 700px) { .dcards, .dcards.all { grid-template-columns: minmax(0, 1fr); } }
+.dcard { background: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px 12px; display: grid; gap: 4px; align-content: start; }
+.dcard.wide { grid-column: 1 / -1; }
+.dcard h4 { margin: 0 0 4px; font: 500 13px var(--sans); color: var(--muted); display: flex; align-items: baseline; gap: 10px; }
+.dcard-sub { margin-top: 8px !important; }
+.dcard-big { margin-left: auto; font: 600 18px var(--condensed); color: hsl(var(--h) 80% 78%); }
+
+/* a parameter: the volca's name, ours, the value */
+.dp { display: grid; grid-template-columns: 3.4em minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 26px; }
+.dp-label { font-size: 14px; white-space: nowrap; }
+.dgrid { display: grid; gap: 2px; width: 100%; }
+.led {
+  font: 600 11px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: #ff6a4d;
+  text-shadow: 0 0 6px rgb(255 80 50 / 0.45);
+  opacity: 0.8;
+  white-space: nowrap;
+}
+/* a number you drag, its fill showing where it sits in its range */
+.dv {
+  display: inline-block;
+  min-width: 3.6em;
+  padding: 2px 8px;
+  text-align: right;
+  font: 500 14px var(--sans);
+  border-radius: 5px;
+  background: linear-gradient(to right, var(--accent-soft) var(--fill), var(--raised) var(--fill));
+  border: 1px solid var(--line);
+  cursor: ns-resize;
+  user-select: none;
+  touch-action: none;
+}
+.dv:hover { border-color: var(--accent); }
+.dseg { flex-wrap: nowrap; }
+.dseg button { padding: 3px 8px; font-size: 13px; white-space: nowrap; }
+.dseg svg { width: 16px; height: 16px; display: block; }
+.dseg path { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; }
+
+/* the envelope pictures */
+.deg, .dscale { width: 100%; height: auto; display: block; touch-action: none; }
+.deg-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.deg-fill { fill: var(--accent-soft); opacity: 0.6; }
+.deg-mid { stroke: var(--line); stroke-dasharray: 3 3; }
+.deg-key { stroke: var(--line); }
+.deg-note { font: 11px var(--sans); fill: var(--dim); }
+.deg-seg { font: 600 11px var(--sans); fill: var(--muted); text-anchor: middle; }
+.deg-handle { cursor: ns-resize; }
+.deg-handle circle:not(.deg-hit) { fill: var(--text); stroke: var(--ink); stroke-width: 2; }
+.deg-handle .deg-hit { fill: transparent; }
+.deg-handle:hover circle:not(.deg-hit), .deg-handle.on circle:not(.deg-hit) { fill: var(--accent); }
+.deg-handle text { font: 600 11px var(--sans); fill: var(--text); }
+.deg-values { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 10px; margin-top: 6px; }
+.deg-values label { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.dscale-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 40px; align-items: start; margin-top: 4px; }
+.dscale-controls .dgrid { justify-items: start; row-gap: 4px; }
+.dscale-controls .dgrid.bp { grid-column: 1 / -1; justify-self: center; width: auto; }
+.dscale-controls .dgrid.bp .dp { width: auto; }
+.dscale-controls .dp { width: 100%; }
+.dp.curve { grid-template-columns: 3.4em auto; }
+@media (max-width: 700px) { .dscale-controls { grid-template-columns: minmax(0, 1fr); } }
+.dscale-bp { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 2 2; }
+.dscale-key { fill: var(--muted); opacity: 0.5; }

@@ -37,6 +37,33 @@ export function maxAt(offset: number): number {
   return 126
 }
 
+const OP_NAMES: Record<keyof typeof OP, string> = {
+  rate1: 'rate 1', rate2: 'rate 2', rate3: 'rate 3', rate4: 'rate 4', level1: 'level 1', level2: 'level 2', level3: 'level 3', level4: 'level 4',
+  breakPoint: 'break point', leftDepth: 'left depth', rightDepth: 'right depth', leftCurve: 'left curve', rightCurve: 'right curve',
+  rateScaling: 'rate scale', ampModSens: 'amp mod sense', velocitySens: 'velocity sense', outputLevel: 'level',
+  oscMode: 'osc mode', coarse: 'coarse', fine: 'fine', detune: 'detune',
+}
+const VC_NAMES: Record<keyof typeof VC, string> = {
+  pitchRate1: 'Pitch rate 1', pitchRate2: 'Pitch rate 2', pitchRate3: 'Pitch rate 3', pitchRate4: 'Pitch rate 4',
+  pitchLevel1: 'Pitch level 1', pitchLevel2: 'Pitch level 2', pitchLevel3: 'Pitch level 3', pitchLevel4: 'Pitch level 4',
+  algorithm: 'Algorithm', feedback: 'Feedback', oscKeySync: 'Osc key sync', lfoSpeed: 'LFO speed', lfoDelay: 'LFO delay',
+  lfoPitchDepth: 'LFO pitch depth', lfoAmpDepth: 'LFO amp depth', lfoSync: 'LFO key sync', lfoWave: 'LFO wave',
+  pitchModSens: 'Pitch mod sense', transpose: 'Transpose', name: 'Name',
+}
+
+/** The parameter at `offset` in words: "OP2 rate 1", "Feedback". */
+export function nameAt(offset: number): string {
+  if (offset < 126) {
+    const key = (Object.keys(OP) as (keyof typeof OP)[]).find((k) => OP[k] === offset % OP_SIZE)!
+    return `OP${6 - Math.floor(offset / OP_SIZE)} ${OP_NAMES[key]}`
+  }
+  const key = (Object.keys(VC) as (keyof typeof VC)[]).find((k) => VC[k] === Math.min(offset, VC.name))!
+  return VC_NAMES[key]
+}
+
+/** Whether the byte at `offset` is part of an operator's envelope (R1–R4, L1–L4). */
+export const isEgByte = (offset: number) => offset < 126 && offset % OP_SIZE < 8
+
 /** Where operator `op` (1–6, as the DX7 numbers them) starts. */
 export const opBase = (op: number) => (6 - op) * OP_SIZE
 

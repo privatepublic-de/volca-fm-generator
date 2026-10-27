@@ -9,7 +9,7 @@ import { getOp, OP, opBase, VC, type Voice } from '../dx7/voice'
 import { hueOfAngle, intensityWord, pinHint, pinLabel } from './Wheel'
 import { StartFromMenu } from './StartFrom'
 import { instrumentName, INSTRUMENTS } from '../generator/instruments'
-import { audition, playback, sameSound, useApp, type Controls as ControlValues } from './store'
+import { audition, egEdited, playback, sameSound, useApp, type Controls as ControlValues } from './store'
 
 /** A slider that makes the voice again while it moves and plays it when let go. A double-click puts it back to
  *  `reset` (its neutral value: the middle for bipolar ones), which `mark` shows on the track when it isn't an end. */
@@ -111,18 +111,25 @@ function ShapePicker() {
   const shape = useApp((s) => s.controls.shape)
   const voice = useApp((s) => s.voice)
   const setControl = useApp((s) => s.setControl)
-  const pick = (v: Shape | null) => { setControl('shape', v); useApp.getState().regenerate(true); audition() }
+  // envelopes edited by hand (the details) are the voice's own, whatever shape made them
+  const own = useApp((s) => s.controls.shape === null || egEdited(s.edits))
+  const picked = own ? null : shape
+  const pick = (v: Shape | null) => {
+    // Own while it already is: nothing to do (the generator's own shape would move what you edited)
+    if (v === null && own) return
+    setControl('shape', v); useApp.getState().regenerate(true); audition()
+  }
   return (
     <div className="shapes" role="radiogroup" aria-label="Envelope">
-      <button role="radio" aria-checked={shape === null} className={shape === null ? 'on' : ''} onClick={() => pick(null)} title="The envelope the tonality comes with">
+      <button role="radio" aria-checked={own} className={own ? 'on' : ''} onClick={() => pick(null)} title={own && shape ? 'Your envelopes, edited in the details (a shape picked takes their place)' : 'The envelope the tonality comes with'}>
         {/* the voice's own envelope when it's the one you hear; an outline while another shape is picked */}
-        {shape === null
+        {own
           ? <EgCurve eg={heardEg(voice)} className="shape-own" />
           : <svg className="shape-own outline" viewBox="0 0 60 22" aria-hidden="true"><path d="M1 20 L9 4 L28 9 L46 9 L59 20" /></svg>}
         <span>Own</span>
       </button>
       {SHAPES.map((s) => (
-        <button key={s} role="radio" aria-checked={shape === s} className={shape === s ? 'on' : ''} onClick={() => pick(s)} title={SHAPE_HINTS[s]}>
+        <button key={s} role="radio" aria-checked={picked === s} className={picked === s ? 'on' : ''} onClick={() => pick(s)} title={SHAPE_HINTS[s]}>
           <ShapeIcon shape={s} />
           <span>{SHAPE_LABELS[s]}</span>
         </button>
